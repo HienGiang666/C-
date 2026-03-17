@@ -1,0 +1,16 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+
+# Build results
+bin/
+obj/
+
+# NuGet
+packages/
+*.nupkg
+
+# OS
+.DS_Store
+Thumbs.db
