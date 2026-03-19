@@ -21,6 +21,18 @@ public class POIController : ControllerBase
     {
         return await _context.POIs.ToListAsync();
     }
+    [HttpGet("{id}")]
+    public async Task<ActionResult<POI>> GetPOI(int id)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+
+        if (poi == null)
+        {
+            return NotFound("Không tìm thấy địa điểm!");
+        }
+
+        return poi;
+    }
 
     [HttpPost]
     public async Task<ActionResult<POI>> CreatePOI(POI poi)

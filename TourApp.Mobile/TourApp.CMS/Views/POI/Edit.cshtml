@@ -1,0 +1,42 @@
+﻿@model TourApp.CMS.Models.POI
+
+@{
+    ViewData["Title"] = "Sửa Địa Điểm";
+}
+
+<div class="container mt-4">
+    <h2 class="text-warning">✏️ Sửa Thông Tin Địa Điểm</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-6">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tên địa điểm</label>
+                    <input asp-for="Name" class="form-control" required />
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mô tả ngắn</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" required></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label fw-bold">Vĩ độ (Latitude)</label>
+                        <input asp-for="Latitude" type="number" step="any" class="form-control" required />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label fw-bold">Kinh độ (Longitude)</label>
+                        <input asp-for="Longitude" type="number" step="any" class="form-control" required />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-warning">💾 Cập nhật</button>
+                <a asp-action="Index" class="btn btn-secondary">Trở về</a>
+            </form>
+        </div>
+    </div>
+</div>
