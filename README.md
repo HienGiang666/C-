@@ -103,8 +103,4 @@ Dự án được đánh giá là hoàn thiện khi đáp ứng các chỉ số 
 
 ---
 
-## 10. Demo Sản phẩm (Showcase)
-(Khu vực đính kèm hình ảnh và video thực tế sau khi hoàn thành Phase 4)
-* **Giao diện Web CMS:** [Chèn ảnh demo]
-* **Giao diện Mobile App:** [Chèn ảnh demo]
-* **Video Luồng hoạt động:** [Chèn Link Demo]
+
