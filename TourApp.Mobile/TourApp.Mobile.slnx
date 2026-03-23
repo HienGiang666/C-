@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="TourApp.Mobile/TourApp.Mobile.csproj" />
+  <Project Path="TourApp.Mobile/TourApp.Mobile.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>
