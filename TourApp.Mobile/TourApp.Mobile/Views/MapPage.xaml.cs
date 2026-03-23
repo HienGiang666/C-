@@ -1,74 +1,64 @@
-﻿using TourApp.Mobile.Models;
-using TourApp.Mobile.Services;
+namespace TourApp.Mobile.Views;
 
-namespace TourApp.Mobile.Views
+public partial class MapPage : ContentPage
 {
-    public partial class MapPage : ContentPage
+    public MapPage()
     {
-        private readonly DatabaseService _db = new();
-        private List<POI> _pois = new();
-        private POI _selectedPoi;
+        InitializeComponent();
+        LoadMap();
+    }
 
-        public MapPage()
+    private void LoadMap()
+    {
+        MapWebView.Source = new HtmlWebViewSource
         {
-            InitializeComponent();
-            LoadMapAsync();
-        }
+            Html = GetMapHtml()
+        };
+    }
 
-        private async void LoadMapAsync()
-        {
-            _pois = await _db.GetAllPOIsAsync();
-            var html = BuildMapHtml(_pois);
-            MapWebView.Source = new HtmlWebViewSource { Html = html };
-        }
-
-        private string BuildMapHtml(List<POI> pois)
-        {
-            var markers = "";
-            foreach (var poi in pois)
-            {
-                markers += $@"
-                    var marker = L.marker([{poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 
-                                           {poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}])
-                        .addTo(map)
-                        .bindPopup('<b>{poi.PoiName}</b><br>{poi.Address}');
-                ";
-            }
-
-            return $@"
-<!DOCTYPE html>
+    private string GetMapHtml()
+    {
+        return @"<!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8'/>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'/>
-    <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+    <link href='https://cdn.jsdelivr.net/npm/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'/>
+    <script src='https://cdn.jsdelivr.net/npm/goong-js@1.0.9/dist/goong.min.js'></script>
     <style>
-        body {{ margin:0; padding:0; }}
-        #map {{ width:100%; height:100vh; }}
+        body, html, #map { margin: 0; padding: 0; height: 100%; width: 100%; }
+        #debug { position:fixed; top:5px; left:5px; background:red; color:white; 
+                 padding:5px; font-size:12px; z-index:999; display:none; }
     </style>
 </head>
 <body>
     <div id='map'></div>
+    <div id='debug'></div>
     <script>
-        var map = L.map('map').setView([10.7769, 106.7009], 13);
-  L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-    attribution: '© OpenStreetMap © CARTO',
-    subdomains: 'abcd',
-    maxZoom: 19
-}}).addTo(map);
-        {markers}
+        try {
+            goongjs.accessToken = '2Dnp8yaRq6ivkjX5c7D7RFcx5tDSi5g512jA5dG9';
+            var map = new goongjs.Map({
+                container: 'map',
+                style: 'https://tiles.goong.io/assets/goong_map_web.json',
+                center: [106.6297, 10.8231],
+                zoom: 14
+            });
+            map.on('error', function(e) {
+                document.getElementById('debug').style.display='block';
+                document.getElementById('debug').innerText = 'Map error: ' + e.error;
+            });
+        } catch(e) {
+            document.getElementById('debug').style.display='block';
+            document.getElementById('debug').innerText = 'JS error: ' + e.message;
+        }
     </script>
 </body>
 </html>";
-        }
-
-        private async void OnPlayAudioClicked(object sender, EventArgs e)
-        {
-            if (_selectedPoi == null) return;
-            var audio = await _db.GetAudioByPoiAsync(_selectedPoi.PoiId);
-            if (audio != null)
-                await DisplayAlert("Thuyết minh", audio.ScriptText, "OK");
-        }
     }
+
+    private void OnPlayAudioClicked(object sender, EventArgs e)
+    {
+        // TODO: ph�t audio
+    }
+
+
 }

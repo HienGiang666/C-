@@ -1,33 +1,39 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TourApp.Mobile.Views.MapPage"
-             Title="Bản đồ Di tích">
+             Title="Phố Ẩm Thực">
 
     <Grid RowDefinitions="*, Auto">
 
-        <WebView x:Name="MapWebView"
-                 Grid.Row="0"/>
+        <WebView x:Name="MapWebView" Grid.Row="0"/>
 
-        <Frame Grid.Row="1"
-               BackgroundColor="White"
-               Padding="15"
-               CornerRadius="0">
+        <Border Grid.Row="1"
+                BackgroundColor="White"
+                Padding="15"
+                StrokeShape="RoundRectangle 0">
             <VerticalStackLayout Spacing="5">
                 <Label x:Name="PoiNameLabel"
-                       Text="Chọn một điểm tham quan"
+                       Text="Chọn một địa điểm"
                        FontSize="16"
                        FontAttributes="Bold"/>
                 <Label x:Name="PoiDescLabel"
                        Text=""
                        FontSize="13"
                        TextColor="Gray"/>
+                <Label x:Name="PoiTimeLabel"
+                       Text=""
+                       FontSize="12"
+                       TextColor="Green"/>
                 <Button x:Name="PlayAudioBtn"
                         Text="▶ Nghe thuyết minh"
                         IsVisible="False"
+                        BackgroundColor="#FF6B35"
+                        TextColor="White"
+                        CornerRadius="8"
                         Clicked="OnPlayAudioClicked"/>
             </VerticalStackLayout>
-        </Frame>
+        </Border>
 
     </Grid>
 </ContentPage>

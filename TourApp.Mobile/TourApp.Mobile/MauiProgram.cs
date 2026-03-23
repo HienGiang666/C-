@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Handlers;
 using TourApp.Mobile.Services;
-using TourApp.Mobile.Views;
 
 namespace TourApp.Mobile
 {
@@ -8,6 +8,17 @@ namespace TourApp.Mobile
     {
         public static MauiApp CreateMauiApp()
         {
+            // Cấu hình WebView cho Android trước khi build
+#if ANDROID
+            WebViewHandler.Mapper.AppendToMapping("GoongWebView", (handler, view) =>
+            {
+                handler.PlatformView.Settings.JavaScriptEnabled = true;
+                handler.PlatformView.Settings.DomStorageEnabled = true;
+                handler.PlatformView.Settings.MixedContentMode =
+                    Android.Webkit.MixedContentHandling.AlwaysAllow;
+            });
+#endif
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -19,7 +30,7 @@ namespace TourApp.Mobile
                 });
 
             builder.Services.AddSingleton<DatabaseService>();
-            builder.Services.AddTransient<MapPage>();
+            builder.Services.AddTransient<Views.MapPage>();
 
 #if DEBUG
             builder.Logging.AddDebug();
