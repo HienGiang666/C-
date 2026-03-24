@@ -3,20 +3,12 @@
     x:Class="TourApp.Mobile.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:TourApp.Mobile"
     xmlns:views="clr-namespace:TourApp.Mobile.Views"
-    Title="TourApp.Mobile">
+    Title="TourApp">
 
-    <TabBar>
-        <Tab Title="Home">
-            <ShellContent
-                ContentTemplate="{DataTemplate local:MainPage}"
-                Route="MainPage" />
-        </Tab>
-        <Tab Title="Bản đồ">
-            <ShellContent
-                ContentTemplate="{DataTemplate views:MapPage}"
-                Route="MapPage" />
-        </Tab>
-    </TabBar>
+    <ShellContent
+        Title="Bản đồ Tour"
+        ContentTemplate="{DataTemplate views:MapPage}"
+        Route="MapPage" />
+
 </Shell>

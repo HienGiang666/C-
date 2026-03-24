@@ -1,89 +1,51 @@
-﻿using Microsoft.Data.SqlClient;
 using TourApp.Mobile.Models;
 
 namespace TourApp.Mobile.Services
 {
     public class DatabaseService
     {
-        private readonly string _connectionString =
-     "Server=10.0.2.2\\SQLEXPRESS,1433;Database=TourAppDB;User Id=sa;Password=123456;TrustServerCertificate=True;";
+        // TODO: thay bằng REST API sau khi bạn kia làm xong backend
+        private const bool USE_MOCK_DATA = true;
 
         public async Task<bool> TestConnectionAsync()
         {
-            try
-            {
-                using var conn = new SqlConnection(_connectionString);
-                await conn.OpenAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await App.Current.MainPage.DisplayAlert("Lỗi chi tiết", ex.Message, "OK");
-                return false;
-            }
+            // Tạm thời luôn trả về true, không kết nối DB thật
+            await Task.CompletedTask;
+            return true;
         }
 
         public async Task<List<POI>> GetAllPOIsAsync()
         {
-            var list = new List<POI>();
-            using var conn = new SqlConnection(_connectionString);
-            await conn.OpenAsync();
-            var cmd = new SqlCommand("SELECT * FROM POI WHERE IsActive=1 ORDER BY Priority", conn);
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            await Task.CompletedTask;
+            return new List<POI>
             {
-                list.Add(new POI
-                {
-                    PoiId = reader.GetInt32(0),
-                    PoiName = reader.GetString(1),
-                    Description = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    Address = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    Latitude = reader.GetDouble(4),
-                    Longitude = reader.GetDouble(5),
-                    Radius = reader.GetDouble(6),
-                    Priority = reader.GetInt32(7),
-                    IsActive = reader.GetBoolean(10)
-                });
-            }
-            return list;
+                new POI { PoiId=1, PoiName="Ốc Oanh",
+                    Description="Quán Ốc Oanh nổi tiếng nhất nhì khu phố Vĩnh Khánh với các món ốc móng tay mít hải sản nướng mỡ hành thơm lừng.",
+                    Latitude=10.75960, Longitude=106.70180, Radius=30, Priority=1, IsActive=true, Rating=4.8,
+                    ImageUrl="https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=600" },
+
+                new POI { PoiId=2, PoiName="Lẩu Bò Khu Vực",
+                    Description="Điểm dừng chân tuyệt vời cho món lẩu bò đậm đà, nóng hổi nhâm nhi trong buổi tối Sài Gòn.",
+                    Latitude=10.75890, Longitude=106.70050, Radius=25, Priority=1, IsActive=true, Rating=4.6,
+                    ImageUrl="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=600" },
+
+                new POI { PoiId=3, PoiName="Trà Sữa Vĩnh Khánh",
+                    Description="Giải khát ngay với ly trà sữa thơm mát sau khi thưởng thức các món ăn mặn.",
+                    Latitude=10.75820, Longitude=106.69910, Radius=20, Priority=2, IsActive=true, Rating=4.3,
+                    ImageUrl="https://images.unsplash.com/photo-1558138838-76294611cb1e?q=80&w=600" }
+            };
         }
 
         public async Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi")
         {
-            using var conn = new SqlConnection(_connectionString);
-            await conn.OpenAsync();
-            var cmd = new SqlCommand(
-                "SELECT * FROM Audio WHERE PoiId=@PoiId AND Language=@Lang AND IsActive=1", conn);
-            cmd.Parameters.AddWithValue("@PoiId", poiId);
-            cmd.Parameters.AddWithValue("@Lang", lang);
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return new Audio
-                {
-                    AudioId = reader.GetInt32(0),
-                    PoiId = reader.GetInt32(1),
-                    Language = reader.GetString(2),
-                    AudioPath = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    ScriptText = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    IsActive = reader.GetBoolean(6)
-                };
-            }
-            return null;
+            await Task.CompletedTask;
+            return null; // chưa có audio, dùng TTS sau
         }
 
         public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
         {
-            using var conn = new SqlConnection(_connectionString);
-            await conn.OpenAsync();
-            var cmd = new SqlCommand(
-                @"INSERT INTO NarrationLog (DeviceId, PoiId, AudioId, TriggerType)
-                  VALUES (@DeviceId, @PoiId, @AudioId, @TriggerType)", conn);
-            cmd.Parameters.AddWithValue("@DeviceId", DeviceInfo.Current.Name);
-            cmd.Parameters.AddWithValue("@PoiId", poiId);
-            cmd.Parameters.AddWithValue("@AudioId", (object?)audioId ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@TriggerType", triggerType);
-            await cmd.ExecuteNonQueryAsync();
+            await Task.CompletedTask;
+            // TODO: gọi API log sau
         }
     }
 }

@@ -1,0 +1,93 @@
+using TourApp.Mobile.Models;
+using Microsoft.Maui.Media;
+
+namespace TourApp.Mobile.Services
+{
+    public class GeofenceService
+    {
+        private readonly DatabaseService _dbService;
+        private List<POI>? _pois;
+        private int _lastSpokenPoiId = -1;
+        private DateTime _lastSpokenTime = DateTime.MinValue;
+
+        public event EventHandler<POI>? PoiTriggered;
+
+        public GeofenceService(DatabaseService dbService)
+        {
+            _dbService = dbService;
+        }
+
+        public async Task InitializeAsync()
+        {
+            if (_pois == null)
+            {
+                _pois = await _dbService.GetAllPOIsAsync();
+            }
+        }
+
+        public void CheckGeofences(Location userLocation)
+        {
+            if (_pois == null || !_pois.Any()) return;
+
+            foreach (var poi in _pois)
+            {
+                if (!poi.IsActive) continue;
+
+                var distance = Location.CalculateDistance(
+                    userLocation.Latitude, userLocation.Longitude,
+                    poi.Latitude, poi.Longitude, DistanceUnits.Kilometers) * 1000; // Convert to meters
+
+                if (distance <= poi.Radius)
+                {
+                    // Debounce / Cooldown Logic (e.g., 2 minutes cooldown for same POI)
+                    if (poi.PoiId == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
+                    {
+                        continue;
+                    }
+
+                    TriggerNarration(poi);
+                    break; // Only trigger one POI at a time
+                }
+            }
+        }
+
+        private void TriggerNarration(POI poi)
+        {
+            _lastSpokenPoiId = poi.PoiId;
+            _lastSpokenTime = DateTime.Now;
+
+            // Notify UI
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                PoiTriggered?.Invoke(this, poi);
+            });
+
+            // Trigger TTS
+            _ = SpeakNarrationAsync(poi);
+        }
+
+        private async Task SpeakNarrationAsync(POI poi)
+        {
+            try
+            {
+                var locales = await TextToSpeech.Default.GetLocalesAsync();
+                var viLocale = locales.FirstOrDefault(l => l.Language.Contains("vi", StringComparison.OrdinalIgnoreCase));
+
+                var options = new SpeechOptions
+                {
+                    Pitch = 1.0f,
+                    Volume = 1.0f,
+                    Locale = viLocale
+                };
+
+                await TextToSpeech.Default.SpeakAsync($"Chào mừng bạn đến {poi.PoiName}. {poi.Description}", options);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"TTS Error: {ex.Message}");
+                // Fallback without locale if previous failed
+                await TextToSpeech.Default.SpeakAsync($"Chào mừng bạn đến {poi.PoiName}. {poi.Description}");
+            }
+        }
+    }
+}

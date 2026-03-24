@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 using TourApp.Mobile.Services;
 
@@ -10,19 +10,21 @@ namespace TourApp.Mobile
         {
             // Cấu hình WebView cho Android trước khi build
 #if ANDROID
-            WebViewHandler.Mapper.AppendToMapping("GoongWebView", (handler, view) =>
+            Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("GoongWebView", (handler, view) =>
             {
-                handler.PlatformView.Settings.JavaScriptEnabled = true;
-                handler.PlatformView.Settings.DomStorageEnabled = true;
-                handler.PlatformView.Settings.MixedContentMode =
-                    Android.Webkit.MixedContentHandling.AlwaysAllow;
+                if (handler.PlatformView != null && handler.PlatformView.Settings != null)
+                {
+                    handler.PlatformView.Settings.JavaScriptEnabled = true;
+                    handler.PlatformView.Settings.DomStorageEnabled = true;
+                    handler.PlatformView.Settings.MixedContentMode = Android.Webkit.MixedContentHandling.AlwaysAllow;
+                    handler.PlatformView.SetLayerType(Android.Views.LayerType.Hardware, null);
+                }
             });
 #endif
 
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
-                .UseMauiMaps()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -30,6 +32,9 @@ namespace TourApp.Mobile
                 });
 
             builder.Services.AddSingleton<DatabaseService>();
+            builder.Services.AddSingleton<LocationService>();
+            builder.Services.AddSingleton<GeofenceService>();
+            
             builder.Services.AddTransient<Views.MapPage>();
 
 #if DEBUG
