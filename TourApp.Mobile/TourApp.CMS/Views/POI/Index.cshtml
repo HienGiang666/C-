@@ -1,0 +1,42 @@
+﻿@model IEnumerable<TourApp.CMS.Models.POI>
+
+@{
+    ViewData["Title"] = "Quản lý Địa điểm";
+}
+
+<div class="container mt-4">
+    <h2 class="text-primary">🗺️ Danh sách Điểm du lịch</h2>
+    <hr />
+    
+    <a asp-action="Create" class="btn btn-success mb-3">+ Thêm địa điểm mới</a>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Tên địa điểm</th>
+                <th>Mô tả</th>
+                <th>Vĩ độ (Lat)</th>
+                <th>Kinh độ (Lon)</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td class="fw-bold">@item.Name</td>
+                    <td>@item.Description</td>
+                    <td>@item.Latitude</td>
+                    <td>@item.Longitude</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Sửa</a>
+                        
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa điểm này không?');">Xóa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
