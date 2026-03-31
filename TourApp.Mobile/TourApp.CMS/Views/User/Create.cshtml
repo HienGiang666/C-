@@ -1,0 +1,102 @@
+@model TourApp.CMS.Models.User
+
+@{
+    ViewData["Title"] = "Thêm User mới";
+}
+
+<div class="page-breadcrumb">
+    <i class="fas fa-users"></i> Quản lý / User / <span class="text-primary">Thêm mới</span>
+</div>
+
+<div class="page-title">➕ Thêm User mới</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Thông tin User</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:none"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label fw-bold">Họ tên <span class="text-danger">*</span></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Nhập họ tên đầy đủ" required />
+                        <small class="form-text text-muted">Tên hiển thị của user</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="Nhập email" required />
+                            <small class="form-text text-muted">Email đăng nhập</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PhoneNumber" class="form-label fw-bold">Số điện thoại</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="Nhập số điện thoại" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label fw-bold">Địa chỉ</label>
+                        <input asp-for="Address" class="form-control" placeholder="Nhập địa chỉ" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Role" class="form-label fw-bold">Vai trò <span class="text-danger">*</span></label>
+                            <select asp-for="Role" class="form-control" required>
+                                <option value="">-- Chọn vai trò --</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Customer">Customer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="IsActive" class="form-label fw-bold">Trạng thái</label>
+                            <div class="form-check mt-2">
+                                <input asp-for="IsActive" type="checkbox" class="form-check-input" id="isActive" checked />
+                                <label class="form-check-label" for="isActive">
+                                    Hoạt động
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Thêm User
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">💡 Hướng dẫn</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Vai trò:</strong></p>
+                <ul class="list-unstyled small">
+                    <li><i class="fas fa-shield-alt text-danger"></i> <strong>Admin:</strong> Quyền quản lý tất cả</li>
+                    <li><i class="fas fa-user-tie text-warning"></i> <strong>Staff:</strong> Nhân viên quản lý nội dung</li>
+                    <li><i class="fas fa-user text-info"></i> <strong>Customer:</strong> Khách hàng đặt tour</li>
+                </ul>
+                <hr>
+                <p><strong>Email:</strong></p>
+                <ul class="list-unstyled small">
+                    <li>Email không được trùng</li>
+                    <li>Email phải hợp lệ</li>
+                    <li>Dùng làm tài khoản đăng nhập</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

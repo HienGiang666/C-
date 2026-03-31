@@ -1,0 +1,84 @@
+@model TourApp.CMS.Models.User
+
+@{
+    ViewData["Title"] = "Chi tiết User";
+}
+
+<div class="page-breadcrumb">
+    <i class="fas fa-users"></i> Quản lý / User / <span class="text-primary">Chi tiết</span>
+</div>
+
+<div class="page-title">👤 Chi tiết User</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Thông tin Cá nhân</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>ID:</strong> <span class="badge bg-secondary">@Model.Id</span></p>
+                        <p><strong>Tên:</strong> @Model.FullName</p>
+                        <p><strong>Email:</strong> <a href="mailto:@Model.Email">@Model.Email</a></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Số điện thoại:</strong> @Model.PhoneNumber</p>
+                        <p><strong>Ngày sinh:</strong> @Model.DateOfBirth.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Địa chỉ:</strong> @Model.Address</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Vai trò:</strong>
+                            @if (Model.Role == "Admin")
+                            {
+                                <span class="badge bg-danger">Admin</span>
+                            }
+                            else if (Model.Role == "Staff")
+                            {
+                                <span class="badge bg-warning">Staff</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info">Customer</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Trạng thái:</strong>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Vô hiệu</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                <hr>
+                <p><strong>Ngày tạo:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">⚙️ Tác vụ</h5>
+            </div>
+            <div class="card-body">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-edit"></i> Chỉnh sửa
+                </a>
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

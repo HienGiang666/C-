@@ -1,0 +1,95 @@
+@model List<TourApp.CMS.Services.ActivityLog>
+
+@{
+    ViewData["Title"] = "Lịch sử hoạt động";
+}
+
+<div class="page-breadcrumb">
+    <i class="fas fa-history"></i> Cài đặt / Lịch sử hoạt động
+</div>
+
+<div class="page-title">📋 Lịch sử hoạt động</div>
+
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Hoạt động gần đây</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>User</th>
+                        <th>Hành động</th>
+                        <th>Entity</th>
+                        <th>Giá trị cũ</th>
+                        <th>Giá trị mới</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        @log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@log.Username</span>
+                                </td>
+                                <td>
+                                    @switch (log.Action)
+                                    {
+                                        case "Create":
+                                            <span class="badge bg-success">Thêm</span>
+                                            break;
+                                        case "Update":
+                                            <span class="badge bg-info">Sửa</span>
+                                            break;
+                                        case "Delete":
+                                            <span class="badge bg-danger">Xóa</span>
+                                            break;
+                                        case "Export":
+                                            <span class="badge bg-warning">Xuất</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">@log.Action</span>
+                                            break;
+                                    }
+                                </td>
+                                <td><small>@log.Entity</small></td>
+                                <td>
+                                    <small class="text-muted">
+                                        @(string.IsNullOrEmpty(log.OldValue) ? "-" : log.OldValue)
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @(string.IsNullOrEmpty(log.NewValue) ? "-" : log.NewValue)
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@log.IpAddress</small>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Không có hoạt động nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

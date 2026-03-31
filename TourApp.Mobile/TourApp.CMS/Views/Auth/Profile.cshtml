@@ -1,0 +1,130 @@
+@model TourApp.CMS.Models.AdminUser
+
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<div class="page-breadcrumb">
+    <i class="fas fa-user"></i> Cài đặt / Hồ sơ
+</div>
+
+<div class="page-title">👤 Hồ sơ cá nhân</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card text-center">
+            <div class="card-body" style="padding: 40px 20px;">
+                <i class="fas fa-user-circle" style="font-size: 80px; color: #3498db; margin-bottom: 20px;"></i>
+                <h4 class="card-title fw-bold">@Model.FullName</h4>
+                <p class="text-muted mb-3">@Model.Email</p>
+                <span class="badge bg-primary" style="font-size: 12px; padding: 6px 12px;">@Model.Role</span>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success ms-2" style="font-size: 12px; padding: 6px 12px;">Hoạt động</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary ms-2" style="font-size: 12px; padding: 6px 12px;">Vô hiệu</span>
+                }
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title fw-bold mb-3">
+                    <i class="fas fa-info-circle"></i> Thông tin Tài khoản
+                </h6>
+                <p class="mb-2">
+                    <strong>Username:</strong>
+                    <br>
+                    <small class="text-muted">@Model.Username</small>
+                </p>
+                <p class="mb-2">
+                    <strong>ID:</strong>
+                    <br>
+                    <small class="text-muted">@Model.Id</small>
+                </p>
+                <p class="mb-2">
+                    <strong>Ngày tạo:</strong>
+                    <br>
+                    <small class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                </p>
+                @if (Model.LastLogin.HasValue)
+                {
+                    <p class="mb-0">
+                        <strong>Lần đăng nhập cuối:</strong>
+                        <br>
+                        <small class="text-muted">@Model.LastLogin.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+                </h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Họ tên</label>
+                            <input type="text" class="form-control" value="@Model.FullName" disabled />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" class="form-control" value="@Model.Email" disabled />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Username</label>
+                            <input type="text" class="form-control" value="@Model.Username" disabled />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Vai trò</label>
+                            <input type="text" class="form-control" value="@Model.Role" disabled />
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Lưu ý:</strong> Hiện tại bạn không thể chỉnh sửa thông tin từ giao diện này. 
+                        Vui lòng liên hệ với Quản trị viên để cập nhật.
+                    </div>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-key"></i> Đổi mật khẩu
+                    </h6>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mật khẩu hiện tại</label>
+                        <input type="password" class="form-control" placeholder="Nhập mật khẩu hiện tại" />
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Mật khẩu mới</label>
+                            <input type="password" class="form-control" placeholder="Nhập mật khẩu mới" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Xác nhận mật khẩu</label>
+                            <input type="password" class="form-control" placeholder="Xác nhận mật khẩu mới" />
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary disabled" disabled>
+                        <i class="fas fa-lock"></i> Đổi mật khẩu
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

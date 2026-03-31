@@ -1,8 +1,234 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="page-breadcrumb">
+    <i class="fas fa-home"></i> Trang chủ / Dashboard
 </div>
+
+<div class="page-title">📊 Dashboard</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="card-text opacity-75">Địa điểm</p>
+                        <h3 class="card-title mb-0">@ViewBag.POICount</h3>
+                    </div>
+                    <i class="fas fa-map-marker-alt fa-3x opacity-25"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
+                <a href="@Url.Action("Index", "POI")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="card-text opacity-75">Tour</p>
+                        <h3 class="card-title mb-0">@ViewBag.TourCount</h3>
+                    </div>
+                    <i class="fas fa-suitcase fa-3x opacity-25"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
+                <a href="@Url.Action("Index", "Tour")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="card-text opacity-75">Booking</p>
+                        <h3 class="card-title mb-0">@ViewBag.BookingCount</h3>
+                    </div>
+                    <i class="fas fa-calendar-check fa-3x opacity-25"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
+                <a href="@Url.Action("Index", "Booking")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="card-text opacity-75">User</p>
+                        <h3 class="card-title mb-0">@ViewBag.UserCount</h3>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-25"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
+                <a href="@Url.Action("Index", "User")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">📊 Phân bố dữ liệu</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">📈 Tổng quan</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="summaryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">⚡ Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="@Url.Action("Create", "POI")" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> Thêm Địa điểm
+                    </a>
+                    <a href="@Url.Action("Create", "Tour")" class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> Thêm Tour
+                    </a>
+                    <a href="@Url.Action("Index", "Booking")" class="btn btn-outline-warning">
+                        <i class="fas fa-list"></i> Xem Booking
+                    </a>
+                    <a href="@Url.Action("Index", "User")" class="btn btn-outline-info">
+                        <i class="fas fa-users"></i> Quản lý User
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">ℹ️ Thông tin Hệ thống</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>.NET Version:</strong>
+                        <p>.NET 10</p>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Application:</strong>
+                        <p>TourApp Admin CMS</p>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Environment:</strong>
+                        <p>Development</p>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Last Updated:</strong>
+                        <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Stats Chart
+        const statsCtx = document.getElementById('statsChart')?.getContext('2d');
+        if (statsCtx) {
+            new Chart(statsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Địa điểm', 'Tour', 'Booking', 'User'],
+                    datasets: [{
+                        data: [@ViewBag.POICount, @ViewBag.TourCount, @ViewBag.BookingCount, @ViewBag.UserCount],
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#9b59b6'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Summary Chart
+        const summaryCtx = document.getElementById('summaryChart')?.getContext('2d');
+        if (summaryCtx) {
+            new Chart(summaryCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Địa điểm', 'Tour', 'Booking', 'User'],
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: [@ViewBag.POICount, @ViewBag.TourCount, @ViewBag.BookingCount, @ViewBag.UserCount],
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#9b59b6'
+                        ],
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}

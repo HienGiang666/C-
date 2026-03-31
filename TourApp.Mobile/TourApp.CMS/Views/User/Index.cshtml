@@ -1,14 +1,14 @@
-﻿@model IEnumerable<TourApp.CMS.Models.POI>
+@model IEnumerable<TourApp.CMS.Models.User>
 
 @{
-    ViewData["Title"] = "Quản lý Địa điểm";
+    ViewData["Title"] = "Quản lý User";
 }
 
 <div class="page-breadcrumb">
-    <i class="fas fa-map-marker-alt"></i> Quản lý / Địa điểm
+    <i class="fas fa-users"></i> Quản lý / User
 </div>
 
-<div class="page-title">🗺️ Quản lý Địa điểm</div>
+<div class="page-title">👥 Quản lý User</div>
 
 @if (TempData["success"] != null)
 {
@@ -28,11 +28,11 @@
 
 <div class="card">
     <div class="card-header bg-white d-flex justify-content-between align-items-center gap-3">
-        <h5 class="mb-0">Danh sách Địa điểm</h5>
+        <h5 class="mb-0">Danh sách User</h5>
         <div style="flex: 1; max-width: 400px;">
             <form method="get" class="d-flex gap-2">
                 <input type="text" name="search" class="form-control form-control-sm" 
-                       placeholder="🔍 Tìm kiếm theo tên..." value="@ViewBag.SearchTerm" />
+                       placeholder="🔍 Tìm kiếm theo tên hoặc email..." value="@ViewBag.SearchTerm" />
                 <button type="submit" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-search"></i>
                 </button>
@@ -43,7 +43,7 @@
                 <i class="fas fa-file-excel"></i> Export
             </a>
             <a asp-action="Create" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus"></i> Thêm
+                <i class="fas fa-plus"></i> Thêm User
             </a>
         </div>
     </div>
@@ -53,44 +53,58 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <th>Tên Địa điểm</th>
-                        <th>Mô tả</th>
-                        <th>Vĩ độ</th>
-                        <th>Kinh độ</th>
-                        <th>Ảnh</th>
+                        <th>Tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
                         <th class="text-center">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (Model.Any())
                     {
-                        @foreach (var item in Model)
+                        @foreach (var user in Model)
                         {
                             <tr>
-                                <td><span class="badge bg-secondary">@item.Id</span></td>
-                                <td class="fw-bold text-primary">@item.Name</td>
+                                <td><span class="badge bg-secondary">@user.Id</span></td>
+                                <td class="fw-bold">@user.FullName</td>
+                                <td><a href="mailto:@user.Email">@user.Email</a></td>
+                                <td>@user.PhoneNumber</td>
                                 <td>
-                                    <small class="text-muted">
-                                        @(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)
-                                    </small>
-                                </td>
-                                <td>@item.Latitude</td>
-                                <td>@item.Longitude</td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                    @if (user.Role == "Admin")
                                     {
-                                        <img src="@item.ImageUrl" alt="@item.Name" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                        <span class="badge bg-danger">Admin</span>
+                                    }
+                                    else if (user.Role == "Staff")
+                                    {
+                                        <span class="badge bg-warning">Staff</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-light text-muted">Không có</span>
+                                        <span class="badge bg-info">Customer</span>
                                     }
                                 </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Vô hiệu</span>
+                                    }
+                                </td>
+                                <td>@user.CreatedAt.ToString("dd/MM/yyyy")</td>
                                 <td class="text-center">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="Sửa">
+                                    <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-info" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-primary" title="Sửa">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" 
+                                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-danger" 
                                        onclick="return confirm('Bạn có chắc chắn muốn xóa?');" title="Xóa">
                                         <i class="fas fa-trash"></i>
                                     </a>
@@ -101,7 +115,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-2x mb-2"></i>
                                 <p>Không có dữ liệu nào</p>
                             </td>

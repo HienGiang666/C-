@@ -1,0 +1,102 @@
+@model TourApp.CMS.Models.Booking
+
+@{
+    ViewData["Title"] = "Chi tiết Booking";
+}
+
+<div class="page-breadcrumb">
+    <i class="fas fa-calendar-check"></i> Quản lý / Booking / <span class="text-primary">Chi tiết</span>
+</div>
+
+<div class="page-title">📋 Chi tiết Booking #@Model.Id</div>
+
+@if (TempData["success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Thông tin Booking</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>ID Booking:</strong> <span class="badge bg-secondary">@Model.Id</span></p>
+                        <p><strong>ID Tour:</strong> @Model.TourId</p>
+                        <p><strong>ID User:</strong> @Model.UserId</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Số Khách:</strong> @Model.NumberOfParticipants</p>
+                        <p><strong>Tổng Giá:</strong> <span class="text-success fw-bold">@Model.TotalPrice.ToString("C")</span></p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Ngày Booking:</strong> @Model.BookingDate.ToString("dd/MM/yyyy HH:mm")</p>
+                        <p><strong>Ngày Tour:</strong> @Model.TourDate.ToString("dd/MM/yyyy")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Trạng thái:</strong>
+                            @if (Model.Status == "Confirmed")
+                            {
+                                <span class="badge bg-success">Xác nhận</span>
+                            }
+                            else if (Model.Status == "Pending")
+                            {
+                                <span class="badge bg-warning">Chờ xác nhận</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Hủy</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <hr>
+                    <p><strong>Ghi chú:</strong></p>
+                    <p class="text-muted">@Model.Notes</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">⚙️ Tác vụ</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.Status != "Confirmed")
+                {
+                    <form asp-action="UpdateStatus" asp-route-id="@Model.Id" method="post" class="mb-2">
+                        <input type="hidden" name="status" value="Confirmed" />
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check"></i> Xác nhận
+                        </button>
+                    </form>
+                }
+                @if (Model.Status != "Cancelled")
+                {
+                    <form asp-action="UpdateStatus" asp-route-id="@Model.Id" method="post" class="mb-2">
+                        <input type="hidden" name="status" value="Cancelled" />
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="fas fa-ban"></i> Hủy
+                        </button>
+                    </form>
+                }
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
