@@ -5,23 +5,23 @@ namespace TourApp.Mobile.Services
 {
     public class GeofenceService
     {
-        private readonly DatabaseService _dbService;
+        private readonly ApiService _apiService;
         private List<POI>? _pois;
         private int _lastSpokenPoiId = -1;
         private DateTime _lastSpokenTime = DateTime.MinValue;
 
         public event EventHandler<POI>? PoiTriggered;
 
-        public GeofenceService(DatabaseService dbService)
+        public GeofenceService(ApiService apiService)
         {
-            _dbService = dbService;
+            _apiService = apiService;
         }
 
         public async Task InitializeAsync()
         {
             if (_pois == null)
             {
-                _pois = await _dbService.GetAllPOIsAsync();
+                _pois = await _apiService.GetAllPOIsAsync();
             }
         }
 
@@ -69,7 +69,7 @@ namespace TourApp.Mobile.Services
             _ = SpeakNarrationAsync(poi);
 
             // [NEW] Ghi log narration (async, không chặn)
-            _ = _dbService.LogNarrationAsync(poi.PoiId, null, "geofence");
+            _ = _apiService.LogNarrationAsync(poi.PoiId, null, "geofence");
         }
 
         // [NEW] Event để MapPage gọi highlightPoi() JS

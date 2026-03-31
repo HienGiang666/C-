@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<Tour> Tours { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<Booking> Bookings { get; set; }
+    public DbSet<Audio> Audios { get; set; }
+    public DbSet<NarrationLog> NarrationLogs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

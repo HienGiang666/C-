@@ -31,7 +31,7 @@ namespace TourApp.Mobile
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
-            builder.Services.AddSingleton<DatabaseService>();
+            builder.Services.AddSingleton<ApiService>();
             builder.Services.AddSingleton<LocationService>();
             builder.Services.AddSingleton<GeofenceService>();
             
