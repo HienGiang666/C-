@@ -1,0 +1,46 @@
+stateDiagram-v2
+    [*] --> AppLaunch
+    AppLaunch --> FetchingOnlinePOIs
+    FetchingOnlinePOIs --> InitLocalCache
+    InitLocalCache --> RequestPermission
+    
+    %% Validation
+    RequestPermission --> TrackingGPS : Approved
+    RequestPermission --> WaitingPermission : Denied
+    WaitingPermission --> RequestPermission : Retry
+    
+    %% Tracking State
+    state TrackingGPS {
+        [*] --> WaitingLocation
+        WaitingLocation --> LocationReceived
+        LocationReceived --> FilterMovement
+        FilterMovement --> WaitingLocation : Moved < 5m
+        FilterMovement --> GeofencingCheck : Moved > 5m
+        
+        GeofencingCheck --> WaitingLocation : Outside Zone
+        GeofencingCheck --> CooldownCheck : Inside Zone
+        
+        CooldownCheck --> WaitingLocation : Still in cooldown
+        CooldownCheck --> TriggerEvents : Cool to play
+        
+        TriggerEvents --> WaitingLocation
+    }
+    
+    %% Narration State
+    state AudioPlayback {
+        [*] --> Idle
+        Idle --> QueuingAudio : Event Received
+        QueuingAudio --> ResolvingURL : Has MP3
+        QueuingAudio --> GeneratingTTS : Text Only
+        ResolvingURL --> Playing
+        GeneratingTTS --> Playing
+        Playing --> LoggingDB
+        LoggingDB --> Idle
+    }
+    
+    %% Links between states
+    TriggerEvents --> AudioPlayback : Play Auto
+    
+    %% QR Code State
+    CameraScanner --> Scanning
+    Scanning --> AudioPlayback : QR Match (Force Play)
