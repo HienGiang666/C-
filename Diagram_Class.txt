@@ -1,0 +1,83 @@
+classDiagram
+    %% Core Entities (Matches SQL Server Database)
+    class Tour {
+        +int TourId
+        +string TourName
+        +string Description
+        +string ImageUrl
+        +bool IsActive
+    }
+    
+    class POI {
+        +int PoiId
+        +string PoiName
+        +string Address
+        +double Latitude
+        +double Longitude
+        +double Radius
+        +int Priority
+        +string OpenTime
+    }
+    
+    class TourPOI {
+        +int TourPOIId
+        +int TourId
+        +int PoiId
+        +int OrderIndex
+    }
+    
+    class Audio {
+        +int AudioId
+        +int PoiId
+        +string Language
+        +string AudioPath
+        +string ScriptText
+        +int Duration
+    }
+    
+    class NarrationLog {
+        +int LogId
+        +string DeviceId
+        +int PoiId
+        +int AudioId
+        +string TriggerType
+        +DateTime PlayedAt
+    }
+    
+    %% Services
+    class IApiService {
+        <<interface>>
+        +GetAllPOIsAsync() List<POI>
+        +GetAudioScriptAsync(poiId, lang) Audio
+        +LogNarrationAsync(log) bool
+    }
+    
+    class GeofenceService {
+        -int _lastSpokenPoiId
+        -DateTime _lastSpokenTime
+        +InitializeAsync()
+        +CheckGeofences(location)
+    }
+    
+    class NarrationEngine {
+        -Queue<Audio> _audioQueue
+        +PlayNarration(poi)
+        +PlayFromQRCode(poiId)
+        +StopCurrent()
+    }
+    
+    class LocationService {
+        -_isTracking bool
+        +StartTracking()
+        +StopTracking()
+    }
+    
+    Tour "1" -- "*" TourPOI
+    POI "1" -- "*" TourPOI
+    POI "1" -- "*" Audio
+    POI "1" -- "*" NarrationLog
+    Audio "1" -- "*" NarrationLog
+    
+    GeofenceService --> IApiService
+    GeofenceService --> NarrationEngine
+    LocationService ..> GeofenceService : triggers

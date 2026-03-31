@@ -1,0 +1,47 @@
+flowchart TD
+    A([Launch App]) --> B["Fetch POIs (REST API)\nFilter: District 4 Only"]
+    B --> C["GeofenceService\n.InitializeAsync()"]
+    C --> D["Load Map View\n(Goong Maps JS)"]
+    D --> E{"Permissions.RequestAsync\n[GPS Access]"}
+    
+    E -->|Denied| F["GPS Required Dialog"]
+    F --> Z([Wait / End])
+    
+    E -->|Granted| G["Start GPS Tracking\nBackground Service"]
+    
+    %% QR Bypass Lane
+    D --> QR1["Scan QR Code\nat Bus Stop"]
+    QR1 --> QR2["Fetch POI Audio/Text\nBypass GPS"]
+    QR2 --> O
+    
+    G --> H["GetLocationAsync\n(Poll every 5s)"]
+    H --> I{Valid Location?}
+    
+    I -->|No| H
+    I -->|Yes| J["Update Blue Dot (URL Scheme)"]
+    J --> K{Moved > 5m?}
+    
+    K -->|No| H
+    K -->|Yes| L["Geofence Engine\nCalculate Haversine Distance"]
+    L --> M{Inside Radius\nPriority Check?}
+    
+    M -->|No| H
+    M -->|Yes| N{Cooldown > 2 mins?}
+    
+    N -->|No| H
+    N -->|Yes| O["Narration Engine\nManage Audio Queue"]
+    O --> P{Has pre-recorded\nAudio file?}
+    P --> |Yes| P1["Play natural MP3"]
+    P --> |No| P2["SpeakAsync(vi-VN)\nLightweight TTS"]
+    
+    P1 --> Q
+    P2 --> Q
+    
+    Q["PoiTriggered Event → UI\nHighlight bottom sheet"] --> R["ApiClient.LogNarration()"]
+    R --> H
+    
+    style A fill:#16a34a,color:#fff
+    style Z fill:#dc2626,color:#fff
+    style O fill:#7c3aed,color:#fff
+    style E fill:#d97706,color:#fff
+    style QR1 fill:#2563eb,color:#fff
