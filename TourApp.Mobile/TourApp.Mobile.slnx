@@ -1,5 +1,7 @@
 <Solution>
   <Project Path="TourApp.API/TourApp.API.csproj" Id="eba2c244-9350-45de-89e2-293087505b0a" />
   <Project Path="TourApp.CMS/TourApp.CMS.csproj" Id="554ccc12-db50-4c5e-b534-1317dc9e880e" />
-  <Project Path="TourApp.Mobile/TourApp.Mobile.csproj" />
+  <Project Path="TourApp.Mobile/TourApp.Mobile.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>

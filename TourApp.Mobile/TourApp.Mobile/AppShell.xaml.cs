@@ -1,4 +1,4 @@
-﻿namespace TourApp.Mobile
+namespace TourApp.Mobile
 {
     public partial class AppShell : Shell
     {
