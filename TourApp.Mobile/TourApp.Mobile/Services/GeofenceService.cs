@@ -29,24 +29,25 @@ namespace TourApp.Mobile.Services
         {
             if (_pois == null || !_pois.Any()) return;
 
-            foreach (var poi in _pois)
-            {
-                if (!poi.IsActive) continue;
+            // [FIX] Sort theo Priority — POI Priority=1 được kiểm tra trước
+            var sortedPois = _pois.Where(p => p.IsActive).OrderBy(p => p.Priority);
 
+            foreach (var poi in sortedPois)
+            {
                 var distance = Location.CalculateDistance(
                     userLocation.Latitude, userLocation.Longitude,
-                    poi.Latitude, poi.Longitude, DistanceUnits.Kilometers) * 1000; // Convert to meters
+                    poi.Latitude, poi.Longitude, DistanceUnits.Kilometers) * 1000;
 
                 if (distance <= poi.Radius)
                 {
-                    // Debounce / Cooldown Logic (e.g., 2 minutes cooldown for same POI)
+                    // Cooldown 2 phút/POI
                     if (poi.PoiId == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
                     {
                         continue;
                     }
 
                     TriggerNarration(poi);
-                    break; // Only trigger one POI at a time
+                    break; // Chỉ trigger 1 POI/cycle
                 }
             }
         }
@@ -56,15 +57,23 @@ namespace TourApp.Mobile.Services
             _lastSpokenPoiId = poi.PoiId;
             _lastSpokenTime = DateTime.Now;
 
-            // Notify UI
+            // Notify UI (hiển bottom sheet + highlight marker)
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 PoiTriggered?.Invoke(this, poi);
+                // [FIX] Highlight đúng marker trên map
+                HighlightRequested?.Invoke(this, poi.PoiId);
             });
 
-            // Trigger TTS
+            // Phát TTS
             _ = SpeakNarrationAsync(poi);
+
+            // [NEW] Ghi log narration (async, không chặn)
+            _ = _dbService.LogNarrationAsync(poi.PoiId, null, "geofence");
         }
+
+        // [NEW] Event để MapPage gọi highlightPoi() JS
+        public event EventHandler<int>? HighlightRequested;
 
         private async Task SpeakNarrationAsync(POI poi)
         {

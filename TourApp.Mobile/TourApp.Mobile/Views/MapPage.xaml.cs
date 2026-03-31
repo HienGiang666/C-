@@ -14,6 +14,7 @@ public partial class MapPage : ContentPage
     private List<POI>? _pois;
     private POI? _currentPoi;
     private Location? _lastLocation;
+    private Location? _lastCheckedLocation; // For GPS movement throttle
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly HttpClient _http = new();
@@ -28,21 +29,44 @@ public partial class MapPage : ContentPage
 
         _locationService.LocationChanged += OnLocationChanged;
         _geofenceService.PoiTriggered += OnPoiTriggered;
+        _geofenceService.HighlightRequested += (_, poiId) =>
+            MapWebView.Eval($"highlightPoi({poiId});");
     }
 
+    // [ROOT CAUSE FIX]
+    // Vấn đề: Task.Run() loại bỏ SynchronizationContext của Main Thread.
+    // Khi Permissions.RequestAsync() chạy trên ThreadPool thread → crash Android vì cần UI thread để show dialog.
+    // Fix: async void OnAppearing chạy TRỰC TIẾP trên Main Thread.
+    //      await không block UI thread — nó yield rồi tiếp tục trên Main Thread khi xong.
+    //      Mock data GetAllPOIsAsync() = instant (0ms blocking thật sự).
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
         try
         {
+            // 1. Load POI TRƯỚC (mock = instant, không I/O)
+            //    Phải load POI trước để LoadMap() render đúng markers ngay lập tức
+            if (_pois == null)
+                _pois = await _dbService.GetAllPOIsAsync();
+
+            // 2. Khởi tạo Geofence (dùng POI đã có, tránh load 2 lần)
             await _geofenceService.InitializeAsync();
-            _pois = await _dbService.GetAllPOIsAsync();
-            if (!_isMapLoaded) { LoadMap(); _isMapLoaded = true; }
+
+            // 3. Load Map — _pois đã có dữ liệu → markers xuất hiện ngay
+            if (!_isMapLoaded)
+            {
+                LoadMap();
+                _isMapLoaded = true;
+            }
+
+            // 4. Start GPS cuối cùng — Permissions.RequestAsync cần Main Thread
+            //    Chạy SAU map load để tránh cạnh tranh tài nguyên trên startup
             await _locationService.StartTracking();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[MapPage] OnAppearing error: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[MapPage] OnAppearing error: {ex}");
         }
     }
 
@@ -55,12 +79,31 @@ public partial class MapPage : ContentPage
     private void OnLocationChanged(object? sender, Location location)
     {
         _lastLocation = location;
+
+        // [FIX-THROTTLE] Chỉ gọi CheckGeofences khi user di chuyển > 5m
+        // Tránh spam xử lý khi đứng yên (học từ Vibe Coding Decoupling)
+        bool shouldCheckGeofence = true;
+        if (_lastCheckedLocation != null)
+        {
+            var movedMeters = Location.CalculateDistance(
+                _lastCheckedLocation.Latitude, _lastCheckedLocation.Longitude,
+                location.Latitude, location.Longitude,
+                DistanceUnits.Kilometers) * 1000;
+            shouldCheckGeofence = movedMeters > 5; // chỉ check khi di chuyển > 5m
+        }
+
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            MapWebView.Eval($"updateUserLocation({location.Longitude}, {location.Latitude});");
-            _geofenceService.CheckGeofences(location);
+            // Luôn update vị trí trên map (dot chạy mượt)
+            MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
 
-            // Update distance on bottom sheet if open
+            if (shouldCheckGeofence)
+            {
+                _lastCheckedLocation = location;
+                _geofenceService.CheckGeofences(location);
+            }
+
+            // Update distance trên bottom sheet nếu đang mở
             if (BottomSheetView.IsVisible && _currentPoi != null)
             {
                 var dist = Location.CalculateDistance(
@@ -287,16 +330,28 @@ var pois = {poisJson};
 var userMarker = null;
 
 map.on('load', function() {{
-  pois.forEach(function(poi) {{
+  addMarkers(pois);
+}});
+
+function addMarkers(poiList) {{
+  poiList.forEach(function(poi) {{
     var el = document.createElement('div');
     el.className = 'poi-marker';
+    el.setAttribute('data-poi-id', poi.PoiId); // [FIX] thêm data attribute để highlight đúng
     el.innerHTML = '🍽️';
     el.addEventListener('click', function() {{
       window.location.href = 'poi://selected?id=' + poi.PoiId;
     }});
     new goongjs.Marker(el).setLngLat([poi.Longitude, poi.Latitude]).addTo(map);
   }});
-}});
+}}
+
+// [NEW] Gọi từ C# sau khi load POI từ API
+function refreshMarkers(newPois) {{
+  pois = newPois;
+  // Chỉ add marker mới nếu bản đồ đã load
+  if (map.loaded()) addMarkers(newPois);
+}}
 
 function updateUserLocation(lng, lat) {{
   if (!userMarker) {{
@@ -310,7 +365,14 @@ function updateUserLocation(lng, lat) {{
 }}
 
 function highlightPoi(poiId) {{
-  document.querySelectorAll('.poi-marker').forEach(m => m.classList.remove('triggered'));
+  document.querySelectorAll('.poi-marker').forEach(function(m) {{ m.classList.remove('triggered'); }});
+  var allMarkers = document.querySelectorAll('.poi-marker');
+  for (var i = 0; i < allMarkers.length; i++) {{
+    if (allMarkers[i].getAttribute('data-poi-id') == poiId) {{
+      allMarkers[i].classList.add('triggered');
+      break;
+    }}
+  }}
 }}
 </script>
 </body>
