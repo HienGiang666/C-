@@ -7,8 +7,5 @@
         public string Description { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public string? ImageUrl { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public bool IsActive { get; set; } = true;
     }
 }

@@ -1,5 +1,4 @@
 @model TourApp.CMS.Models.RegisterViewModel
-
 @{
     ViewData["Title"] = "Đăng ký";
     Layout = null;
@@ -10,229 +9,86 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - TourApp Admin</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <title>Đăng ký - TourApp Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #3498db;
-            --sidebar-bg: #2c3e50;
-        }
-
         body {
-            background: linear-gradient(135deg, var(--sidebar-bg) 0%, var(--primary-color) 100%);
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px 0;
+            padding: 2rem 0;
         }
-
-        .register-container {
-            width: 100%;
-            max-width: 500px;
-        }
-
         .register-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
             overflow: hidden;
-        }
-
-        .register-header {
-            background: linear-gradient(135deg, var(--sidebar-bg) 0%, var(--primary-color) 100%);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-        }
-
-        .register-header i {
-            font-size: 40px;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .register-header h1 {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-            margin-bottom: 5px;
-        }
-
-        .register-body {
-            padding: 40px;
-            background: white;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--sidebar-bg);
-            margin-bottom: 6px;
-            display: block;
-            font-size: 14px;
-        }
-
-        .form-control {
-            border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-
-        .btn-register {
             width: 100%;
-            padding: 11px;
-            background: linear-gradient(135deg, var(--sidebar-bg) 0%, var(--primary-color) 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
+            max-width: 480px;
         }
-
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.4);
-            color: white;
-        }
-
-        .register-footer {
+        .register-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 2rem;
             text-align: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-top: 1px solid #ecf0f1;
+            color: white;
         }
-
-        .register-footer p {
-            margin: 0;
-            color: #7f8c8d;
-            font-size: 13px;
-        }
-
-        .register-footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .register-footer a:hover {
-            text-decoration: underline;
-        }
-
-        .alert {
-            border-radius: 8px;
-            border: none;
-            margin-bottom: 15px;
-            font-size: 13px;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            font-size: 12px;
-            margin-top: 3px;
-            display: block;
-        }
+        .register-header h2 { margin: 0; font-weight: 700; }
+        .register-body { padding: 2rem; }
+        .form-control:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
     </style>
 </head>
 <body>
-    <div class="register-container">
-        <div class="register-card">
-            <div class="register-header">
-                <i class="fas fa-user-plus"></i>
-                <h1>Tạo tài khoản mới</h1>
-            </div>
+    <div class="register-card">
+        <div class="register-header">
+            <i class="fa-solid fa-user-plus fs-1 mb-2"></i>
+            <h2>Tạo Tài Khoản</h2>
+            <p class="mb-0 opacity-75">Đăng ký tài khoản quản trị mới</p>
+        </div>
+        <div class="register-body">
+            <form asp-action="Register" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <div class="register-body">
-                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any()))
-                {
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach (var modelState in ViewData.ModelState.Values)
-                            {
-                                @foreach (var error in modelState.Errors)
-                                {
-                                    <li>@error.ErrorMessage</li>
-                                }
-                            }
-                        </ul>
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label fw-medium">Họ và Tên</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên..." required />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label fw-medium">Tên đăng nhập</label>
+                    <input asp-for="Username" class="form-control" placeholder="Chọn tên đăng nhập..." required />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label fw-medium">Email</label>
+                    <input asp-for="Email" type="email" class="form-control" placeholder="example@email.com" required />
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Password" class="form-label fw-medium">Mật khẩu</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required />
                     </div>
-                }
-
-                <form asp-action="Register" method="post">
-                    <div class="form-group">
-                        <label asp-for="FullName" class="form-label">
-                            <i class="fas fa-user"></i> Họ và tên
-                        </label>
-                        <input asp-for="FullName" class="form-control" 
-                               placeholder="Nhập họ tên đầy đủ" required />
-                        <span asp-validation-for="FullName" class="error-message"></span>
+                    <div class="col-md-6">
+                        <label asp-for="ConfirmPassword" class="form-label fw-medium">Xác nhận</label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Nhập lại mật khẩu" required />
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label asp-for="Email" class="form-label">
-                            <i class="fas fa-envelope"></i> Email
-                        </label>
-                        <input asp-for="Email" type="email" class="form-control" 
-                               placeholder="Nhập email" required />
-                        <span asp-validation-for="Email" class="error-message"></span>
-                    </div>
+                <button type="submit" class="btn w-100 py-2 fw-bold text-white mb-3" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
+                    <i class="fa-solid fa-user-check me-2"></i> Đăng ký
+                </button>
 
-                    <div class="form-group">
-                        <label asp-for="Username" class="form-label">
-                            <i class="fas fa-at"></i> Tên đăng nhập
-                        </label>
-                        <input asp-for="Username" class="form-control" 
-                               placeholder="Nhập tên đăng nhập" required />
-                        <span asp-validation-for="Username" class="error-message"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="Password" class="form-label">
-                            <i class="fas fa-lock"></i> Mật khẩu
-                        </label>
-                        <input asp-for="Password" type="password" class="form-control" 
-                               placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" required />
-                        <span asp-validation-for="Password" class="error-message"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="ConfirmPassword" class="form-label">
-                            <i class="fas fa-lock"></i> Xác nhận mật khẩu
-                        </label>
-                        <input asp-for="ConfirmPassword" type="password" class="form-control" 
-                               placeholder="Nhập lại mật khẩu" required />
-                        <span asp-validation-for="ConfirmPassword" class="error-message"></span>
-                    </div>
-
-                    <button type="submit" class="btn btn-register">
-                        <i class="fas fa-user-check"></i> Đăng ký
-                    </button>
-                </form>
-            </div>
-
-            <div class="register-footer">
-                <p>
-                    Đã có tài khoản? <a asp-action="Login">Đăng nhập tại đây</a>
-                </p>
-            </div>
+                <div class="text-center">
+                    <span class="text-muted">Đã có tài khoản?</span>
+                    <a asp-action="Login" class="text-decoration-none fw-medium"> Đăng nhập</a>
+                </div>
+            </form>
         </div>
     </div>
-
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

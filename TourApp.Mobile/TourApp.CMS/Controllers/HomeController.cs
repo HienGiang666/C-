@@ -1,75 +1,74 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 using TourApp.CMS.Models;
 
-namespace TourApp.CMS.Controllers
+namespace TourApp.CMS.Controllers;
+
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly IHttpClientFactory _clientFactory;
+
+    public HomeController(IHttpClientFactory clientFactory)
     {
-        private readonly IHttpClientFactory _clientFactory;
+        _clientFactory = clientFactory;
+    }
 
-        public HomeController(IHttpClientFactory clientFactory)
+    public async Task<IActionResult> Index()
+    {
+        ViewData["Title"] = "Dashboard";
+
+        int poiCount = 0, tourCount = 0, userCount = 0, bookingCount = 0;
+
+        try
         {
-            _clientFactory = clientFactory;
-        }
+            var client = _clientFactory.CreateClient("TourApi");
 
-        public async Task<IActionResult> Index()
-        {
-            // Nếu chưa đăng nhập, redirect to login
-            var userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId))
-                return RedirectToAction("Login", "Auth");
+            var poiTask = client.GetAsync("api/POI");
+            var tourTask = client.GetAsync("api/tour");
+            var userTask = client.GetAsync("api/user");
+            var bookingTask = client.GetAsync("api/booking");
 
-            ViewData["Title"] = "Dashboard";
+            await Task.WhenAll(poiTask, tourTask, userTask, bookingTask);
 
-            try
+            if (poiTask.Result.IsSuccessStatusCode)
             {
-                var client = _clientFactory.CreateClient("TourApi");
-
-                // Lấy dữ liệu từ API
-                var poisResponse = await client.GetAsync("api/POI");
-                var toursResponse = await client.GetAsync("api/tour");
-                var bookingsResponse = await client.GetAsync("api/booking");
-                var usersResponse = await client.GetAsync("api/user");
-
-                ViewBag.POICount = poisResponse.IsSuccessStatusCode 
-                    ? (await poisResponse.Content.ReadFromJsonAsync<List<POI>>())?.Count ?? 0 
-                    : 0;
-
-                ViewBag.TourCount = toursResponse.IsSuccessStatusCode 
-                    ? (await toursResponse.Content.ReadFromJsonAsync<List<Tour>>())?.Count ?? 0 
-                    : 0;
-
-                ViewBag.BookingCount = bookingsResponse.IsSuccessStatusCode 
-                    ? (await bookingsResponse.Content.ReadFromJsonAsync<List<Booking>>())?.Count ?? 0 
-                    : 0;
-
-                ViewBag.UserCount = usersResponse.IsSuccessStatusCode 
-                    ? (await usersResponse.Content.ReadFromJsonAsync<List<User>>())?.Count ?? 0 
-                    : 0;
+                var pois = await poiTask.Result.Content.ReadFromJsonAsync<List<POI>>();
+                poiCount = pois?.Count ?? 0;
             }
-            catch
+            if (tourTask.Result.IsSuccessStatusCode)
             {
-                ViewBag.POICount = 0;
-                ViewBag.TourCount = 0;
-                ViewBag.BookingCount = 0;
-                ViewBag.UserCount = 0;
+                var tours = await tourTask.Result.Content.ReadFromJsonAsync<List<Tour>>();
+                tourCount = tours?.Count ?? 0;
             }
-
-            return View();
+            if (userTask.Result.IsSuccessStatusCode)
+            {
+                var users = await userTask.Result.Content.ReadFromJsonAsync<List<User>>();
+                userCount = users?.Count ?? 0;
+            }
+            if (bookingTask.Result.IsSuccessStatusCode)
+            {
+                var bookings = await bookingTask.Result.Content.ReadFromJsonAsync<List<Booking>>();
+                bookingCount = bookings?.Count ?? 0;
+            }
         }
+        catch { }
 
-        public IActionResult Privacy()
-        {
-            ViewData["Title"] = "Privacy Policy";
-            return View();
-        }
+        ViewBag.POICount = poiCount;
+        ViewBag.TourCount = tourCount;
+        ViewBag.UserCount = userCount;
+        ViewBag.BookingCount = bookingCount;
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        return View();
+    }
+
+    public IActionResult Privacy()
+    {
+        ViewData["Title"] = "Chính sách bảo mật";
+        return View();
+    }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
-

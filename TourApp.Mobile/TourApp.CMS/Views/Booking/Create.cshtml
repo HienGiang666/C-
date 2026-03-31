@@ -1,0 +1,67 @@
+@model TourApp.CMS.Models.Booking
+
+@{
+    ViewData["Title"] = "Tạo Đơn Đặt Vé Mới";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-ticket me-2 text-primary"></i> @ViewData["Title"]</h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="TourId" class="form-label fw-medium">Mã Tour (ID) <span class="text-danger">*</span></label>
+                            <input asp-for="TourId" type="number" class="form-control" required min="1" placeholder="Nhập ID tour..." />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="UserId" class="form-label fw-medium">Mã Khách hàng (ID) <span class="text-danger">*</span></label>
+                            <input asp-for="UserId" type="number" class="form-control" required min="1" placeholder="Nhập ID user..." />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label asp-for="TourDate" class="form-label fw-medium">Ngày khởi hành <span class="text-danger">*</span></label>
+                            <input asp-for="TourDate" type="date" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NumberOfParticipants" class="form-label fw-medium">Số lượng khách <span class="text-danger">*</span></label>
+                            <input asp-for="NumberOfParticipants" type="number" class="form-control" required min="1" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="TotalPrice" class="form-label fw-medium">Tổng tiền (VNĐ) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input asp-for="TotalPrice" type="number" class="form-control" required min="0" />
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Status" class="form-label fw-medium">Trạng thái</label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="Pending">Chờ duyệt</option>
+                            <option value="Confirmed">Đã xác nhận</option>
+                            <option value="Cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-medium">Ghi chú</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Yêu cầu đặc biệt từ khách..."></textarea>
+                    </div>
+
+                    <hr />
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light border px-4">Hủy</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-save me-1"></i> Tạo Booking</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

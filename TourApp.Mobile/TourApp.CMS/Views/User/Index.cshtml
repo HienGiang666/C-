@@ -1,113 +1,92 @@
 @model IEnumerable<TourApp.CMS.Models.User>
 
 @{
-    ViewData["Title"] = "Quản lý User";
+    ViewData["Title"] = "Quản lý Người Dùng";
 }
 
-<div class="page-breadcrumb">
-    <i class="fas fa-users"></i> Quản lý / User
-</div>
-
-<div class="page-title">👥 Quản lý User</div>
-
-@if (TempData["success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i> @TempData["success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-@if (TempData["error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-times-circle"></i> @TempData["error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-<div class="card">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-3">
-        <h5 class="mb-0">Danh sách User</h5>
-        <div style="flex: 1; max-width: 400px;">
-            <form method="get" class="d-flex gap-2">
-                <input type="text" name="search" class="form-control form-control-sm" 
-                       placeholder="🔍 Tìm kiếm theo tên hoặc email..." value="@ViewBag.SearchTerm" />
-                <button type="submit" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-search"></i>
-                </button>
-            </form>
-        </div>
-        <div class="btn-group" role="group">
-            <a asp-action="Export" class="btn btn-sm btn-outline-success" title="Xuất Excel">
-                <i class="fas fa-file-excel"></i> Export
-            </a>
-            <a asp-action="Create" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus"></i> Thêm User
-            </a>
-        </div>
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-users me-2 text-primary"></i> Danh sách Thành viên</h5>
+        <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
+            <i class="fa-solid fa-user-plus me-2"></i> Thêm mới
+        </a>
     </div>
     <div class="card-body p-0">
+        <!-- Search Bar -->
+        <div class="p-3 border-bottom bg-light">
+            <form method="get" asp-action="Index" class="d-flex">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="search" value="@ViewBag.SearchTerm" class="form-control border-start-0 ps-0" placeholder="Tìm kiếm theo Tên hoặc Email..." />
+                    <button type="submit" class="btn btn-secondary">Tìm</button>
+                    @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                    {
+                        <a asp-action="Index" class="btn btn-outline-danger">Xóa</a>
+                    }
+                </div>
+            </form>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <th>Tên</th>
-                        <th>Email</th>
-                        <th>Số điện thoại</th>
+                        <th>Khách hàng</th>
+                        <th>Liên hệ</th>
                         <th>Vai trò</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày tạo</th>
-                        <th class="text-center">Hành động</th>
+                        <th>Hoạt động</th>
+                        <th class="text-end">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model.Any())
+                    @if (Model != null && Model.Any())
                     {
-                        @foreach (var user in Model)
+                        foreach (var user in Model)
                         {
                             <tr>
-                                <td><span class="badge bg-secondary">@user.Id</span></td>
-                                <td class="fw-bold">@user.FullName</td>
-                                <td><a href="mailto:@user.Email">@user.Email</a></td>
-                                <td>@user.PhoneNumber</td>
+                                <td><span class="badge bg-secondary">#@user.Id</span></td>
                                 <td>
-                                    @if (user.Role == "Admin")
-                                    {
-                                        <span class="badge bg-danger">Admin</span>
-                                    }
-                                    else if (user.Role == "Staff")
-                                    {
-                                        <span class="badge bg-warning">Staff</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-info">Customer</span>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name=@user.FullName&background=random" width="35" class="rounded-circle me-3" />
+                                        <div>
+                                            <div class="fw-bold">@user.FullName</div>
+                                            <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> @user.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div><i class="fa-regular fa-envelope me-1 text-muted"></i> @user.Email</div>
+                                    <div><i class="fa-solid fa-phone me-1 text-muted"></i> @user.PhoneNumber</div>
+                                </td>
+                                <td>
+                                    @if(user.Role == "Admin") {
+                                        <span class="badge bg-danger">Quản trị viên</span>
+                                    } else if(user.Role == "Staff") {
+                                        <span class="badge bg-info text-dark">Nhân viên</span>
+                                    } else {
+                                        <span class="badge bg-primary">Khách hàng</span>
                                     }
                                 </td>
                                 <td>
-                                    @if (user.IsActive)
-                                    {
-                                        <span class="badge bg-success">Hoạt động</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">Vô hiệu</span>
+                                    @if(user.IsActive) {
+                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-check-circle me-1"></i> OK</span>
+                                    } else {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-ban me-1"></i> Khóa</span>
                                     }
                                 </td>
-                                <td>@user.CreatedAt.ToString("dd/MM/yyyy")</td>
-                                <td class="text-center">
-                                    <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-info" title="Chi tiết">
-                                        <i class="fas fa-eye"></i>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-outline-secondary" title="Chi tiết">
+                                        <i class="fa-solid fa-eye"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-primary" title="Sửa">
-                                        <i class="fas fa-edit"></i>
+                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-danger" 
-                                       onclick="return confirm('Bạn có chắc chắn muốn xóa?');" title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
+                                    @if(user.Role != "Admin") {
+                                        <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Chắc chắn xóa user này?');">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -115,10 +94,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p>Không có dữ liệu nào</p>
-                            </td>
+                            <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy tài khoản nào.</td>
                         </tr>
                     }
                 </tbody>

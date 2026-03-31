@@ -1,234 +1,174 @@
-﻿@{
+@{
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="page-breadcrumb">
-    <i class="fas fa-home"></i> Trang chủ / Dashboard
-</div>
-
-<div class="page-title">📊 Dashboard</div>
-
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="card-text opacity-75">Địa điểm</p>
-                        <h3 class="card-title mb-0">@ViewBag.POICount</h3>
+<!-- Stats Cards Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 overflow-hidden h-100">
+            <div class="card-body position-relative">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#818cf8)">
+                            <i class="fa-solid fa-map-location-dot text-white fs-4"></i>
+                        </div>
                     </div>
-                    <i class="fas fa-map-marker-alt fa-3x opacity-25"></i>
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase fw-semibold" style="font-size:0.75rem;letter-spacing:0.05em">Địa điểm (POI)</p>
+                        <h3 class="mb-0 fw-bold">@ViewBag.POICount</h3>
+                    </div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
-                <a href="@Url.Action("Index", "POI")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            <div class="card-footer bg-transparent border-top-0 pt-0">
+                <a asp-controller="POI" asp-action="Index" class="text-decoration-none text-primary fw-medium d-flex align-items-center" style="font-size:0.85rem">
+                    Xem chi tiết <i class="fa-solid fa-arrow-right ms-auto"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="card-text opacity-75">Tour</p>
-                        <h3 class="card-title mb-0">@ViewBag.TourCount</h3>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 overflow-hidden h-100">
+            <div class="card-body position-relative">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:linear-gradient(135deg,#10b981,#34d399)">
+                            <i class="fa-solid fa-suitcase-rolling text-white fs-4"></i>
+                        </div>
                     </div>
-                    <i class="fas fa-suitcase fa-3x opacity-25"></i>
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase fw-semibold" style="font-size:0.75rem;letter-spacing:0.05em">Chuyến Tour</p>
+                        <h3 class="mb-0 fw-bold">@ViewBag.TourCount</h3>
+                    </div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
-                <a href="@Url.Action("Index", "Tour")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            <div class="card-footer bg-transparent border-top-0 pt-0">
+                <a asp-controller="Tour" asp-action="Index" class="text-decoration-none text-success fw-medium d-flex align-items-center" style="font-size:0.85rem">
+                    Xem chi tiết <i class="fa-solid fa-arrow-right ms-auto"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="card-text opacity-75">Booking</p>
-                        <h3 class="card-title mb-0">@ViewBag.BookingCount</h3>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 overflow-hidden h-100">
+            <div class="card-body position-relative">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:linear-gradient(135deg,#f59e0b,#fbbf24)">
+                            <i class="fa-solid fa-users text-white fs-4"></i>
+                        </div>
                     </div>
-                    <i class="fas fa-calendar-check fa-3x opacity-25"></i>
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase fw-semibold" style="font-size:0.75rem;letter-spacing:0.05em">Thành viên</p>
+                        <h3 class="mb-0 fw-bold">@ViewBag.UserCount</h3>
+                    </div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
-                <a href="@Url.Action("Index", "Booking")" class="text-white text-decoration-none">Xem chi tiết →</a>
+            <div class="card-footer bg-transparent border-top-0 pt-0">
+                <a asp-controller="User" asp-action="Index" class="text-decoration-none text-warning fw-medium d-flex align-items-center" style="font-size:0.85rem">
+                    Xem chi tiết <i class="fa-solid fa-arrow-right ms-auto"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="card-text opacity-75">User</p>
-                        <h3 class="card-title mb-0">@ViewBag.UserCount</h3>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 overflow-hidden h-100">
+            <div class="card-body position-relative">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:linear-gradient(135deg,#ef4444,#f87171)">
+                            <i class="fa-solid fa-ticket text-white fs-4"></i>
+                        </div>
                     </div>
-                    <i class="fas fa-users fa-3x opacity-25"></i>
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase fw-semibold" style="font-size:0.75rem;letter-spacing:0.05em">Đặt Vé</p>
+                        <h3 class="mb-0 fw-bold">@ViewBag.BookingCount</h3>
+                    </div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent border-top border-white border-opacity-25">
-                <a href="@Url.Action("Index", "User")" class="text-white text-decoration-none">Xem chi tiết →</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Row -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">📊 Phân bố dữ liệu</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="statsChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">📈 Tổng quan</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="summaryChart"></canvas>
+            <div class="card-footer bg-transparent border-top-0 pt-0">
+                <a asp-controller="Booking" asp-action="Index" class="text-decoration-none text-danger fw-medium d-flex align-items-center" style="font-size:0.85rem">
+                    Xem chi tiết <i class="fa-solid fa-arrow-right ms-auto"></i>
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Quick Actions -->
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">⚡ Quick Actions</h5>
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 h-100">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-bolt text-warning me-2"></i> Thao tác nhanh</h5>
             </div>
             <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="@Url.Action("Create", "POI")" class="btn btn-outline-primary">
-                        <i class="fas fa-plus"></i> Thêm Địa điểm
-                    </a>
-                    <a href="@Url.Action("Create", "Tour")" class="btn btn-outline-success">
-                        <i class="fas fa-plus"></i> Thêm Tour
-                    </a>
-                    <a href="@Url.Action("Index", "Booking")" class="btn btn-outline-warning">
-                        <i class="fas fa-list"></i> Xem Booking
-                    </a>
-                    <a href="@Url.Action("Index", "User")" class="btn btn-outline-info">
-                        <i class="fas fa-users"></i> Quản lý User
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- System Information -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">ℹ️ Thông tin Hệ thống</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <strong>.NET Version:</strong>
-                        <p>.NET 10</p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a asp-controller="POI" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start d-flex align-items-center">
+                            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
+                                <i class="fa-solid fa-map-pin text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Thêm Địa Điểm</div>
+                                <small class="text-muted">Tạo POI mới</small>
+                            </div>
+                        </a>
                     </div>
-                    <div class="col-md-3">
-                        <strong>Application:</strong>
-                        <p>TourApp Admin CMS</p>
+                    <div class="col-md-4">
+                        <a asp-controller="Tour" asp-action="Create" class="btn btn-outline-success w-100 py-3 text-start d-flex align-items-center">
+                            <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
+                                <i class="fa-solid fa-plus text-success"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Tạo Tour</div>
+                                <small class="text-muted">Tạo chuyến mới</small>
+                            </div>
+                        </a>
                     </div>
-                    <div class="col-md-3">
-                        <strong>Environment:</strong>
-                        <p>Development</p>
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Last Updated:</strong>
-                        <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                    <div class="col-md-4">
+                        <a asp-controller="User" asp-action="Create" class="btn btn-outline-warning w-100 py-3 text-start d-flex align-items-center">
+                            <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
+                                <i class="fa-solid fa-user-plus text-warning"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Thêm User</div>
+                                <small class="text-muted">Tạo tài khoản</small>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-circle-info text-info me-2"></i> Thông tin hệ thống</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-solid fa-server me-2"></i> Phiên bản</span>
+                        <span class="badge bg-primary rounded-pill">v1.0.0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-solid fa-database me-2"></i> Database</span>
+                        <span class="badge bg-success rounded-pill">SQL Server</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-solid fa-code me-2"></i> Framework</span>
+                        <span class="badge bg-info rounded-pill">.NET 10</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-regular fa-clock me-2"></i> Ngày</span>
+                        <span class="badge bg-secondary rounded-pill">@DateTime.Now.ToString("dd/MM/yyyy")</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
-
-@section Scripts {
-    <script>
-        // Stats Chart
-        const statsCtx = document.getElementById('statsChart')?.getContext('2d');
-        if (statsCtx) {
-            new Chart(statsCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Địa điểm', 'Tour', 'Booking', 'User'],
-                    datasets: [{
-                        data: [@ViewBag.POICount, @ViewBag.TourCount, @ViewBag.BookingCount, @ViewBag.UserCount],
-                        backgroundColor: [
-                            '#3498db',
-                            '#2ecc71',
-                            '#f39c12',
-                            '#9b59b6'
-                        ],
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
-
-        // Summary Chart
-        const summaryCtx = document.getElementById('summaryChart')?.getContext('2d');
-        if (summaryCtx) {
-            new Chart(summaryCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Địa điểm', 'Tour', 'Booking', 'User'],
-                    datasets: [{
-                        label: 'Số lượng',
-                        data: [@ViewBag.POICount, @ViewBag.TourCount, @ViewBag.BookingCount, @ViewBag.UserCount],
-                        backgroundColor: [
-                            '#3498db',
-                            '#2ecc71',
-                            '#f39c12',
-                            '#9b59b6'
-                        ],
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-    </script>
-}
