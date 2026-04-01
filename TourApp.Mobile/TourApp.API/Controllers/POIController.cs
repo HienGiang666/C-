@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourApp.API.Data;
 using TourApp.API.Models;
@@ -19,12 +19,12 @@ public class POIController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<POI>>> GetPOIs()
     {
-        return await _context.POIs.ToListAsync();
+        return await _context.POIs.Include(p => p.Audios).ToListAsync();
     }
     [HttpGet("{id}")]
     public async Task<ActionResult<POI>> GetPOI(int id)
     {
-        var poi = await _context.POIs.FindAsync(id);
+        var poi = await _context.POIs.Include(p => p.Audios).FirstOrDefaultAsync(p => p.Id == id);
 
         if (poi == null)
         {

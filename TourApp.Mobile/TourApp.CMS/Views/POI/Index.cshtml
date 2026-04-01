@@ -17,9 +17,10 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
+                        <th>Ảnh</th>
                         <th>Tên địa điểm</th>
                         <th>Mô tả</th>
-                        <th>Tọa độ</th>
+                        <th>Tọa độ & Trạng thái</th>
                         <th class="text-end">Thao tác</th>
                     </tr>
                 </thead>
@@ -30,12 +31,23 @@
                         {
                             <tr>
                                 <td><span class="badge bg-secondary">#@item.Id</span></td>
-                                <td class="fw-medium">@item.Name</td>
-                                <td class="text-truncate" style="max-width: 200px;">@item.Description</td>
                                 <td>
-                                    <small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1"></i> @item.Latitude, @item.Longitude</small>
+                                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/50" : item.ImageUrl)" 
+                                         class="img-thumbnail rounded" style="width: 50px; height: 50px; object-fit: cover;" />
+                                </td>
+                                <td class="fw-bold text-primary">@item.Name</td>
+                                <td class="text-truncate" style="max-width: 200px;" title="@item.Description">
+                                    <small>@item.Description</small>
+                                </td>
+                                <td>
+                                    <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-danger"></i> @item.Latitude</small></div>
+                                    <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-primary"></i> @item.Longitude</small></div>
+                                    @if(item.IsActive) { <span class="badge bg-success" style="font-size: 0.65em;">Hoạt động</span> } else { <span class="badge bg-warning" style="font-size: 0.65em;">Đang ẩn</span> }
                                 </td>
                                 <td class="text-end">
+                                    <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1" title="Quản lý Audio">
+                                        <i class="fa-solid fa-headphones"></i> Audios
+                                    </a>
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
@@ -49,7 +61,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="6" class="text-center py-4 text-muted">
                                 <i class="fa-solid fa-box-open fs-2 mb-2"></i><br />
                                 Không có dữ liệu
                             </td>

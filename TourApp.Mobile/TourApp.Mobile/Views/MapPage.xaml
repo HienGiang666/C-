@@ -19,7 +19,7 @@
                        Placeholder="Tìm quán ăn, điểm tham quan..."
                        PlaceholderColor="#94A3B8"
                        TextColor="#333"
-                       HorizontalOptions="FillAndExpand"
+                       HorizontalOptions="Fill"
                        BackgroundColor="Transparent"
                        ReturnType="Search"
                        Completed="OnSearchCompleted"/>

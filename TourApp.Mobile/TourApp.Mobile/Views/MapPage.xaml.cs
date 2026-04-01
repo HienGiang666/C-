@@ -188,7 +188,7 @@ public partial class MapPage : ContentPage
         if (_currentPoi == null) return;
         var url = $"https://www.google.com/maps/dir/?api=1&destination={_currentPoi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{_currentPoi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&travelmode=walking";
         try { await Launcher.Default.OpenAsync(new Uri(url)); }
-        catch { await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
+        catch { await DisplayAlertAsync("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
     }
 
     private void OnFavoriteClicked(object? sender, EventArgs e)

@@ -15,6 +15,5 @@ public class POI
     public bool IsActive { get; set; } = true;
     public double Rating { get; set; } = 4.5;
     
-    // Thuộc tính quan hệ với Audio (nếu có)
-    // public ICollection<Audio> Audios { get; set; } = new List<Audio>();
+    public ICollection<Audio> Audios { get; set; } = new List<Audio>();
 }

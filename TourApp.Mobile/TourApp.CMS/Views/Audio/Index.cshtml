@@ -1,0 +1,84 @@
+@model IEnumerable<TourApp.CMS.Models.Audio>
+
+@{
+    ViewData["Title"] = "Quản lý Thuyết minh (Audio)";
+    var poisDict = ViewBag.POIs as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var currentPoiId = ViewBag.CurrentPoiId as int?;
+}
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">
+            <i class="fa-solid fa-headphones me-2 text-info"></i> Danh sách Audio
+            @if(currentPoiId.HasValue && poisDict.ContainsKey(currentPoiId.Value))
+            {
+                <span class="text-muted fs-6 ms-2">/ Điểm: @poisDict[currentPoiId.Value]</span>
+            }
+        </h5>
+        <div>
+            @if(currentPoiId.HasValue)
+            {
+                <a asp-action="Index" asp-controller="POI" class="btn btn-outline-secondary me-2">
+                    <i class="fa-solid fa-arrow-left"></i> Về danh sách POI
+                </a>
+            }
+            <a asp-action="Create" asp-route-poiId="@currentPoiId" class="btn btn-info text-white d-inline-flex align-items-center">
+                <i class="fa-solid fa-cloud-arrow-up me-2"></i> Thêm Audio mới
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Địa điểm (POI)</th>
+                        <th>Ngôn ngữ</th>
+                        <th>Phát thử</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary">#@item.Id</span></td>
+                                <td class="fw-medium">
+                                    @(poisDict.ContainsKey(item.POIId) ? poisDict[item.POIId] : $"POI ID: {item.POIId}")
+                                </td>
+                                <td><span class="badge bg-light text-dark border">@item.Language.ToUpper()</span></td>
+                                <td>
+                                    <audio controls class="form-control-sm" style="max-height: 40px; max-width: 200px;">
+                                        <source src="@item.AudioPath" type="audio/mpeg">
+                                        Trình duyệt không hỗ trợ.
+                                    </audio>
+                                </td>
+                                <td>
+                                    @if(item.IsActive) { <span class="badge bg-success">Hoạt động</span> } else { <span class="badge bg-warning">Chờ xử lý</span> }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa file MP3 này vĩnh viễn không? File vật lý sẽ bị xóa.');">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-music fs-1 mb-3 text-light"></i><br />
+                                Chưa có tệp âm thanh nào được nạp lên
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

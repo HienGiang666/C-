@@ -8,11 +8,13 @@ public class POIController : Controller
 {
     private readonly IHttpClientFactory _clientFactory;
     private readonly IActivityLogger _activityLogger;
+    private readonly IFileUploadService _fileUploadService;
 
-    public POIController(IHttpClientFactory clientFactory, IActivityLogger activityLogger)
+    public POIController(IHttpClientFactory clientFactory, IActivityLogger activityLogger, IFileUploadService fileUploadService)
     {
         _clientFactory = clientFactory;
         _activityLogger = activityLogger;
+        _fileUploadService = fileUploadService;
     }
 
     public async Task<IActionResult> Index()
@@ -36,8 +38,13 @@ public class POIController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(POI poi)
+    public async Task<IActionResult> Create(POI poi, IFormFile? uploadImage)
     {
+        if (uploadImage != null)
+        {
+            poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
+        }
+
         var client = _clientFactory.CreateClient("TourApi");
         var response = await client.PostAsJsonAsync("api/POI", poi);
 
@@ -84,9 +91,25 @@ public class POIController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, POI poi)
+    public async Task<IActionResult> Edit(int id, POI poi, IFormFile? uploadImage)
     {
         var client = _clientFactory.CreateClient("TourApi");
+        
+        // Preserve old image url if new image is not uploaded
+        if (uploadImage != null)
+        {
+            poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
+        }
+        else
+        {
+            var existingResponse = await client.GetAsync($"api/POI/{id}");
+            if (existingResponse.IsSuccessStatusCode)
+            {
+                var existingPoi = await existingResponse.Content.ReadFromJsonAsync<POI>();
+                if (existingPoi != null) poi.ImageUrl = existingPoi.ImageUrl;
+            }
+        }
+
         var response = await client.PutAsJsonAsync($"api/POI/{id}", poi);
 
         if (response.IsSuccessStatusCode)
