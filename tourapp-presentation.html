@@ -548,6 +548,7 @@
                 display: none;
             }
         }
+
         /* MERMAID */
         .mermaid {
             text-align: center;
@@ -605,7 +606,7 @@
         <div class="section-wrap">
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="value">3</div>
+                    <div class="value">1</div>
                     <div class="label">Services</div>
                 </div>
                 <div class="stat-card">
@@ -629,7 +630,7 @@
                     <div class="label">Audio Cooldown / POI</div>
                 </div>
                 <div class="stat-card">
-                    <div class="value">3</div>
+                    <div class="value">5</div>
                     <div class="label">POI Demo (Vĩnh Khánh)</div>
                 </div>
                 <div class="stat-card">
@@ -743,12 +744,14 @@
                     <h4>Tầng 1 — WebView Android Config</h4>
                     <p>Cấu hình trước khi build: <code>JavaScriptEnabled = true</code>,
                         <code>DomStorageEnabled = true</code>, <code>MixedContentMode = AlwaysAllow</code>,
-                        <code>LayerType.Hardware</code>. Bắt buộc để Goong Maps JS chạy được.</p>
+                        <code>LayerType.Hardware</code>. Bắt buộc để Goong Maps JS chạy được.
+                    </p>
                 </div>
                 <div class="timeline-item">
                     <h4>Tầng 2 — DI Container</h4>
                     <p>Đăng ký Singleton: <code>ApiClientService</code>, <code>LocationService</code>,
-                        <code>GeofenceService</code>. Đăng ký Transient: <code>MapPage</code>.</p>
+                        <code>GeofenceService</code>. Đăng ký Transient: <code>MapPage</code>.
+                    </p>
                 </div>
                 <div class="timeline-item">
                     <h4>Tầng 3 — AppShell → MapPage</h4>
@@ -772,1107 +775,1189 @@
                 <span class="flow-step">GPS Tracking</span>
             </div>
             <div class="highlight success">
-<strong>✅ App Khởi Động Tối Ưu:</strong> Dữ liệu POI được tải bất đồng bộ (Async) từ Backend REST API. Giao diện thiết kế đảm bảo GPS chạy Background Thread không blocks UI, bypass timeout.
-</div>
-    </div>
-
-    <!-- GEOFENCE -->
-    <div id="geofence">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#eff6ff;color:var(--info);">📡</div>
-                <div>
-                    <div class="section-num">Chapter 02</div>
-                    <h2>GPS + Geofence + Audio Narration</h2>
-                </div>
+                <strong>✅ App Khởi Động Tối Ưu:</strong> Dữ liệu POI được tải bất đồng bộ (Async) từ Backend REST API.
+                Giao diện thiết kế đảm bảo GPS chạy Background Thread không blocks UI, bypass timeout.
             </div>
-            <p style="margin-bottom:1.5rem;color:var(--text-secondary);">LocationService poll GPS mỗi 5 giây. Mỗi update
-                kích hoạt CheckGeofences() — tính Haversine đến từng POI, debounce 2 phút cooldown, trigger TTS + UI khi
-                vào zone.</p>
-            <h3>Thuyết Minh Tự Động & Chống Spam</h3>
-                <p> Hệ thống hỗ trợ <b>Debounce & Cooldown</b>: Giới hạn 2 phút/POI để tránh lặp thoại nếu user đứng yên. Geofence trigger tự động khi Location rơi vào Radius của POI.</p>
+        </div>
+
+        <!-- GEOFENCE -->
+        <div id="geofence">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#eff6ff;color:var(--info);">📡</div>
+                    <div>
+                        <div class="section-num">Chapter 02</div>
+                        <h2>GPS + Geofence + Audio Narration</h2>
+                    </div>
+                </div>
+                <p style="margin-bottom:1.5rem;color:var(--text-secondary);">LocationService poll GPS mỗi 5 giây. Mỗi
+                    update
+                    kích hoạt CheckGeofences() — tính Haversine đến từng POI, debounce 2 phút cooldown, trigger TTS + UI
+                    khi
+                    vào zone.</p>
+                <h3>Thuyết Minh Tự Động & Chống Spam</h3>
+                <p> Hệ thống hỗ trợ <b>Debounce & Cooldown</b>: Giới hạn 2 phút/POI để tránh lặp thoại nếu user đứng
+                    yên. Geofence trigger tự động khi Location rơi vào Radius của POI.</p>
                 <div class="highlight info" style="margin-top:1rem;">
-                    <strong>🔥 Tính Năng Mới - Quét QR Bypass:</strong> Dán QR tại điểm trạm. User quét QR -> Request Backend lập tức -> Trả về URL MP3/Script Audio -> Xóa hàng đợi và phát đè luôn (Bypass GPS Radius).
+                    <strong>🔥 Tính Năng Mới - Quét QR Bypass:</strong> Dán QR tại điểm trạm. User quét QR -> Request
+                    Backend lập tức -> Trả về URL MP3/Script Audio -> Xóa hàng đợi và phát đè luôn (Bypass GPS Radius).
                 </div>
-<h3>Luồng Geofence Engine (4 Bước)</h3>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <h4>Giai đoạn 1 — GPS Collection (LocationService)</h4>
-                    <p><code>GetLocationAsync()</code> mỗi 5s trên background thread →
-                        <code>MainThread.BeginInvokeOnMainThread()</code> phát <code>LocationChanged</code> event an
-                        toàn.</p>
-                </div>
-                <div class="timeline-item">
-                    <h4>Giai đoạn 2 — Zone Detection (GeofenceService)</h4>
-                    <p><code>CheckGeofences(pos)</code>: <code>Location.CalculateDistance()</code> tính khoảng cách. ≤
-                        radius → kiểm tra cooldown → <code>TriggerNarration(poi)</code>. Chỉ trigger 1 POI/lần
-                        (<code>break</code>).</p>
-                </div>
-                <div class="timeline-item">
-                    <h4>Giai đoạn 3 — Audio Decision</h4>
-                    <p>Cooldown 2 phút/POI: nếu <code>poi.PoiId == _lastSpokenPoiId</code> và chưa qua 2 phút → bỏ qua.
-                        Tránh thuyết minh lặp lại khi đứng yên.</p>
-                </div>
-                <div class="timeline-item">
-                    <h4>Giai đoạn 4 — Audio Playback + UI</h4>
-                    <p><code>PoiTriggered</code> event → <code>ShowPoiDetails(poi)</code> mở bottom sheet. Song song:
-                        <code>SpeakNarrationAsync()</code> → <code>TextToSpeech.Default.SpeakAsync()</code>.</p>
-                </div>
-            </div>
-            <div class="card-grid" style="margin-top:1rem;">
-                <div class="card">
-                    <h3>📏 Radius per POI</h3>
-                    <ul>
-                        <li>Ốc Oanh: <strong>30m</strong> (Priority 1)</li>
-                        <li>Lẩu Bò Khu Vực: <strong>25m</strong> (Priority 1)</li>
-                        <li>Trà Sữa Vĩnh Khánh: <strong>20m</strong> (Priority 2)</li>
-                        <li>Default model: <strong>80m</strong></li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>⏱️ Timing Constants</h3>
-                    <ul>
-                        <li>GPS Interval: <strong>5s</strong></li>
-                        <li>Geolocation timeout: <strong>5s</strong></li>
-                        <li>Audio cooldown/POI: <strong>2 phút</strong></li>
-                        <li>Max trigger/cycle: <strong>1 POI</strong></li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>🔗 JS Bridge (Map ↔ C#)</h3>
-                    <p><strong>C# → JS:</strong> <code>MapWebView.Eval("updateUserLocation(...)")</code> cập nhật dot vị
-                        trí, <code>map.flyTo()</code></p>
-                    <p style="margin-top:.4rem;"><strong>JS → C#:</strong> Click marker →
-                        <code>poi://selected?id=1</code> → <code>OnMapWebViewNavigating()</code></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- POI CONTENT -->
-    <div id="content" class="section-bg">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#fce7f3;color:#be185d;">📍</div>
-                <div>
-                    <div class="section-num">Chapter 03</div>
-                    <h2>POI Content — Vòng Đời Dữ Liệu</h2>
-                </div>
-            </div>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>📖 Load POI (Startup)</h3>
-                    <p><code>GetAllPOIsAsync()</code> → mock 3 POI hardcode (sau này: <code>GET /api/pois</code> từ
-                        MySQL). Dữ liệu load 1 lần khi app mở, lưu trong <code>_pois</code> list.</p>
-                </div>
-                <div class="card">
-                    <h3>🗺️ Render Markers</h3>
-                    <p>Serialize <code>List&lt;POI&gt;</code> → JSON → inject vào HTML Goong Map. JS loop tạo
-                        <code>goongjs.Marker</code> cho từng POI với emoji 🍽️.</p>
-                </div>
-                <div class="card">
-                    <h3>🔍 Search POI</h3>
-                    <p>1. Tìm trong <code>_pois</code> local (PoiName contains). 2. Nếu không có: Goong AutoComplete API
-                        → Place Detail API → <code>map.flyTo()</code>.</p>
-                </div>
-                <div class="card">
-                    <h3>⭐ Favorites</h3>
-                    <p>Lưu qua <code>Preferences.Default</code> với key <code>fav_{poiId}</code>. Không cần DB — persist
-                        ngay trên device giữa các session.</p>
-                </div>
-            </div>
-            <h3 style="margin-top:1.5rem;">3-Tier Content Fallback (kế hoạch)</h3>
-            <div class="tier-list">
-                <div class="tier-item">
-                    <div class="tier-label" style="background:#059669;">Tier 1</div>
-                    <div class="tier-content">
-                        <strong>MySQL REST API (online)</strong>
-                        <span><code>GET /api/pois</code> → dữ liệu đầy đủ, ảnh URL, audio_url từ server.</span>
+                <h3>Luồng Geofence Engine (4 Bước)</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <h4>Giai đoạn 1 — GPS Collection (LocationService)</h4>
+                        <p><code>GetLocationAsync()</code> mỗi 5s trên background thread →
+                            <code>MainThread.BeginInvokeOnMainThread()</code> phát <code>LocationChanged</code> event an
+                            toàn.
+                        </p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4>Giai đoạn 2 — Zone Detection (GeofenceService)</h4>
+                        <p><code>CheckGeofences(pos)</code>: <code>Location.CalculateDistance()</code> tính khoảng cách.
+                            ≤
+                            radius → kiểm tra cooldown → <code>TriggerNarration(poi)</code>. Chỉ trigger 1 POI/lần
+                            (<code>break</code>).</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4>Giai đoạn 3 — Audio Decision</h4>
+                        <p>Cooldown 2 phút/POI: nếu <code>poi.PoiId == _lastSpokenPoiId</code> và chưa qua 2 phút → bỏ
+                            qua.
+                            Tránh thuyết minh lặp lại khi đứng yên.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4>Giai đoạn 4 — Audio Playback + UI</h4>
+                        <p><code>PoiTriggered</code> event → <code>ShowPoiDetails(poi)</code> mở bottom sheet. Song
+                            song:
+                            <code>SpeakNarrationAsync()</code> → <code>TextToSpeech.Default.SpeakAsync()</code>.
+                        </p>
                     </div>
                 </div>
-                <div class="tier-item">
-                    <div class="tier-label" style="background:#2563eb;">Tier 2</div>
-                    <div class="tier-content">
-                        <strong>SQLite Local Cache (offline)</strong>
-                        <span>Lưu POI sau khi fetch lần đầu → mở lại app không cần mạng vẫn có dữ liệu.</span>
+                <div class="card-grid" style="margin-top:1rem;">
+                    <div class="card">
+                        <h3>📏 Radius per POI</h3>
+                        <ul>
+                            <li>Ốc Oanh: <strong>30m</strong> (Priority 1)</li>
+                            <li>Lẩu Bò Khu Vực: <strong>25m</strong> (Priority 1)</li>
+                            <li>Trà Sữa Vĩnh Khánh: <strong>20m</strong> (Priority 2)</li>
+                            <li>Default model: <strong>80m</strong></li>
+                        </ul>
                     </div>
-                </div>
-                <div class="tier-item">
-                    <div class="tier-label" style="background:#d97706;">Tier 3</div>
-                    <div class="tier-content">
-                        <strong>Mock Data Hardcode (fallback cuối)</strong>
-                        <span><code>USE_MOCK_DATA = true</code> — 3 POI demo Vĩnh Khánh. Luôn hoạt động kể cả khi
-                            backend chưa xong.</span>
+                    <div class="card">
+                        <h3>⏱️ Timing Constants</h3>
+                        <ul>
+                            <li>GPS Interval: <strong>5s</strong></li>
+                            <li>Geolocation timeout: <strong>5s</strong></li>
+                            <li>Audio cooldown/POI: <strong>2 phút</strong></li>
+                            <li>Max trigger/cycle: <strong>1 POI</strong></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🔗 JS Bridge (Map ↔ C#)</h3>
+                        <p><strong>C# → JS:</strong> <code>MapWebView.Eval("updateUserLocation(...)")</code> cập nhật
+                            dot vị
+                            trí, <code>map.flyTo()</code></p>
+                        <p style="margin-top:.4rem;"><strong>JS → C#:</strong> Click marker →
+                            <code>poi://selected?id=1</code> → <code>OnMapWebViewNavigating()</code>
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- AUDIO -->
-    <div id="audio">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#f5f3ff;color:#7c3aed;">🎧</div>
-                <div>
-                    <div class="section-num">Chapter 04</div>
-                    <h2>Audio / Text-To-Speech</h2>
+        <!-- POI CONTENT -->
+        <div id="content" class="section-bg">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#fce7f3;color:#be185d;">📍</div>
+                    <div>
+                        <div class="section-num">Chapter 03</div>
+                        <h2>POI Content — Vòng Đời Dữ Liệu</h2>
+                    </div>
                 </div>
-            </div>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>🔥 Admin Web CMS / CRUD Kịch Bản TTS</h3>
-                    <ul>
-                        <li>Admin có quyền CRUD tùy chỉnh đoạn văn TTS theo nhiều ngôn ngữ (vi, en).</li>
-                        <li>Linh hoạt cao: Cập nhật text, mobile tự đổi thoại ngay.</li>
-                        <li>Phù hợp lúc rảnh tay, dung lượng load cực thấp.</li>
-                    </ul>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>📖 Load POI (Startup)</h3>
+                        <p><code>GetAllPOIsAsync()</code> → mock 3 POI hardcode (sau này: <code>GET /api/pois</code> từ
+                            MySQL). Dữ liệu load 1 lần khi app mở, lưu trong <code>_pois</code> list.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🗺️ Render Markers</h3>
+                        <p>Serialize <code>List&lt;POI&gt;</code> → JSON → inject vào HTML Goong Map. JS loop tạo
+                            <code>goongjs.Marker</code> cho từng POI với emoji 🍽️.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <h3>🔍 Search POI</h3>
+                        <p>1. Tìm trong <code>_pois</code> local (PoiName contains). 2. Nếu không có: Goong AutoComplete
+                            API
+                            → Place Detail API → <code>map.flyTo()</code>.</p>
+                    </div>
+                    <div class="card">
+                        <h3>⭐ Favorites</h3>
+                        <p>Lưu qua <code>Preferences.Default</code> với key <code>fav_{poiId}</code>. Không cần DB —
+                            persist
+                            ngay trên device giữa các session.</p>
+                    </div>
                 </div>
-                <div class="card">
-                    <h3>🔔 2 Điểm Trigger Audio</h3>
-                    <ul>
-                        <li><strong>Tự động:</strong> Geofence → <code>SpeakNarrationAsync(poi)</code></li>
-                        <li><strong>Manual:</strong> Nút ▶️ trong bottom sheet</li>
-                        <li>Nội dung: <em>"Chào mừng bạn đến [tên]. [mô tả]"</em></li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>🎙️ Audio Thu Sẵn / Hàng Đợi Queue</h3>
-                    <ul>
-                        <li>File MP3 tự nhiên, chất lượng cao cực mượt.</li>
-                        <li>Hỗ trợ AudioTaskManager: Queue hàng đợi.</li>
-                        <li>Trường hợp có Audio = Play MP3. Không có = Play TTS Văn bản.</li>
-                        <li>Tự ngắt khi có sự kiện ưu tiên hơn (QR Code).</li>
-                    </ul>
-                </div>
-            </div>
-            <h3 style="margin-top:1.5rem;">Audio Generation Pipeline</h3>
-            <div class="flow">
-                <span class="flow-step warning">Geofence Trigger</span><span class="flow-arrow">→</span>
-                <span class="flow-step alt">Check Audio DB</span><span class="flow-arrow">→</span>
-                <span class="flow-step">audio_url tồn tại?</span><span class="flow-arrow">→</span>
-                <span class="flow-step success">Phát file MP3 (TODO)</span>
-            </div>
-            <div class="flow">
-                <span class="flow-step warning">Không có file</span><span class="flow-arrow">→</span>
-                <span class="flow-step alt">Build text string</span><span class="flow-arrow">→</span>
-                <span class="flow-step">TextToSpeech.SpeakAsync()</span><span class="flow-arrow">→</span>
-                <span class="flow-step success">Android TTS Engine</span>
-            </div>
-            <div class="highlight success">
-                <strong>Lợi thế MAUI TTS: </strong> Offline 100%, $0 cost, luôn hoạt động. Phù hợp demo đồ án khi chưa
-                có backend audio hosting.
-            </div>
-        </div>
-    </div>
-
-    <!-- AUTH -->
-    <div id="auth" class="section-bg">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#fdf4ff;color:#7e22ce;">🔐</div>
-                <div>
-                    <div class="section-num">Chapter 05</div>
-                    <h2>Authentication</h2>
-                </div>
-            </div>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>📄 LoginPage.xaml</h3>
-                    <ul>
-                        <li>Form đăng nhập (username, password)</li>
-                        <li>Điều hướng đến MapPage sau login</li>
-                        <li>Auth logic: TODO kết nối MySQL</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>📝 RegisterPage.xaml</h3>
-                    <ul>
-                        <li>Form đăng ký tài khoản</li>
-                        <li>TODO: <code>POST /api/auth/register</code></li>
-                        <li>Validate input phía client</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>🔒 Kế Hoạch Auth</h3>
-                    <ul>
-                        <li>JWT token từ MySQL backend</li>
-                        <li>Lưu: <code>SecureStorage.SetAsync()</code></li>
-                        <li>Roles: <code>user</code> / <code>admin</code></li>
-                        <li>Auto-refresh khi hết hạn</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="highlight info">
-                <strong>Đủ cho đồ án giữa kỳ:</strong> UI Login/Register hoàn chỉnh, luồng điều hướng hoạt động. Auth
-                thật bổ sung sau khi MySQL backend sẵn sàng.
-            </div>
-        </div>
-    </div>
-
-    <!-- I18N -->
-    <div id="i18n">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#ecfeff;color:#0e7490;">🌐</div>
-                <div>
-                    <div class="section-num">Chapter 06</div>
-                    <h2>Localization / Đa Ngôn Ngữ</h2>
-                </div>
-            </div>
-            <p style="margin-bottom:1rem;color:var(--text-secondary);">Hiện tại app chỉ hỗ trợ tiếng Việt. TextToSpeech
-                MAUI có thể mở rộng sang đa ngôn ngữ với locale tương ứng.</p>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>🇻🇳 Hiện tại: Tiếng Việt</h3>
-                    <ul>
-                        <li>TTS locale: <code>vi-VN</code> (Android)</li>
-                        <li>Nội dung POI: tiếng Việt</li>
-                        <li>UI labels: tiếng Việt</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>🔮 Mở Rộng Đa Ngôn Ngữ (TODO)</h3>
-                    <ul>
-                        <li>MAUI <code>ResourceDictionary</code> cho UI strings</li>
-                        <li>TTS locale: <code>en-US</code>, <code>zh-CN</code>, <code>ja-JP</code></li>
-                        <li>MySQL: thêm cột <code>lang</code> trong <code>audios</code></li>
-                        <li>GetAudioByPoiAsync(<strong>id, lang</strong>) đã có tham số</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>⚡ Goong Maps — Đã đa ngôn ngữ</h3>
-                    <ul>
-                        <li>Goong Maps JS tự render nhãn địa điểm theo locale browser</li>
-                        <li>Không cần config thêm</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="highlight info">
-                <strong>Pattern tham khảo :</strong> Tham khảo <code>deep-translator</code> (miễn phí) để tự động dịch
-                mô tả POI sang 5 ngôn ngữ và Edge-TTS tạo MP3. TourApp có thể áp dụng tương tự khi kết nối backend.
-            </div>
-        </div>
-    </div>
-
-    <!-- OFFLINE -->
-    <div id="offline" class="section-bg">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#f0f9ff;color:#0369a1;">📴</div>
-                <div>
-                    <div class="section-num">Chapter 07</div>
-                    <h2>Offline Capability</h2>
-                </div>
-            </div>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>✅ Đã offline: TTS</h3>
-                    <p><code>TextToSpeech.Default</code> dùng Android TTS engine tích hợp. Không cần mạng để phát thuyết
-                        minh. Phiên bản <strong>vi-VN</strong> tải sẵn trong device.</p>
-                </div>
-                <div class="card">
-                    <h3>✅ Đã offline: POI Data</h3>
-                    <p>Mock data hardcode → luôn có dữ liệu kể cả mất mạng. Khi có MySQL: cần thêm SQLite cache lần đầu
-                        load.</p>
-                </div>
-                <div class="card">
-                    <h3>✅ Đã offline: Favorites</h3>
-                    <p><code>Preferences.Default</code> lưu local trong app storage. Persist giữa các lần mở app, không
-                        cần mạng.</p>
-                </div>
-                <div class="card">
-                    <h3>❌ Chưa offline: Bản đồ</h3>
-                    <p>Goong Maps JS load tile từ CDN. Mất mạng = bản đồ trắng. Giải pháp: cache tile lần đầu hoặc dùng
-                        map tĩnh fallback.</p>
-                </div>
-            </div>
-            <h3 style="margin-top:1.5rem;">4 Lớp Defense (hiện tại)</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Lớp</th>
-                            <th>Thành phần</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1 — Audio</td>
-                            <td>MAUI TextToSpeech (device TTS)</td>
-                            <td>✅ Offline hoàn toàn</td>
-                        </tr>
-                        <tr>
-                            <td>2 — POI Data</td>
-                            <td>Mock data / SQLite local cache</td>
-                            <td>✅ Mock xong, SQLite TODO</td>
-                        </tr>
-                        <tr>
-                            <td>3 — Favorites</td>
-                            <td>MAUI Preferences local storage</td>
-                            <td>✅ Hoàn chỉnh</td>
-                        </tr>
-                        <tr>
-                            <td>4 — Bản đồ</td>
-                            <td>Goong Maps JS (CDN)</td>
-                            <td>❌ Cần internet</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAPS -->
-    <div id="maps">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#f0fdf4;color:#15803d;">🗺️</div>
-                <div>
-                    <div class="section-num">Chapter 08</div>
-                    <h2>Bản Đồ — Goong Maps</h2>
-                </div>
-            </div>
-            <p style="margin-bottom:1.5rem;color:var(--text-secondary);">Goong Maps JS nhúng trong MAUI WebView dưới
-                dạng HTML inline. Giao tiếp hai chiều C# ↔ JS qua URL scheme và Eval().</p>
-            <h3>Chuỗi 4 Tầng Map</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Tầng</th>
-                            <th>Thành phần</th>
-                            <th>Vai trò</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1. WebView Config</td>
-                            <td><code>MauiProgram.cs</code> Android mapper</td>
-                            <td>Bật JS, DomStorage, Hardware Layer cho Goong JS hoạt động</td>
-                        </tr>
-                        <tr>
-                            <td>2. HTML Gen</td>
-                            <td><code>BuildMapHtml(poisJson)</code> trong MapPage</td>
-                            <td>Tạo HTML string nhúng Goong JS + inject danh sách POI qua JSON</td>
-                        </tr>
-                        <tr>
-                            <td>3. JS Bridge</td>
-                            <td><code>MapWebView.Eval()</code> / URL scheme</td>
-                            <td>C#→JS: updateLocation, flyTo. JS→C#: poi://selected?id=X</td>
-                        </tr>
-                        <tr>
-                            <td>4. Runtime</td>
-                            <td>Goong Maps GL JS 1.0.9</td>
-                            <td>Render vector map, POI markers, user dot, search flyTo</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <h3 style="margin-top:1.5rem;">3 Chế Độ Search</h3>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>🔍 Local Search</h3>
-                    <p>Tìm trong <code>_pois</code> list: <code>PoiName.Contains(query)</code>. Nhanh nhất, không cần
-                        mạng. Hiện thị bottom sheet + flyTo.</p>
-                </div>
-                <div class="card">
-                    <h3>🌐 Goong AutoComplete</h3>
-                    <p><code>GET rsapi.goong.io/Place/AutoComplete?input=...</code> → lấy <code>place_id</code> từ kết
-                        quả đầu.</p>
-                </div>
-                <div class="card">
-                    <h3>📍 Goong Place Detail</h3>
-                    <p><code>GET rsapi.goong.io/Place/Detail?place_id=...</code> → lấy lat/lng →
-                        <code>map.flyTo({zoom:17})</code>.</p>
-                </div>
-            </div>
-            <h3 style="margin-top:1.5rem;">Goong Map Service Config</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Thông số</th>
-                            <th>Giá trị</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Library version</td>
-                            <td><code>@goongmaps/goong-js 1.0.9</code> (CDN)</td>
-                        </tr>
-                        <tr>
-                            <td>Map Style</td>
-                            <td><code>goong_map_web.json</code> (tiles.goong.io)</td>
-                        </tr>
-                        <tr>
-                            <td>Default center</td>
-                            <td><code>[106.7018, 10.7596]</code> — Vĩnh Khánh, Q4</td>
-                        </tr>
-                        <tr>
-                            <td>Default zoom</td>
-                            <td><code>16</code></td>
-                        </tr>
-                        <tr>
-                            <td>Places API base</td>
-                            <td><code>rsapi.goong.io</code></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="highlight warning">
-                <strong>⚠️ Phụ thuộc Internet:</strong> Goong Maps tile cần CDN. Mất mạng → bản đồ không load.
-            </div>
-        </div>
-    </div>
-
-    <!-- ADMIN / LOG -->
-    <div id="admin" class="section-bg">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#fefce8;color:#854d0e;">👨‍💼</div>
-                <div>
-                    <div class="section-num">Chapter 09</div>
-                    <h2>Admin / NarrationLog</h2>
-                </div>
-            </div>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>📋 NarrationLog Model</h3>
-                    <ul>
-                        <li><code>NarrationLog.cs</code> — model đã tạo</li>
-                        <li><code>LogNarrationAsync(poiId, audioId, type)</code> — stub trong ApiClientService</li>
-                        <li>Ghi: poiId, thời gian, trigger type (geofence/manual)</li>
-                        <li>TODO: ghi vào MySQL mỗi khi TTS phát</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>🔑 Admin Flow (dự kiến)</h3>
-                    <ul>
-                        <li>Login với role <code>admin</code></li>
-                        <li>Xem danh sách narration logs</li>
-                        <li>CRUD POI qua MySQL backend</li>
-                        <li>Upload audio URL cho POI</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>📊 Analytics (TODO)</h3>
-                    <ul>
-                        <li>Thống kê: POI nào được nghe nhiều nhất</li>
-                        <li>Thời gian thuyết minh trung bình / POI</li>
-                        <li>Bản đồ nhiệt (heatmap tương lai)</li>
-                    </ul>
-                </div>
-            </div>
-            <h3 style="margin-top:1.5rem;">Owner Registration Flow (tương lai)</h3>
-            <div class="flow">
-                <span class="flow-step">Chủ quán đăng ký</span><span class="flow-arrow">→</span>
-                <span class="flow-step alt">POST /api/auth/register-owner</span><span class="flow-arrow">→</span>
-                <span class="flow-step warning">Admin duyệt (MySQL)</span><span class="flow-arrow">→</span>
-                <span class="flow-step success">Verified → cập nhật POI</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- PATTERNS -->
-    <div id="patterns">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#f5f3ff;color:#4c1d95;">⚡</div>
-                <div>
-                    <div class="section-num">Chapter 10</div>
-                    <h2>Design Patterns &amp; Key Constants</h2>
-                </div>
-            </div>
-            <h3>Architecture Patterns</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Pattern</th>
-                            <th>Mô tả trong TourApp</th>
-                            <th>Tham chiếu</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Event-Driven (C#)</strong></td>
-                            <td><code>LocationChanged</code>, <code>PoiTriggered</code> — services không biết nhau, giao
-                                tiếp qua events</td>
-                            <td>Publisher-Subscriber pattern</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Dependency Injection</strong></td>
-                            <td>MAUI DI: Singleton Services inject vào MapPage qua constructor</td>
-                            <td>Microsoft DI Container</td>
-                        </tr>
-                        <tr>
-                            <td><strong>JS Bridge Pattern</strong></td>
-                            <td>HTML WebView ↔ C# qua URL scheme + Eval(). Tách biệt map logic khỏi app logic</td>
-                            <td>Hybrid App pattern</td>
-                        </tr>
-                        <tr>
-                            <td><strong>3-Tier Content Fallback</strong></td>
-                            <td>MySQL API → SQLite cache → Mock data hardcode</td>
-                            <td>Tham khảo</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Cooldown / Debounce</strong></td>
-                            <td>2 phút cooldown/POI tránh spam audio, break sau trigger đầu tiên</td>
-                            <td>iOS CLLocationManager patterns</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Preferences Local Store</strong></td>
-                            <td>Favorites lưu <code>fav_{id}</code> qua MAUI Preferences — không cần DB</td>
-                            <td>Android SharedPreferences</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Polling GPS</strong></td>
-                            <td>Background Task.Run() loop, phát event về Main Thread an toàn</td>
-                            <td>MAUI Threading model</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Hardware WebView Layer</strong></td>
-                            <td><code>SetLayerType(Hardware)</code> → GPU accelerate map rendering</td>
-                            <td>Android WebView optimization</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <h3 style="margin-top:1.5rem;">Key Constants</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Constant</th>
-                            <th>Giá trị</th>
-                            <th>File</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>GPS Poll Interval</td>
-                            <td>5s</td>
-                            <td>LocationService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Geolocation Timeout</td>
-                            <td>5s</td>
-                            <td>LocationService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>GPS Accuracy</td>
-                            <td>GeolocationAccuracy.Best</td>
-                            <td>LocationService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Audio Cooldown</td>
-                            <td>2 phút / POI</td>
-                            <td>GeofenceService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Max Trigger / Cycle</td>
-                            <td>1 POI (break)</td>
-                            <td>GeofenceService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Default Geofence Radius</td>
-                            <td>80m (POI model default)</td>
-                            <td>POI.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Map Default Center</td>
-                            <td>[106.7018, 10.7596] Vĩnh Khánh Q4</td>
-                            <td>MapPage.xaml.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Map Default Zoom</td>
-                            <td>16</td>
-                            <td>MapPage.xaml.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Search flyTo Zoom</td>
-                            <td>17</td>
-                            <td>MapPage.xaml.cs</td>
-                        </tr>
-                        <tr>
-                            <td>USE_MOCK_DATA</td>
-                            <td>true (hiện tại)</td>
-                            <td>ApiClientService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Goong API Base</td>
-                            <td>rsapi.goong.io</td>
-                            <td>MapPage.xaml.cs</td>
-                        </tr>
-                        <tr>
-                            <td>Goong Map Library</td>
-                            <td>goong-js 1.0.9 (CDN)</td>
-                            <td>BuildMapHtml()</td>
-                        </tr>
-                        <tr>
-                            <td>TTS Pitch</td>
-                            <td>1.0f</td>
-                            <td>GeofenceService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>TTS Volume</td>
-                            <td>1.0f</td>
-                            <td>GeofenceService.cs</td>
-                        </tr>
-                        <tr>
-                            <td>TTS Locale Priority</td>
-                            <td>vi-VN → system default</td>
-                            <td>GeofenceService.cs</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- FULL END-TO-END FLOW -->
-            <h3 style="margin-top:2rem;">End-to-End Flow — Mở App → Nghe Thuyết Minh</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Bước</th>
-                            <th>Thành phần</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td><code>MauiProgram</code></td>
-                            <td>DI container khởi động, cấu hình WebView Android Hardware layer</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td><code>AppShell</code></td>
-                            <td>Route mặc định → <code>MapPage</code></td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td><code>MapPage</code> Constructor</td>
-                            <td>Inject services, subscribe <code>LocationChanged</code> + <code>PoiTriggered</code></td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td><code>OnAppearing()</code></td>
-                            <td><code>InitializeAsync()</code> → <code>GetAllPOIsAsync()</code> → <code>LoadMap()</code>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>5</td>
-                            <td><code>LoadMap()</code></td>
-                            <td>Serialize POI → JSON → inject vào HTML string → WebView.Source</td>
-                        </tr>
-                        <tr>
-                            <td>6</td>
-                            <td>Goong Maps JS</td>
-                            <td>Map init → <code>map.on('load')</code> → tạo markers cho từng POI</td>
-                        </tr>
-                        <tr>
-                            <td>7</td>
-                            <td><code>LocationService</code></td>
-                            <td>Background loop: <code>GetLocationAsync(5s)</code> → phát <code>LocationChanged</code>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>8</td>
-                            <td><code>OnLocationChanged()</code></td>
-                            <td><code>Eval("updateUserLocation(...)")</code> + <code>CheckGeofences(loc)</code></td>
-                        </tr>
-                        <tr>
-                            <td>9</td>
-                            <td><code>GeofenceService</code></td>
-                            <td>Tính Haversine distance. Nếu ≤ radius &amp;&amp; cooldown xong →
-                                <code>TriggerNarration()</code></td>
-                        </tr>
-                        <tr>
-                            <td>10</td>
-                            <td><code>PoiTriggered</code> event</td>
-                            <td><code>ShowPoiDetails(poi)</code> → Bottom Sheet mở</td>
-                        </tr>
-                        <tr>
-                            <td>11</td>
-                            <td><code>SpeakNarrationAsync()</code></td>
-                            <td><code>TextToSpeech.Default.SpeakAsync("Chào mừng...")</code> → Android TTS phát</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- TECH STACK -->
-            <h3 style="margin-top:2rem;">Technology Stack &amp; Cost Analysis</h3>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>📱 Mobile App</h3>
-                    <ul>
-                        <li><strong>.NET MAUI 8</strong> — cross-platform native</li>
-                        <li><strong>C# / XAML</strong> — UI + logic</li>
-                        <li><strong>Microsoft DI</strong> — dependency injection</li>
-                        <li><strong>MAUI Geolocation</strong> — GPS API</li>
-                        <li><strong>MAUI TextToSpeech</strong> — TTS offline</li>
-                        <li><strong>MAUI Preferences</strong> — local storage</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>🗺️ Bản Đồ</h3>
-                    <ul>
-                        <li><strong>Goong Maps JS 1.0.9</strong> — vector map</li>
-                        <li><strong>Goong Places API</strong> — autocomplete</li>
-                        <li><strong>Goong Place Detail API</strong> — geocode</li>
-                        <li><strong>MAUI WebView</strong> — host container</li>
-                        <li><strong>URL Scheme Bridge</strong> — JS↔C# comms</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>💰 Zero-Cost Core</h3>
-                    <ul>
-                        <li>✅ MAUI TTS: built-in, miễn phí</li>
-                        <li>✅ Mock data: hardcode, không cần server</li>
-                        <li>✅ MAUI Preferences: local, miễn phí</li>
-                        <li>⚠️ Goong Maps: cần API key (<a href="https://goong.io" target="_blank">goong.io</a>)</li>
-                        <li>⚠️ MySQL: cần server hosting</li>
-                    </ul>
+                <h3 style="margin-top:1.5rem;">3-Tier Content Fallback (kế hoạch)</h3>
+                <div class="tier-list">
+                    <div class="tier-item">
+                        <div class="tier-label" style="background:#059669;">Tier 1</div>
+                        <div class="tier-content">
+                            <strong>MySQL REST API (online)</strong>
+                            <span><code>GET /api/pois</code> → dữ liệu đầy đủ, ảnh URL, audio_url từ server.</span>
+                        </div>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-label" style="background:#2563eb;">Tier 2</div>
+                        <div class="tier-content">
+                            <strong>SQLite Local Cache (offline)</strong>
+                            <span>Lưu POI sau khi fetch lần đầu → mở lại app không cần mạng vẫn có dữ liệu.</span>
+                        </div>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-label" style="background:#d97706;">Tier 3</div>
+                        <div class="tier-content">
+                            <strong>Mock Data Hardcode (fallback cuối)</strong>
+                            <span><code>USE_MOCK_DATA = true</code> — 3 POI demo Vĩnh Khánh. Luôn hoạt động kể cả khi
+                                backend chưa xong.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    
-    <!-- CHAPTER 11: UML DIAGRAMS -->
-    <div id="diagrams" class="section-bg">
-        <div class="section-wrap">
-            <div class="section-header">
-                <div class="icon" style="background:#fdf4ff;color:#7c3aed;">📐</div>
-                <div>
-                    <div class="section-num">Chapter 11</div>
-                    <h2>UML Diagrams — Activity, Sequence, State, Class</h2>
+        <!-- AUDIO -->
+        <div id="audio">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#f5f3ff;color:#7c3aed;">🎧</div>
+                    <div>
+                        <div class="section-num">Chapter 04</div>
+                        <h2>Audio / Text-To-Speech</h2>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="diagram-wrap" style="margin-top: 2rem;">
-
-                <!-- ACTIVITY -->
-                <div style="margin-bottom: 3rem;">
-                    <h3 style="margin-bottom:.8rem;color:var(--primary);">1. Activity Diagram — Main User Flow</h3>
-                    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">The core user activity flow: Launch -> Load POI (REST API) -> GPS Auth -> Background Service Location Tracker -> Priority Check & Cooldown -> Narration Engine Play.</p>
-                    <div class="mermaid">
-flowchart TD
-    A([Launch App]) --> B["Fetch POIs (REST API)
-Filter: District 4 Only"]
-    B --> C["GeofenceService
-.InitializeAsync()"]
-    C --> D["Load Map View
-(Goong Maps JS)"]
-    D --> E{"Permissions.RequestAsync
-[GPS Access]"}
-    
-    E -->|Denied| F["GPS Required Dialog"]
-    F --> Z([Wait / End])
-    
-    E -->|Granted| G["Start GPS Tracking
-Background Service"]
-    
-    %% QR Bypass Lane
-    D --> QR1["Scan QR Code
-at Bus Stop"]
-    QR1 --> QR2["Fetch POI Audio/Text
-Bypass GPS"]
-    QR2 --> O
-    
-    G --> H["GetLocationAsync
-(Poll every 5s)"]
-    H --> I{Valid Location?}
-    
-    I -->|No| H
-    I -->|Yes| J["Update Blue Dot (URL Scheme)"]
-    J --> K{Moved > 5m?}
-    
-    K -->|No| H
-    K -->|Yes| L["Geofence Engine
-Calculate Haversine Distance"]
-    L --> M{Inside Radius
-Priority Check?}
-    
-    M -->|No| H
-    M -->|Yes| N{Cooldown > 2 mins?}
-    
-    N -->|No| H
-    N -->|Yes| O["Narration Engine
-Manage Audio Queue"]
-    O --> P{Has pre-recorded
-Audio file?}
-    P --> |Yes| P1["Play natural MP3"]
-    P --> |No| P2["SpeakAsync(vi-VN)
-Lightweight TTS"]
-    
-    P1 --> Q
-    P2 --> Q
-    
-    Q["PoiTriggered Event → UI
-Highlight bottom sheet"] --> R["ApiClient.LogNarration()"]
-    R --> H
-    
-    style A fill:#16a34a,color:#fff
-    style Z fill:#dc2626,color:#fff
-    style O fill:#7c3aed,color:#fff
-    style E fill:#d97706,color:#fff
-    style QR1 fill:#2563eb,color:#fff
-
-</div>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>🔥 Admin Web CMS / CRUD Kịch Bản TTS</h3>
+                        <ul>
+                            <li>Admin có quyền CRUD tùy chỉnh đoạn văn TTS theo nhiều ngôn ngữ (vi, en).</li>
+                            <li>Linh hoạt cao: Cập nhật text, mobile tự đổi thoại ngay.</li>
+                            <li>Phù hợp lúc rảnh tay, dung lượng load cực thấp.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🔔 2 Điểm Trigger Audio</h3>
+                        <ul>
+                            <li><strong>Tự động:</strong> Geofence → <code>SpeakNarrationAsync(poi)</code></li>
+                            <li><strong>Manual:</strong> Nút ▶️ trong bottom sheet</li>
+                            <li>Nội dung: <em>"Chào mừng bạn đến [tên]. [mô tả]"</em></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🎙️ Audio Thu Sẵn / Hàng Đợi Queue</h3>
+                        <ul>
+                            <li>File MP3 tự nhiên, chất lượng cao cực mượt.</li>
+                            <li>Hỗ trợ AudioTaskManager: Queue hàng đợi.</li>
+                            <li>Trường hợp có Audio = Play MP3. Không có = Play TTS Văn bản.</li>
+                            <li>Tự ngắt khi có sự kiện ưu tiên hơn (QR Code).</li>
+                        </ul>
+                    </div>
                 </div>
-
-                <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
-
-                <!-- SEQUENCE -->
-                <div style="margin-bottom: 3rem;">
-                    <h3 style="margin-bottom:.8rem;color:var(--primary);">2. Sequence Diagram — Geofence Trigger (Core Feature)</h3>
-                    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Detailed interaction between Mobile App, Background GPS, Location/Geofence Services, Narration Engine and the Backend REST API (SQL Server). Includes QR Code scan bypass.</p>
-                    <div class="mermaid">
-sequenceDiagram
-    actor Tourist
-    participant GPS as Background GPS
-    participant Scanner as QR Scanner
-    participant App as Mobile App
-    participant Geofence as Geofence Engine
-    participant Narration as Narration Engine
-    participant Map as Goong Maps
-    participant API as Backend REST API (SQL Server)
-    
-    %% Startup & Data Load
-    App->>API: GET /api/pois (District 4)
-    API-->>App: List[POI] Data + Radiuses
-    App->>Map: WebView.Source = BuildMapHtml()
-    App->>GPS: Start Tracking Service
-    
-    %% Main GPS Loop
-    loop Every 5 Seconds
-        GPS-->>App: Location (Lat, Lng)
-        App->>Map: Update Blue Dot (Eval)
-        
-        alt User moved > 5m
-            App->>Geofence: CheckGeofences(location, List[POI])
-            Geofence->>Geofence: Sort by Priority
-            
-            alt Inside Radius & Cooldown Passed
-                Geofence->>App: PoiTriggeredEvent(POI)
-                App->>Map: Highlight Marker (Eval)
-                App->>App: Show POI Bottom Sheet
-                
-                %% Audio Decision
-                App->>API: GET /api/audio?poiId=X&lang=vi
-                alt Configured Audio File Exists
-                    API-->>App: MP3 File URL
-                    App->>Narration: Play Natural Offline Audio
-                else No Audio File Available
-                    API-->>App: Text Script Only
-                    App->>Narration: SpeakAsync(Text, vi-VN)
-                end
-                
-                Narration-->>Tourist: Audio Instructions
-                App->>API: POST /api/narration-log (Type: Geofence)
-            end
-        end
-    end
-    
-    %% Manual QR Code Bypass
-    Tourist->>Scanner: Scan QR Code at Bus Stop
-    Scanner-->>App: Discovered URL / POI ID
-    App->>API: GET /api/audio?poiId=X
-    API-->>App: Text or MP3 Info
-    App->>Narration: Clear Queue & Force Play
-    Narration-->>Tourist: Instant Audio (Bypass GPS)
-    App->>API: POST /api/narration-log (Type: QRCode)
-
-</div>
+                <h3 style="margin-top:1.5rem;">Audio Generation Pipeline</h3>
+                <div class="flow">
+                    <span class="flow-step warning">Geofence Trigger</span><span class="flow-arrow">→</span>
+                    <span class="flow-step alt">Check Audio DB</span><span class="flow-arrow">→</span>
+                    <span class="flow-step">audio_url tồn tại?</span><span class="flow-arrow">→</span>
+                    <span class="flow-step success">Phát file MP3 (TODO)</span>
                 </div>
-
-                <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
-
-                <!-- STATE -->
-                <div style="margin-bottom: 3rem;">
-                    <h3 style="margin-bottom:.8rem;color:var(--primary);">3. State Diagram — App &amp; Geofence Lifecycle</h3>
-                    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">State lifecycle covering: Initialization -> Validation (Permissions) -> Location Tracking -> Audio Playback -> Idle.</p>
-                    <div class="mermaid">
-stateDiagram-v2
-    [*] --> AppLaunch
-    AppLaunch --> FetchingOnlinePOIs
-    FetchingOnlinePOIs --> InitLocalCache
-    InitLocalCache --> RequestPermission
-    
-    %% Validation
-    RequestPermission --> TrackingGPS : Approved
-    RequestPermission --> WaitingPermission : Denied
-    WaitingPermission --> RequestPermission : Retry
-    
-    %% Tracking State
-    state TrackingGPS {
-        [*] --> WaitingLocation
-        WaitingLocation --> LocationReceived
-        LocationReceived --> FilterMovement
-        FilterMovement --> WaitingLocation : Moved < 5m
-        FilterMovement --> GeofencingCheck : Moved > 5m
-        
-        GeofencingCheck --> WaitingLocation : Outside Zone
-        GeofencingCheck --> CooldownCheck : Inside Zone
-        
-        CooldownCheck --> WaitingLocation : Still in cooldown
-        CooldownCheck --> TriggerEvents : Cool to play
-        
-        TriggerEvents --> WaitingLocation
-    }
-    
-    %% Narration State
-    state AudioPlayback {
-        [*] --> Idle
-        Idle --> QueuingAudio : Event Received
-        QueuingAudio --> ResolvingURL : Has MP3
-        QueuingAudio --> GeneratingTTS : Text Only
-        ResolvingURL --> Playing
-        GeneratingTTS --> Playing
-        Playing --> LoggingDB
-        LoggingDB --> Idle
-    }
-    
-    %% Links between states
-    TriggerEvents --> AudioPlayback : Play Auto
-    
-    %% QR Code State
-    CameraScanner --> Scanning
-    Scanning --> AudioPlayback : QR Match (Force Play)
-
-</div>
+                <div class="flow">
+                    <span class="flow-step warning">Không có file</span><span class="flow-arrow">→</span>
+                    <span class="flow-step alt">Build text string</span><span class="flow-arrow">→</span>
+                    <span class="flow-step">TextToSpeech.SpeakAsync()</span><span class="flow-arrow">→</span>
+                    <span class="flow-step success">Android TTS Engine</span>
                 </div>
-
-                <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
-
-                <!-- CLASS -->
-                <div style="margin-bottom: 3rem;">
-                    <h3 style="margin-bottom:.8rem;color:var(--primary);">4. Class Diagram — Unit Test Perspective</h3>
-                    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Core database entities representing SQL Server schema (TourAppDB) matching exactly with the Mobile Service classes.</p>
-                    <div class="mermaid">
-classDiagram
-    %% Core Entities (Matches SQL Server Database)
-    class Tour {
-        +int TourId
-        +string TourName
-        +string Description
-        +string ImageUrl
-        +bool IsActive
-    }
-    
-    class POI {
-        +int PoiId
-        +string PoiName
-        +string Address
-        +double Latitude
-        +double Longitude
-        +double Radius
-        +int Priority
-        +string OpenTime
-    }
-    
-    class TourPOI {
-        +int TourPOIId
-        +int TourId
-        +int PoiId
-        +int OrderIndex
-    }
-    
-    class Audio {
-        +int AudioId
-        +int PoiId
-        +string Language
-        +string AudioPath
-        +string ScriptText
-        +int Duration
-    }
-    
-    class NarrationLog {
-        +int LogId
-        +string DeviceId
-        +int PoiId
-        +int AudioId
-        +string TriggerType
-        +DateTime PlayedAt
-    }
-    
-    %% Services
-    class IApiService {
-        <<interface>>
-        +GetAllPOIsAsync() List<POI>
-        +GetAudioScriptAsync(poiId, lang) Audio
-        +LogNarrationAsync(log) bool
-    }
-    
-    class GeofenceService {
-        -int _lastSpokenPoiId
-        -DateTime _lastSpokenTime
-        +InitializeAsync()
-        +CheckGeofences(location)
-    }
-    
-    class NarrationEngine {
-        -Queue<Audio> _audioQueue
-        +PlayNarration(poi)
-        +PlayFromQRCode(poiId)
-        +StopCurrent()
-    }
-    
-    class LocationService {
-        -_isTracking bool
-        +StartTracking()
-        +StopTracking()
-    }
-    
-    Tour "1" -- "*" TourPOI
-    POI "1" -- "*" TourPOI
-    POI "1" -- "*" Audio
-    POI "1" -- "*" NarrationLog
-    Audio "1" -- "*" NarrationLog
-    
-    GeofenceService --> IApiService
-    GeofenceService --> NarrationEngine
-    LocationService ..> GeofenceService : triggers
-
-</div>
+                <div class="highlight success">
+                    <strong>Lợi thế MAUI TTS: </strong> Offline 100%, $0 cost, luôn hoạt động. Phù hợp demo đồ án khi
+                    chưa
+                    có backend audio hosting.
                 </div>
-            </div>
-
-            <!-- UNIT TEST CASES TABLE -->
-            <h3 style="margin-top:2rem;">Unit Test Cases — GeofenceService (Business Logic Core)</h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr><th>Test Method</th><th>Input</th><th>Expected</th><th>Priority</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><code>Test_InsideRadius_Triggers()</code></td><td>POI Radius=30m, distance=15m, cooldown=none</td><td>PoiTriggered event fired</td><td>🔴 Critical</td></tr>
-                        <tr><td><code>Test_OutsideRadius_NoTrigger()</code></td><td>POI Radius=30m, distance=50m</td><td>No event fired</td><td>🔴 Critical</td></tr>
-                        <tr><td><code>Test_Cooldown_Skips()</code></td><td>Same POI triggered 30s ago</td><td>No event fired</td><td>🔴 Critical</td></tr>
-                        <tr><td><code>Test_CooldownExpired_Triggers()</code></td><td>Same POI triggered 3min ago</td><td>Event fired again</td><td>🟡 High</td></tr>
-                        <tr><td><code>Test_SortsByPriority()</code></td><td>POI A Priority=2, POI B Priority=1, both in range</td><td>POI B triggers first</td><td>🟡 High</td></tr>
-                        <tr><td><code>Test_InactivePOI_Skipped()</code></td><td>POI IsActive=false, distance=5m</td><td>No event fired</td><td>🟢 Medium</td></tr>
-                        <tr><td><code>Test_OnlyOnePOI_PerCycle()</code></td><td>3 POI all in range</td><td>Only 1 event fired</td><td>🟢 Medium</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
-    </div>
 
-    <footer>
-        <p><strong>TourApp Mobile — Hệ Thống Du Lịch Ẩm Thực Quận 4</strong></p>
-        <p>.NET MAUI Android · Goong Maps JS · GPS Geofence · MAUI TextToSpeech · SQL Server / REST API</p>
-        <p style="margin-top:.5rem;opacity:.5;">Đồ án giữa kỳ · Phân tích từ source code · 25/03/2026</p>
-    </footer>
+        <!-- AUTH -->
+        <div id="auth" class="section-bg">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#fdf4ff;color:#7e22ce;">🔐</div>
+                    <div>
+                        <div class="section-num">Chapter 05</div>
+                        <h2>Authentication</h2>
+                    </div>
+                </div>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>📄 LoginPage.xaml</h3>
+                        <ul>
+                            <li>Form đăng nhập (username, password)</li>
+                            <li>Điều hướng đến MapPage sau login</li>
+                            <li>Auth logic: TODO kết nối MySQL</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📝 RegisterPage.xaml</h3>
+                        <ul>
+                            <li>Form đăng ký tài khoản</li>
+                            <li>TODO: <code>POST /api/auth/register</code></li>
+                            <li>Validate input phía client</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🔒 Kế Hoạch Auth</h3>
+                        <ul>
+                            <li>JWT token từ MySQL backend</li>
+                            <li>Lưu: <code>SecureStorage.SetAsync()</code></li>
+                            <li>Roles: <code>user</code> / <code>admin</code></li>
+                            <li>Auto-refresh khi hết hạn</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight info">
+                    <strong>Đủ cho đồ án giữa kỳ:</strong> UI Login/Register hoàn chỉnh, luồng điều hướng hoạt động.
+                    Auth
+                    thật bổ sung sau khi MySQL backend sẵn sàng.
+                </div>
+            </div>
+        </div>
 
-    <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
-    </script>
+        <!-- I18N -->
+        <div id="i18n">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#ecfeff;color:#0e7490;">🌐</div>
+                    <div>
+                        <div class="section-num">Chapter 06</div>
+                        <h2>Localization / Đa Ngôn Ngữ</h2>
+                    </div>
+                </div>
+                <p style="margin-bottom:1rem;color:var(--text-secondary);">Hiện tại app chỉ hỗ trợ tiếng Việt.
+                    TextToSpeech
+                    MAUI có thể mở rộng sang đa ngôn ngữ với locale tương ứng.</p>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>🇻🇳 Hiện tại: Tiếng Việt</h3>
+                        <ul>
+                            <li>TTS locale: <code>vi-VN</code> (Android)</li>
+                            <li>Nội dung POI: tiếng Việt</li>
+                            <li>UI labels: tiếng Việt</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🔮 Mở Rộng Đa Ngôn Ngữ (TODO)</h3>
+                        <ul>
+                            <li>MAUI <code>ResourceDictionary</code> cho UI strings</li>
+                            <li>TTS locale: <code>en-US</code>, <code>zh-CN</code>, <code>ja-JP</code></li>
+                            <li>MySQL: thêm cột <code>lang</code> trong <code>audios</code></li>
+                            <li>GetAudioByPoiAsync(<strong>id, lang</strong>) đã có tham số</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>⚡ Goong Maps — Đã đa ngôn ngữ</h3>
+                        <ul>
+                            <li>Goong Maps JS tự render nhãn địa điểm theo locale browser</li>
+                            <li>Không cần config thêm</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight info">
+                    <strong>Pattern tham khảo :</strong> Tham khảo <code>deep-translator</code> (miễn phí) để tự động
+                    dịch
+                    mô tả POI sang 5 ngôn ngữ và Edge-TTS tạo MP3. TourApp có thể áp dụng tương tự khi kết nối backend.
+                </div>
+            </div>
+        </div>
+
+        <!-- OFFLINE -->
+        <div id="offline" class="section-bg">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#f0f9ff;color:#0369a1;">📴</div>
+                    <div>
+                        <div class="section-num">Chapter 07</div>
+                        <h2>Offline Capability</h2>
+                    </div>
+                </div>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>✅ Đã offline: TTS</h3>
+                        <p><code>TextToSpeech.Default</code> dùng Android TTS engine tích hợp. Không cần mạng để phát
+                            thuyết
+                            minh. Phiên bản <strong>vi-VN</strong> tải sẵn trong device.</p>
+                    </div>
+                    <div class="card">
+                        <h3>✅ Đã offline: POI Data</h3>
+                        <p>Mock data hardcode → luôn có dữ liệu kể cả mất mạng. Khi có MySQL: cần thêm SQLite cache lần
+                            đầu
+                            load.</p>
+                    </div>
+                    <div class="card">
+                        <h3>✅ Đã offline: Favorites</h3>
+                        <p><code>Preferences.Default</code> lưu local trong app storage. Persist giữa các lần mở app,
+                            không
+                            cần mạng.</p>
+                    </div>
+                    <div class="card">
+                        <h3>❌ Chưa offline: Bản đồ</h3>
+                        <p>Goong Maps JS load tile từ CDN. Mất mạng = bản đồ trắng. Giải pháp: cache tile lần đầu hoặc
+                            dùng
+                            map tĩnh fallback.</p>
+                    </div>
+                </div>
+                <h3 style="margin-top:1.5rem;">4 Lớp Defense (hiện tại)</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Lớp</th>
+                                <th>Thành phần</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1 — Audio</td>
+                                <td>MAUI TextToSpeech (device TTS)</td>
+                                <td>✅ Offline hoàn toàn</td>
+                            </tr>
+                            <tr>
+                                <td>2 — POI Data</td>
+                                <td>Mock data / SQLite local cache</td>
+                                <td>✅ Mock xong, SQLite TODO</td>
+                            </tr>
+                            <tr>
+                                <td>3 — Favorites</td>
+                                <td>MAUI Preferences local storage</td>
+                                <td>✅ Hoàn chỉnh</td>
+                            </tr>
+                            <tr>
+                                <td>4 — Bản đồ</td>
+                                <td>Goong Maps JS (CDN)</td>
+                                <td>❌ Cần internet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAPS -->
+        <div id="maps">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#f0fdf4;color:#15803d;">🗺️</div>
+                    <div>
+                        <div class="section-num">Chapter 08</div>
+                        <h2>Bản Đồ — Goong Maps</h2>
+                    </div>
+                </div>
+                <p style="margin-bottom:1.5rem;color:var(--text-secondary);">Goong Maps JS nhúng trong MAUI WebView dưới
+                    dạng HTML inline. Giao tiếp hai chiều C# ↔ JS qua URL scheme và Eval().</p>
+                <h3>Chuỗi 4 Tầng Map</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tầng</th>
+                                <th>Thành phần</th>
+                                <th>Vai trò</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1. WebView Config</td>
+                                <td><code>MauiProgram.cs</code> Android mapper</td>
+                                <td>Bật JS, DomStorage, Hardware Layer cho Goong JS hoạt động</td>
+                            </tr>
+                            <tr>
+                                <td>2. HTML Gen</td>
+                                <td><code>BuildMapHtml(poisJson)</code> trong MapPage</td>
+                                <td>Tạo HTML string nhúng Goong JS + inject danh sách POI qua JSON</td>
+                            </tr>
+                            <tr>
+                                <td>3. JS Bridge</td>
+                                <td><code>MapWebView.Eval()</code> / URL scheme</td>
+                                <td>C#→JS: updateLocation, flyTo. JS→C#: poi://selected?id=X</td>
+                            </tr>
+                            <tr>
+                                <td>4. Runtime</td>
+                                <td>Goong Maps GL JS 1.0.9</td>
+                                <td>Render vector map, POI markers, user dot, search flyTo</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h3 style="margin-top:1.5rem;">3 Chế Độ Search</h3>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>🔍 Local Search</h3>
+                        <p>Tìm trong <code>_pois</code> list: <code>PoiName.Contains(query)</code>. Nhanh nhất, không
+                            cần
+                            mạng. Hiện thị bottom sheet + flyTo.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🌐 Goong AutoComplete</h3>
+                        <p><code>GET rsapi.goong.io/Place/AutoComplete?input=...</code> → lấy <code>place_id</code> từ
+                            kết
+                            quả đầu.</p>
+                    </div>
+                    <div class="card">
+                        <h3>📍 Goong Place Detail</h3>
+                        <p><code>GET rsapi.goong.io/Place/Detail?place_id=...</code> → lấy lat/lng →
+                            <code>map.flyTo({zoom:17})</code>.
+                        </p>
+                    </div>
+                </div>
+                <h3 style="margin-top:1.5rem;">Goong Map Service Config</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thông số</th>
+                                <th>Giá trị</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Library version</td>
+                                <td><code>@goongmaps/goong-js 1.0.9</code> (CDN)</td>
+                            </tr>
+                            <tr>
+                                <td>Map Style</td>
+                                <td><code>goong_map_web.json</code> (tiles.goong.io)</td>
+                            </tr>
+                            <tr>
+                                <td>Default center</td>
+                                <td><code>[106.7018, 10.7596]</code> — Vĩnh Khánh, Q4</td>
+                            </tr>
+                            <tr>
+                                <td>Default zoom</td>
+                                <td><code>16</code></td>
+                            </tr>
+                            <tr>
+                                <td>Places API base</td>
+                                <td><code>rsapi.goong.io</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight warning">
+                    <strong>⚠️ Phụ thuộc Internet:</strong> Goong Maps tile cần CDN. Mất mạng → bản đồ không load.
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN / LOG -->
+        <div id="admin" class="section-bg">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#fefce8;color:#854d0e;">👨‍💼</div>
+                    <div>
+                        <div class="section-num">Chapter 09</div>
+                        <h2>Admin / NarrationLog</h2>
+                    </div>
+                </div>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>📋 NarrationLog Model</h3>
+                        <ul>
+                            <li><code>NarrationLog.cs</code> — model đã tạo</li>
+                            <li><code>LogNarrationAsync(poiId, audioId, type)</code> — stub trong ApiClientService</li>
+                            <li>Ghi: poiId, thời gian, trigger type (geofence/manual)</li>
+                            <li>TODO: ghi vào MySQL mỗi khi TTS phát</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🔑 Admin Flow (dự kiến)</h3>
+                        <ul>
+                            <li>Login với role <code>admin</code></li>
+                            <li>Xem danh sách narration logs</li>
+                            <li>CRUD POI qua MySQL backend</li>
+                            <li>Upload audio URL cho POI</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📊 Analytics (TODO)</h3>
+                        <ul>
+                            <li>Thống kê: POI nào được nghe nhiều nhất</li>
+                            <li>Thời gian thuyết minh trung bình / POI</li>
+                            <li>Bản đồ nhiệt (heatmap tương lai)</li>
+                        </ul>
+                    </div>
+                </div>
+                <h3 style="margin-top:1.5rem;">Owner Registration Flow (tương lai)</h3>
+                <div class="flow">
+                    <span class="flow-step">Chủ quán đăng ký</span><span class="flow-arrow">→</span>
+                    <span class="flow-step alt">POST /api/auth/register-owner</span><span class="flow-arrow">→</span>
+                    <span class="flow-step warning">Admin duyệt (MySQL)</span><span class="flow-arrow">→</span>
+                    <span class="flow-step success">Verified → cập nhật POI</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PATTERNS -->
+        <div id="patterns">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#f5f3ff;color:#4c1d95;">⚡</div>
+                    <div>
+                        <div class="section-num">Chapter 10</div>
+                        <h2>Design Patterns &amp; Key Constants</h2>
+                    </div>
+                </div>
+                <h3>Architecture Patterns</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pattern</th>
+                                <th>Mô tả trong TourApp</th>
+                                <th>Tham chiếu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Event-Driven (C#)</strong></td>
+                                <td><code>LocationChanged</code>, <code>PoiTriggered</code> — services không biết nhau,
+                                    giao
+                                    tiếp qua events</td>
+                                <td>Publisher-Subscriber pattern</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dependency Injection</strong></td>
+                                <td>MAUI DI: Singleton Services inject vào MapPage qua constructor</td>
+                                <td>Microsoft DI Container</td>
+                            </tr>
+                            <tr>
+                                <td><strong>JS Bridge Pattern</strong></td>
+                                <td>HTML WebView ↔ C# qua URL scheme + Eval(). Tách biệt map logic khỏi app logic</td>
+                                <td>Hybrid App pattern</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3-Tier Content Fallback</strong></td>
+                                <td>MySQL API → SQLite cache → Mock data hardcode</td>
+                                <td>Tham khảo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cooldown / Debounce</strong></td>
+                                <td>2 phút cooldown/POI tránh spam audio, break sau trigger đầu tiên</td>
+                                <td>iOS CLLocationManager patterns</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Preferences Local Store</strong></td>
+                                <td>Favorites lưu <code>fav_{id}</code> qua MAUI Preferences — không cần DB</td>
+                                <td>Android SharedPreferences</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Polling GPS</strong></td>
+                                <td>Background Task.Run() loop, phát event về Main Thread an toàn</td>
+                                <td>MAUI Threading model</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Hardware WebView Layer</strong></td>
+                                <td><code>SetLayerType(Hardware)</code> → GPU accelerate map rendering</td>
+                                <td>Android WebView optimization</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h3 style="margin-top:1.5rem;">Key Constants</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Constant</th>
+                                <th>Giá trị</th>
+                                <th>File</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GPS Poll Interval</td>
+                                <td>5s</td>
+                                <td>LocationService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Geolocation Timeout</td>
+                                <td>5s</td>
+                                <td>LocationService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>GPS Accuracy</td>
+                                <td>GeolocationAccuracy.Best</td>
+                                <td>LocationService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Audio Cooldown</td>
+                                <td>2 phút / POI</td>
+                                <td>GeofenceService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Max Trigger / Cycle</td>
+                                <td>1 POI (break)</td>
+                                <td>GeofenceService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Default Geofence Radius</td>
+                                <td>80m (POI model default)</td>
+                                <td>POI.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Map Default Center</td>
+                                <td>[106.7018, 10.7596] Vĩnh Khánh Q4</td>
+                                <td>MapPage.xaml.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Map Default Zoom</td>
+                                <td>16</td>
+                                <td>MapPage.xaml.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Search flyTo Zoom</td>
+                                <td>17</td>
+                                <td>MapPage.xaml.cs</td>
+                            </tr>
+                            <tr>
+                                <td>USE_MOCK_DATA</td>
+                                <td>true (hiện tại)</td>
+                                <td>ApiClientService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Goong API Base</td>
+                                <td>rsapi.goong.io</td>
+                                <td>MapPage.xaml.cs</td>
+                            </tr>
+                            <tr>
+                                <td>Goong Map Library</td>
+                                <td>goong-js 1.0.9 (CDN)</td>
+                                <td>BuildMapHtml()</td>
+                            </tr>
+                            <tr>
+                                <td>TTS Pitch</td>
+                                <td>1.0f</td>
+                                <td>GeofenceService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>TTS Volume</td>
+                                <td>1.0f</td>
+                                <td>GeofenceService.cs</td>
+                            </tr>
+                            <tr>
+                                <td>TTS Locale Priority</td>
+                                <td>vi-VN → system default</td>
+                                <td>GeofenceService.cs</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- FULL END-TO-END FLOW -->
+                <h3 style="margin-top:2rem;">End-to-End Flow — Mở App → Nghe Thuyết Minh</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Bước</th>
+                                <th>Thành phần</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><code>MauiProgram</code></td>
+                                <td>DI container khởi động, cấu hình WebView Android Hardware layer</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td><code>AppShell</code></td>
+                                <td>Route mặc định → <code>MapPage</code></td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td><code>MapPage</code> Constructor</td>
+                                <td>Inject services, subscribe <code>LocationChanged</code> + <code>PoiTriggered</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td><code>OnAppearing()</code></td>
+                                <td><code>InitializeAsync()</code> → <code>GetAllPOIsAsync()</code> →
+                                    <code>LoadMap()</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td><code>LoadMap()</code></td>
+                                <td>Serialize POI → JSON → inject vào HTML string → WebView.Source</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td>Goong Maps JS</td>
+                                <td>Map init → <code>map.on('load')</code> → tạo markers cho từng POI</td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td><code>LocationService</code></td>
+                                <td>Background loop: <code>GetLocationAsync(5s)</code> → phát
+                                    <code>LocationChanged</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>8</td>
+                                <td><code>OnLocationChanged()</code></td>
+                                <td><code>Eval("updateUserLocation(...)")</code> + <code>CheckGeofences(loc)</code></td>
+                            </tr>
+                            <tr>
+                                <td>9</td>
+                                <td><code>GeofenceService</code></td>
+                                <td>Tính Haversine distance. Nếu ≤ radius &amp;&amp; cooldown xong →
+                                    <code>TriggerNarration()</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>10</td>
+                                <td><code>PoiTriggered</code> event</td>
+                                <td><code>ShowPoiDetails(poi)</code> → Bottom Sheet mở</td>
+                            </tr>
+                            <tr>
+                                <td>11</td>
+                                <td><code>SpeakNarrationAsync()</code></td>
+                                <td><code>TextToSpeech.Default.SpeakAsync("Chào mừng...")</code> → Android TTS phát</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TECH STACK -->
+                <h3 style="margin-top:2rem;">Technology Stack &amp; Cost Analysis</h3>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>📱 Mobile App</h3>
+                        <ul>
+                            <li><strong>.NET MAUI 8</strong> — cross-platform native</li>
+                            <li><strong>C# / XAML</strong> — UI + logic</li>
+                            <li><strong>Microsoft DI</strong> — dependency injection</li>
+                            <li><strong>MAUI Geolocation</strong> — GPS API</li>
+                            <li><strong>MAUI TextToSpeech</strong> — TTS offline</li>
+                            <li><strong>MAUI Preferences</strong> — local storage</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🗺️ Bản Đồ</h3>
+                        <ul>
+                            <li><strong>Goong Maps JS 1.0.9</strong> — vector map</li>
+                            <li><strong>Goong Places API</strong> — autocomplete</li>
+                            <li><strong>Goong Place Detail API</strong> — geocode</li>
+                            <li><strong>MAUI WebView</strong> — host container</li>
+                            <li><strong>URL Scheme Bridge</strong> — JS↔C# comms</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>💰 Zero-Cost Core</h3>
+                        <ul>
+                            <li>✅ MAUI TTS: built-in, miễn phí</li>
+                            <li>✅ Mock data: hardcode, không cần server</li>
+                            <li>✅ MAUI Preferences: local, miễn phí</li>
+                            <li>⚠️ Goong Maps: cần API key (<a href="https://goong.io" target="_blank">goong.io</a>)
+                            </li>
+                            <li>⚠️ MySQL: cần server hosting</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CHAPTER 11: UML DIAGRAMS -->
+        <div id="diagrams" class="section-bg">
+            <div class="section-wrap">
+                <div class="section-header">
+                    <div class="icon" style="background:#fdf4ff;color:#7c3aed;">📐</div>
+                    <div>
+                        <div class="section-num">Chapter 11</div>
+                        <h2>UML Diagrams — Activity, Sequence, State, Class</h2>
+                    </div>
+                </div>
+
+                <div class="diagram-wrap" style="margin-top: 2rem;">
+
+                    <!-- ACTIVITY -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3 style="margin-bottom:.8rem;color:var(--primary);">1. Activity Diagram — Main User Flow</h3>
+                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">The core user
+                            activity flow: Launch -> Load POI (REST API) -> GPS Auth -> Background Service Location
+                            Tracker -> Priority Check & Cooldown -> Narration Engine Play.</p>
+                        <div class="mermaid">
+                            flowchart TD
+                            A([Launch App]) --> B["Fetch POIs (REST API)
+                            Filter: District 4 Only"]
+                            B --> C["GeofenceService
+                            .InitializeAsync()"]
+                            C --> D["Load Map View
+                            (Goong Maps JS)"]
+                            D --> E{"Permissions.RequestAsync
+                            [GPS Access]"}
+
+                            E -->|Denied| F["GPS Required Dialog"]
+                            F --> Z([Wait / End])
+
+                            E -->|Granted| G["Start GPS Tracking
+                            Background Service"]
+
+                            %% QR Bypass Lane
+                            D --> QR1["Scan QR Code
+                            at Bus Stop"]
+                            QR1 --> QR2["Fetch POI Audio/Text
+                            Bypass GPS"]
+                            QR2 --> O
+
+                            G --> H["GetLocationAsync
+                            (Poll every 5s)"]
+                            H --> I{Valid Location?}
+
+                            I -->|No| H
+                            I -->|Yes| J["Update Blue Dot (URL Scheme)"]
+                            J --> K{Moved > 5m?}
+
+                            K -->|No| H
+                            K -->|Yes| L["Geofence Engine
+                            Calculate Haversine Distance"]
+                            L --> M{Inside Radius
+                            Priority Check?}
+
+                            M -->|No| H
+                            M -->|Yes| N{Cooldown > 2 mins?}
+
+                            N -->|No| H
+                            N -->|Yes| O["Narration Engine
+                            Manage Audio Queue"]
+                            O --> P{Has pre-recorded
+                            Audio file?}
+                            P --> |Yes| P1["Play natural MP3"]
+                            P --> |No| P2["SpeakAsync(vi-VN)
+                            Lightweight TTS"]
+
+                            P1 --> Q
+                            P2 --> Q
+
+                            Q["PoiTriggered Event → UI
+                            Highlight bottom sheet"] --> R["ApiClient.LogNarration()"]
+                            R --> H
+
+                            style A fill:#16a34a,color:#fff
+                            style Z fill:#dc2626,color:#fff
+                            style O fill:#7c3aed,color:#fff
+                            style E fill:#d97706,color:#fff
+                            style QR1 fill:#2563eb,color:#fff
+
+                        </div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
+
+                    <!-- SEQUENCE -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3 style="margin-bottom:.8rem;color:var(--primary);">2. Sequence Diagram — Geofence Trigger
+                            (Core Feature)</h3>
+                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Detailed interaction
+                            between Mobile App, Background GPS, Location/Geofence Services, Narration Engine and the
+                            Backend REST API (SQL Server). Includes QR Code scan bypass.</p>
+                        <div class="mermaid">
+                            sequenceDiagram
+                            actor Tourist
+                            participant GPS as Background GPS
+                            participant Scanner as QR Scanner
+                            participant App as Mobile App
+                            participant Geofence as Geofence Engine
+                            participant Narration as Narration Engine
+                            participant Map as Goong Maps
+                            participant API as Backend REST API (SQL Server)
+
+                            %% Startup & Data Load
+                            App->>API: GET /api/pois (District 4)
+                            API-->>App: List[POI] Data + Radiuses
+                            App->>Map: WebView.Source = BuildMapHtml()
+                            App->>GPS: Start Tracking Service
+
+                            %% Main GPS Loop
+                            loop Every 5 Seconds
+                            GPS-->>App: Location (Lat, Lng)
+                            App->>Map: Update Blue Dot (Eval)
+
+                            alt User moved > 5m
+                            App->>Geofence: CheckGeofences(location, List[POI])
+                            Geofence->>Geofence: Sort by Priority
+
+                            alt Inside Radius & Cooldown Passed
+                            Geofence->>App: PoiTriggeredEvent(POI)
+                            App->>Map: Highlight Marker (Eval)
+                            App->>App: Show POI Bottom Sheet
+
+                            %% Audio Decision
+                            App->>API: GET /api/audio?poiId=X&lang=vi
+                            alt Configured Audio File Exists
+                            API-->>App: MP3 File URL
+                            App->>Narration: Play Natural Offline Audio
+                            else No Audio File Available
+                            API-->>App: Text Script Only
+                            App->>Narration: SpeakAsync(Text, vi-VN)
+                            end
+
+                            Narration-->>Tourist: Audio Instructions
+                            App->>API: POST /api/narration-log (Type: Geofence)
+                            end
+                            end
+                            end
+
+                            %% Manual QR Code Bypass
+                            Tourist->>Scanner: Scan QR Code at Bus Stop
+                            Scanner-->>App: Discovered URL / POI ID
+                            App->>API: GET /api/audio?poiId=X
+                            API-->>App: Text or MP3 Info
+                            App->>Narration: Clear Queue & Force Play
+                            Narration-->>Tourist: Instant Audio (Bypass GPS)
+                            App->>API: POST /api/narration-log (Type: QRCode)
+
+                        </div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
+
+                    <!-- STATE -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3 style="margin-bottom:.8rem;color:var(--primary);">3. State Diagram — App &amp; Geofence
+                            Lifecycle</h3>
+                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">State lifecycle
+                            covering: Initialization -> Validation (Permissions) -> Location Tracking -> Audio Playback
+                            -> Idle.</p>
+                        <div class="mermaid">
+                            stateDiagram-v2
+                            [*] --> AppLaunch
+                            AppLaunch --> FetchingOnlinePOIs
+                            FetchingOnlinePOIs --> InitLocalCache
+                            InitLocalCache --> RequestPermission
+
+                            %% Validation
+                            RequestPermission --> TrackingGPS : Approved
+                            RequestPermission --> WaitingPermission : Denied
+                            WaitingPermission --> RequestPermission : Retry
+
+                            %% Tracking State
+                            state TrackingGPS {
+                            [*] --> WaitingLocation
+                            WaitingLocation --> LocationReceived
+                            LocationReceived --> FilterMovement
+                            FilterMovement --> WaitingLocation : Moved Under 5m
+                            FilterMovement --> GeofencingCheck : Moved Over 5m
+                                GeofencingCheck --> WaitingLocation : Outside Zone
+                                GeofencingCheck --> CooldownCheck : Inside Zone
+
+                                CooldownCheck --> WaitingLocation : Still in cooldown
+                                CooldownCheck --> TriggerEvents : Cool to play
+
+                                TriggerEvents --> WaitingLocation
+                                }
+
+                                %% Narration State
+                                state AudioPlayback {
+                                [*] --> Idle
+                                Idle --> QueuingAudio : Event Received
+                                QueuingAudio --> ResolvingURL : Has MP3
+                                QueuingAudio --> GeneratingTTS : Text Only
+                                ResolvingURL --> Playing
+                                GeneratingTTS --> Playing
+                                Playing --> LoggingDB
+                                LoggingDB --> Idle
+                                }
+
+                                %% Links between states
+                                TriggerEvents --> AudioPlayback : Play Auto
+
+                                %% QR Code State
+                                CameraScanner --> Scanning
+                                Scanning --> AudioPlayback : QR Match (Force Play)
+
+                        </div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
+
+                    <!-- CLASS -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3 style="margin-bottom:.8rem;color:var(--primary);">4. Class Diagram — Unit Test Perspective
+                        </h3>
+                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Core database
+                            entities representing SQL Server schema (TourAppDB) matching exactly with the Mobile Service
+                            classes.</p>
+                        <div class="mermaid">
+                            classDiagram
+                            %% Core Entities (Matches SQL Server Database)
+                            class Tour {
+                            +int TourId
+                            +string TourName
+                            +string Description
+                            +string ImageUrl
+                            +bool IsActive
+                            }
+
+                            class POI {
+                            +int PoiId
+                            +string PoiName
+                            +string Address
+                            +double Latitude
+                            +double Longitude
+                            +double Radius
+                            +int Priority
+                            +string OpenTime
+                            }
+
+                            class TourPOI {
+                            +int TourPOIId
+                            +int TourId
+                            +int PoiId
+                            +int OrderIndex
+                            }
+
+                            class Audio {
+                            +int AudioId
+                            +int PoiId
+                            +string Language
+                            +string AudioPath
+                            +string ScriptText
+                            +int Duration
+                            }
+
+                            class NarrationLog {
+                            +int LogId
+                            +string DeviceId
+                            +int PoiId
+                            +int AudioId
+                            +string TriggerType
+                            +DateTime PlayedAt
+                            }
+
+                            %% Services
+                            class IApiService {
+                            &lt;&lt;interface&gt;&gt;
+                                +GetAllPOIsAsync() List~POI~
+                                    +GetAudioScriptAsync(poiId, lang) Audio
+                                    +LogNarrationAsync(log) bool
+                                    }
+
+                                    class GeofenceService {
+                                    -int _lastSpokenPoiId
+                                    -DateTime _lastSpokenTime
+                                    +InitializeAsync()
+                                    +CheckGeofences(location)
+                                    }
+
+                                    class NarrationEngine {
+                                    -Queue~Audio~ _audioQueue
+                                        +PlayNarration(poi)
+                                        +PlayFromQRCode(poiId)
+                                        +StopCurrent()
+                                        }
+
+                                        class LocationService {
+                                        -_isTracking bool
+                                        +StartTracking()
+                                        +StopTracking()
+                                        }
+
+                                        Tour "1" -- "*" TourPOI
+                                        POI "1" -- "*" TourPOI
+                                        POI "1" -- "*" Audio
+                                        POI "1" -- "*" NarrationLog
+                                        Audio "1" -- "*" NarrationLog
+
+                                        GeofenceService --> IApiService
+                                        GeofenceService --> NarrationEngine
+                                        LocationService ..> GeofenceService : triggers
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UNIT TEST CASES TABLE -->
+                <h3 style="margin-top:2rem;">Unit Test Cases — GeofenceService (Business Logic Core)</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Test Method</th>
+                                <th>Input</th>
+                                <th>Expected</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Test_InsideRadius_Triggers()</code></td>
+                                <td>POI Radius=30m, distance=15m, cooldown=none</td>
+                                <td>PoiTriggered event fired</td>
+                                <td>🔴 Critical</td>
+                            </tr>
+                            <tr>
+                                <td><code>Test_OutsideRadius_NoTrigger()</code></td>
+                                <td>POI Radius=30m, distance=50m</td>
+                                <td>No event fired</td>
+                                <td>🔴 Critical</td>
+                            </tr>
+                            <tr>
+                                <td><code>Test_Cooldown_Skips()</code></td>
+                                <td>Same POI triggered 30s ago</td>
+                                <td>No event fired</td>
+                                <td>🔴 Critical</td>
+                            </tr>
+                            <tr>
+                                <td><code>Test_CooldownExpired_Triggers()</code></td>
+                                <td>Same POI triggered 3min ago</td>
+                                <td>Event fired again</td>
+                                <td>🟡 High</td>
+                            </tr>
+                            <tr>
+                                <td><code>Test_SortsByPriority()</code></td>
+                                <td>POI A Priority=2, POI B Priority=1, both in range</td>
+                                <td>POI B triggers first</td>
+                                <td>🟡 High</td>
+                            </tr>
+                            <tr>
+                                <td><code>Test_InactivePOI_Skipped()</code></td>
+                                <td>POI IsActive=false, distance=5m</td>
+                                <td>No event fired</td>
+                                <td>🟢 Medium</td>
+                            </tr>
+                            <tr>
+                                <td><code>Test_OnlyOnePOI_PerCycle()</code></td>
+                                <td>3 POI all in range</td>
+                                <td>Only 1 event fired</td>
+                                <td>🟢 Medium</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>TourApp Mobile — Hệ Thống Du Lịch Ẩm Thực Quận 4</strong></p>
+            <p>.NET MAUI Android · Goong Maps JS · GPS Geofence · MAUI TextToSpeech · SQL Server / REST API</p>
+            <p style="margin-top:.5rem;opacity:.5;">Đồ án giữa kỳ · Phân tích từ source code · 25/03/2026</p>
+        </footer>
+
+        <script>
+            mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+        </script>
 
 </body>
 
