@@ -14,7 +14,7 @@ public partial class LoginPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(pass))
         {
-            await this.DisplayAlert("Lỗi", "Vui lòng nhập Email và Mật khẩu!", "OK");
+            await this.DisplayAlertAsync("Lỗi", "Vui lòng nhập Email và Mật khẩu!", "OK");
             return;
         }
 

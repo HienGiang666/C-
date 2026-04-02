@@ -1,0 +1,108 @@
+@model List<TourApp.CMS.Services.ActivityLog>
+
+@{
+    ViewData["Title"] = "Lịch sử Hoạt động";
+}
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-list me-2 text-primary"></i> Nhật ký Hoạt động</h5>
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">@Model.Count hoạt động</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:180px">Thời gian</th>
+                        <th>Người thực hiện</th>
+                        <th>Hành động</th>
+                        <th>Đối tượng</th>
+                        <th>Giá trị cũ</th>
+                        <th>Giá trị mới</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> @log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name=@log.Username&size=28&background=random" class="rounded-circle me-2" width="28" />
+                                        <span class="fw-medium">@log.Username</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @switch (log.Action)
+                                    {
+                                        case "Create":
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="fa-solid fa-plus me-1"></i> Thêm mới</span>
+                                            break;
+                                        case "Update":
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25"><i class="fa-solid fa-pen me-1"></i> Chỉnh sửa</span>
+                                            break;
+                                        case "Delete":
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25"><i class="fa-solid fa-trash me-1"></i> Xóa</span>
+                                            break;
+                                        case "Export":
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"><i class="fa-solid fa-file-export me-1"></i> Xuất dữ liệu</span>
+                                            break;
+                                        case "Login":
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i class="fa-solid fa-right-to-bracket me-1"></i> Đăng nhập</span>
+                                            break;
+                                        case "Logout":
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25"><i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">@log.Action</span>
+                                            break;
+                                    }
+                                </td>
+                                <td><span class="fw-medium text-dark">@log.Entity</span></td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(log.OldValue))
+                                    {
+                                        <code class="bg-danger bg-opacity-10 text-danger px-2 py-1 rounded">@log.OldValue</code>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(log.NewValue))
+                                    {
+                                        <code class="bg-success bg-opacity-10 text-success px-2 py-1 rounded">@log.NewValue</code>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td><small class="text-muted font-monospace">@log.IpAddress</small></td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fa-solid fa-ghost fs-1 text-muted"></i>
+                                </div>
+                                <h5 class="text-muted">Chưa có hoạt động nào</h5>
+                                <p class="text-muted mb-0">Khi bạn thao tác trên hệ thống (thêm / sửa / xóa), các bản ghi sẽ tự động hiển thị tại đây.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

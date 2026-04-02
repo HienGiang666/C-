@@ -1,0 +1,68 @@
+@model TourApp.CMS.Models.Tour
+
+@{
+    ViewData["Title"] = "Thêm Tour Mới";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="card border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-fw fa-plus me-2 text-primary"></i> @ViewData["Title"]</h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label asp-for="Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Nhập tên chuyến đi..." required />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Destination" class="form-label fw-medium">Địa điểm đến</label>
+                            <input asp-for="Destination" class="form-control form-control-lg" />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label asp-for="Price" class="form-label fw-medium">Giá vé (VNĐ) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input asp-for="Price" type="number" class="form-control" required min="0" />
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Duration" class="form-label fw-medium">Thời lượng (ngày)</label>
+                            <input asp-for="Duration" type="number" class="form-control" placeholder="1, 2, 3..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="MaxParticipants" class="form-label fw-medium">Số khách tối đa</label>
+                            <input asp-for="MaxParticipants" type="number" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ImageUrl" class="form-label fw-medium">Đường dẫn Hình ảnh Cover (URL)</label>
+                        <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label fw-medium">Mô tả Tour</label>
+                        <textarea asp-for="Description" class="form-control" rows="5" placeholder="Lịch trình chi tiết, điểm đặc sắc..."></textarea>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input mt-1" type="checkbox" role="switch" asp-for="IsActive" checked>
+                        <label class="form-check-label ms-2 fw-medium" asp-for="IsActive">Công khai Tour này trên ứng dụng</label>
+                    </div>
+
+                    <hr />
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light border px-4">Hủy</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-save me-1"></i> Lưu Tour</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

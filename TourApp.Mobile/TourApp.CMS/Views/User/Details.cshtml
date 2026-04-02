@@ -1,0 +1,63 @@
+@model TourApp.CMS.Models.User
+
+@{
+    ViewData["Title"] = "Hồ sơ Thành viên";
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 mb-4 text-center">
+            <div class="card-body p-4">
+                <img src="https://ui-avatars.com/api/?name=@Model.FullName&background=random&size=120" class="rounded-circle shadow-sm mb-3" />
+                <h4 class="fw-bold mb-1">@Model.FullName</h4>
+                <p class="text-muted mb-3">@Model.Role</p>
+                <div class="d-flex justify-content-center gap-2 mb-2">
+                    @if(Model.IsActive) {
+                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-check-circle me-1"></i> Đang hoạt động</span>
+                    } else {
+                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-ban me-1"></i> Đã bị khóa</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card border-0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-address-card me-2 text-primary"></i> Thông tin chi tiết</h5>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen me-1"></i> Sửa</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-3 pb-3 border-bottom">
+                    <div class="col-sm-4 text-muted fw-medium">ID Thành viên:</div>
+                    <div class="col-sm-8 fw-bold">#@Model.Id</div>
+                </div>
+                <div class="row mb-3 pb-3 border-bottom">
+                    <div class="col-sm-4 text-muted fw-medium">Email:</div>
+                    <div class="col-sm-8">@Model.Email</div>
+                </div>
+                <div class="row mb-3 pb-3 border-bottom">
+                    <div class="col-sm-4 text-muted fw-medium">Số điện thoại:</div>
+                    <div class="col-sm-8">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</div>
+                </div>
+                <div class="row mb-3 pb-3 border-bottom">
+                    <div class="col-sm-4 text-muted fw-medium">Ngày sinh:</div>
+                    <div class="col-sm-8">@Model.DateOfBirth.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div class="row mb-3 pb-3 border-bottom">
+                    <div class="col-sm-4 text-muted fw-medium">Địa chỉ:</div>
+                    <div class="col-sm-8">@(string.IsNullOrEmpty(Model.Address) ? "Chưa cập nhật" : Model.Address)</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 text-muted fw-medium">Ngày tham gia:</div>
+                    <div class="col-sm-8"><i class="fa-regular fa-calendar-days me-1 text-primary"></i> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-end">
+            <a asp-action="Index" class="btn btn-light border"><i class="fa-solid fa-arrow-left me-1"></i> Quay lại danh sách</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,67 @@
+@model IEnumerable<TourApp.CMS.Models.Tour>
+
+@{
+    ViewData["Title"] = "Quản lý Chuyến Đi (Tours)";
+}
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-suitcase-rolling me-2 text-primary"></i> Danh sách Tour</h5>
+        <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
+            <i class="fa-solid fa-plus me-2"></i> Thêm mới
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã</th>
+                        <th>Tên Tour</th>
+                        <th>Thời lượng</th>
+                        <th>Khách tối đa</th>
+                        <th>Mức giá</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var tour in Model)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary">#@tour.Id</span></td>
+                                <td class="fw-medium">@tour.Name</td>
+                                <td>@tour.Duration ngày</td>
+                                <td><i class="fa-solid fa-person text-secondary"></i> @tour.MaxParticipants</td>
+                                <td class="text-success fw-bold">@tour.Price.ToString("N0") VNĐ</td>
+                                <td>
+                                    @if(tour.IsActive) {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="fa-solid fa-circle fa-2xs me-1"></i> Hoạt động</span>
+                                    } else {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1"><i class="fa-solid fa-circle fa-2xs me-1"></i> Ẩn</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-action="Edit" asp-route-id="@tour.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@tour.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Xóa Tour này?');">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">Không có dữ liệu</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

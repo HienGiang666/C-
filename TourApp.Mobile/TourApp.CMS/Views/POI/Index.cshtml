@@ -1,0 +1,74 @@
+@model IEnumerable<TourApp.CMS.Models.POI>
+
+@{
+    ViewData["Title"] = "Quản lý Điểm Tham Quan (POI)";
+}
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Danh sách Địa điểm</h5>
+        <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
+            <i class="fa-solid fa-plus me-2"></i> Thêm mới
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Ảnh</th>
+                        <th>Tên địa điểm</th>
+                        <th>Mô tả</th>
+                        <th>Tọa độ & Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary">#@item.Id</span></td>
+                                <td>
+                                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/50" : item.ImageUrl)" 
+                                         class="img-thumbnail rounded" style="width: 50px; height: 50px; object-fit: cover;" />
+                                </td>
+                                <td class="fw-bold text-primary">@item.Name</td>
+                                <td class="text-truncate" style="max-width: 200px;" title="@item.Description">
+                                    <small>@item.Description</small>
+                                </td>
+                                <td>
+                                    <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-danger"></i> @item.Latitude</small></div>
+                                    <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-primary"></i> @item.Longitude</small></div>
+                                    @if(item.IsActive) { <span class="badge bg-success" style="font-size: 0.65em;">Hoạt động</span> } else { <span class="badge bg-warning" style="font-size: 0.65em;">Đang ẩn</span> }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1" title="Quản lý Audio">
+                                        <i class="fa-solid fa-headphones"></i> Audios
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa địa điểm này?');">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-box-open fs-2 mb-2"></i><br />
+                                Không có dữ liệu
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

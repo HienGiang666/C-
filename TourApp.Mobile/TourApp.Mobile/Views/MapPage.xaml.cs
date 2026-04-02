@@ -8,7 +8,7 @@ public partial class MapPage : ContentPage
 {
     private readonly LocationService _locationService;
     private readonly GeofenceService _geofenceService;
-    private readonly DatabaseService _dbService;
+    private readonly ApiService _apiService;
 
     private bool _isMapLoaded = false;
     private List<POI>? _pois;
@@ -24,8 +24,8 @@ public partial class MapPage : ContentPage
         InitializeComponent();
         var services = IPlatformApplication.Current?.Services;
         _locationService = services?.GetService<LocationService>() ?? new LocationService();
-        _dbService = services?.GetService<DatabaseService>() ?? new DatabaseService();
-        _geofenceService = services?.GetService<GeofenceService>() ?? new GeofenceService(_dbService);
+        _apiService = services?.GetService<ApiService>() ?? new ApiService();
+        _geofenceService = services?.GetService<GeofenceService>() ?? new GeofenceService(_apiService);
 
         _locationService.LocationChanged += OnLocationChanged;
         _geofenceService.PoiTriggered += OnPoiTriggered;
@@ -48,7 +48,7 @@ public partial class MapPage : ContentPage
             // 1. Load POI TRƯỚC (mock = instant, không I/O)
             //    Phải load POI trước để LoadMap() render đúng markers ngay lập tức
             if (_pois == null)
-                _pois = await _dbService.GetAllPOIsAsync();
+                _pois = await _apiService.GetAllPOIsAsync();
 
             // 2. Khởi tạo Geofence (dùng POI đã có, tránh load 2 lần)
             await _geofenceService.InitializeAsync();
@@ -188,7 +188,7 @@ public partial class MapPage : ContentPage
         if (_currentPoi == null) return;
         var url = $"https://www.google.com/maps/dir/?api=1&destination={_currentPoi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{_currentPoi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&travelmode=walking";
         try { await Launcher.Default.OpenAsync(new Uri(url)); }
-        catch { await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
+        catch { await DisplayAlertAsync("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
     }
 
     private void OnFavoriteClicked(object? sender, EventArgs e)

@@ -1,0 +1,104 @@
+@model IEnumerable<TourApp.CMS.Models.User>
+
+@{
+    ViewData["Title"] = "Quản lý Người Dùng";
+}
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-users me-2 text-primary"></i> Danh sách Thành viên</h5>
+        <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
+            <i class="fa-solid fa-user-plus me-2"></i> Thêm mới
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <!-- Search Bar -->
+        <div class="p-3 border-bottom bg-light">
+            <form method="get" asp-action="Index" class="d-flex">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="search" value="@ViewBag.SearchTerm" class="form-control border-start-0 ps-0" placeholder="Tìm kiếm theo Tên hoặc Email..." />
+                    <button type="submit" class="btn btn-secondary">Tìm</button>
+                    @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                    {
+                        <a asp-action="Index" class="btn btn-outline-danger">Xóa</a>
+                    }
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Khách hàng</th>
+                        <th>Liên hệ</th>
+                        <th>Vai trò</th>
+                        <th>Hoạt động</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var user in Model)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary">#@user.Id</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name=@user.FullName&background=random" width="35" class="rounded-circle me-3" />
+                                        <div>
+                                            <div class="fw-bold">@user.FullName</div>
+                                            <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> @user.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div><i class="fa-regular fa-envelope me-1 text-muted"></i> @user.Email</div>
+                                    <div><i class="fa-solid fa-phone me-1 text-muted"></i> @user.PhoneNumber</div>
+                                </td>
+                                <td>
+                                    @if(user.Role == "Admin") {
+                                        <span class="badge bg-danger">Quản trị viên</span>
+                                    } else if(user.Role == "Staff") {
+                                        <span class="badge bg-info text-dark">Nhân viên</span>
+                                    } else {
+                                        <span class="badge bg-primary">Khách hàng</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if(user.IsActive) {
+                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-check-circle me-1"></i> OK</span>
+                                    } else {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-ban me-1"></i> Khóa</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-outline-secondary" title="Chi tiết">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    @if(user.Role != "Admin") {
+                                        <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Chắc chắn xóa user này?');">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy tài khoản nào.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
