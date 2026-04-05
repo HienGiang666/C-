@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 
-// Bật tính năng Swagger
+// Bật tính năng OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -38,7 +38,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 // ----------------------------------------------------------------------
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // [DISABLED] Điện thoại kết nối HTTP, redirect HTTPS sẽ fail
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

@@ -33,42 +33,47 @@ public partial class MapPage : ContentPage
             MapWebView.Eval($"highlightPoi({poiId});");
     }
 
-    // [ROOT CAUSE FIX]
-    // Vấn đề: Task.Run() loại bỏ SynchronizationContext của Main Thread.
-    // Khi Permissions.RequestAsync() chạy trên ThreadPool thread → crash Android vì cần UI thread để show dialog.
-    // Fix: async void OnAppearing chạy TRỰC TIẾP trên Main Thread.
-    //      await không block UI thread — nó yield rồi tiếp tục trên Main Thread khi xong.
-    //      Mock data GetAllPOIsAsync() = instant (0ms blocking thật sự).
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
         try
         {
-            // 1. Load POI TRƯỚC (mock = instant, không I/O)
-            //    Phải load POI trước để LoadMap() render đúng markers ngay lập tức
-            if (_pois == null)
-                _pois = await _apiService.GetAllPOIsAsync();
-
-            // 2. Khởi tạo Geofence (dùng POI đã có, tránh load 2 lần)
-            await _geofenceService.InitializeAsync();
-
-            // 3. Load Map — _pois đã có dữ liệu → markers xuất hiện ngay
+            // Tránh lỗi nén tài nguyên trên Android cũ khi load quá nhanh lúc bật app
+            await Task.Delay(200);
+            // 1. Tải bản đồ rỗng trước LẬP TỨC để tránh trắng màn hình (tránh ANR/Crash khi startup)
             if (!_isMapLoaded)
             {
                 LoadMap();
                 _isMapLoaded = true;
             }
 
-            // 4. Start GPS cuối cùng — Permissions.RequestAsync cần Main Thread
-            //    Chạy SAU map load để tránh cạnh tranh tài nguyên trên startup
+            // [ANTI CRASH] Đợi WebView nạp HTML vào bộ nhớ đệm an toàn rồi mới xin quyền GPS (tránh xung đột vòng đời Activity gây văng app)
+            await Task.Delay(1000); 
+
+            // 2. Chạy Tracking GPS ngầm
             await _locationService.StartTracking();
+
+            // 3. Tải POI từ API (nó sẽ chờ Auto-Discovery dò tìm IP ngầm)
+            if (_pois == null)
+            {
+                _pois = await _apiService.GetAllPOIsAsync();
+
+                // Nếu tìm được POI thì đẩy vào MapJS
+                if (_pois != null && _pois.Any())
+                {
+                    var poisJson = JsonSerializer.Serialize(_pois, _jsonOptions);
+                    MapWebView.Eval($"refreshMarkers({poisJson});");
+                    await _geofenceService.InitializeAsync(); // Cập nhật geofence từ data mới
+                }
+            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[MapPage] OnAppearing error: {ex}");
         }
     }
+
 
     protected override void OnDisappearing()
     {
@@ -188,7 +193,7 @@ public partial class MapPage : ContentPage
         if (_currentPoi == null) return;
         var url = $"https://www.google.com/maps/dir/?api=1&destination={_currentPoi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{_currentPoi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&travelmode=walking";
         try { await Launcher.Default.OpenAsync(new Uri(url)); }
-        catch { await DisplayAlertAsync("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
+        catch { await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
     }
 
     private void OnFavoriteClicked(object? sender, EventArgs e)
@@ -262,6 +267,10 @@ public partial class MapPage : ContentPage
         catch (Exception ex)
         {
             Console.WriteLine($"[Search] Error: {ex.Message}");
+            MainThread.BeginInvokeOnMainThread(() => 
+            {
+                DisplayAlert("Lỗi tìm kiếm", "Không thể tìm kiếm địa điểm lúc này. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.", "OK");
+            });
         }
     }
 
@@ -337,10 +346,11 @@ function addMarkers(poiList) {{
   poiList.forEach(function(poi) {{
     var el = document.createElement('div');
     el.className = 'poi-marker';
-    el.setAttribute('data-poi-id', poi.PoiId); // [FIX] thêm data attribute để highlight đúng
+    // [FIX] C# serialize với JsonPropertyName('id') nên model thành poi.id
+    el.setAttribute('data-poi-id', poi.id); 
     el.innerHTML = '🍽️';
     el.addEventListener('click', function() {{
-      window.location.href = 'poi://selected?id=' + poi.PoiId;
+      window.location.href = 'poi://selected?id=' + poi.id;
     }});
     new goongjs.Marker(el).setLngLat([poi.Longitude, poi.Latitude]).addTo(map);
   }});
@@ -358,7 +368,7 @@ function updateUserLocation(lng, lat) {{
     var el = document.createElement('div');
     el.id = 'user-marker';
     userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
-    map.flyTo({{center: [lng, lat], zoom: 16}});
+    // [FIX] Bỏ auto flyTo để bản đồ giữ nguyên mặc định ở Quận 4 theo ý người dùng
   }} else {{
     userMarker.setLngLat([lng, lat]);
   }}

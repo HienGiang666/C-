@@ -17,7 +17,8 @@ namespace TourApp.Mobile
                     handler.PlatformView.Settings.JavaScriptEnabled = true;
                     handler.PlatformView.Settings.DomStorageEnabled = true;
                     handler.PlatformView.Settings.MixedContentMode = Android.Webkit.MixedContentHandling.AlwaysAllow;
-                    handler.PlatformView.SetLayerType(Android.Views.LayerType.Hardware, null);
+                    // Bỏ ép phần cứng (Hardware Layer) vì gây crash native (văng app tắp lự) trên Android 9 (Oppo A31)
+                    // handler.PlatformView.SetLayerType(Android.Views.LayerType.Hardware, null);
                 }
             });
 #endif
