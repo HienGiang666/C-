@@ -33,7 +33,8 @@ public partial class RegisterPage : ContentPage
 
         // Mock Register
         await DisplayAlert("Thành công", "Đăng ký thành công! Đang đăng nhập...", "OK");
-        await Navigation.PopAsync();
-        await Application.Current!.Windows[0].Navigation.PopModalAsync();
+        // Pop Register, then pop Login to land on Home
+        await Navigation.PopAsync(); // back to Login
+        await Application.Current!.Windows[0].Navigation.PopModalAsync(); // dismiss Login modal
     }
 }

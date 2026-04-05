@@ -1,12 +1,17 @@
+using TourApp.CMS.Filters;
 using TourApp.CMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<AuthFilter>();
+});
+
 builder.Services.AddHttpClient("TourApi", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7244/");
+    client.BaseAddress = new Uri("http://localhost:5254/");
 });
 
 builder.Services.AddDistributedMemoryCache();
@@ -36,8 +41,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+app.UseSession();       // Phải trước UseAuthorization
 app.UseAuthorization();
-app.UseSession();
 
 app.MapControllerRoute(
     name: "default",
