@@ -21,8 +21,27 @@ namespace TourApp.Mobile.Services
         {
             if (_pois == null)
             {
-                _pois = await _apiService.GetAllPOIsAsync();
+                try
+                {
+                    _pois = await Task.Run(async () =>
+                    {
+                        try { return await _apiService.GetAllPOIsAsync(); }
+                        catch { return new List<POI>(); }
+                    });
+                }
+                catch
+                {
+                    _pois = new List<POI>();
+                }
             }
+        }
+
+        /// <summary>
+        /// Inject POI list đã load sẵn từ MapPage, tránh gọi API lần 2.
+        /// </summary>
+        public void SetPois(List<POI> pois)
+        {
+            _pois = pois;
         }
 
         public void CheckGeofences(Location userLocation)
@@ -93,9 +112,17 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"TTS Error: {ex.Message}");
-                // Fallback without locale if previous failed
-                await TextToSpeech.Default.SpeakAsync($"Chào mừng bạn đến {poi.PoiName}. {poi.Description}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Error with locale: {ex.Message}");
+                try
+                {
+                    // Fallback: không dùng locale, không crash app nếu TTS không khả dụng
+                    await TextToSpeech.Default.SpeakAsync($"Chào mừng bạn đến {poi.PoiName}. {poi.Description}");
+                }
+                catch (Exception ex2)
+                {
+                    // TTS hoàn toàn không khả dụng trên thiết bị này — bỏ qua, không crash
+                    System.Diagnostics.Debug.WriteLine($"[TTS] Fallback also failed: {ex2.Message}");
+                }
             }
         }
     }

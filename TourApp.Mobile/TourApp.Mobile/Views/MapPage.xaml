@@ -37,6 +37,15 @@
                     Clicked="OnRecenterClicked"/>
         </Border>
 
+        <!-- Settings button (đổi IP server) -->
+        <Border WidthRequest="48" HeightRequest="48" StrokeShape="RoundRectangle 24"
+                BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
+                VerticalOptions="Start" Margin="0,140,15,0"
+                Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.15, Radius=8}">
+            <Button Text="⚙️" BackgroundColor="Transparent" FontSize="20" Padding="0"
+                    Clicked="OnSettingsClicked"/>
+        </Border>
+
         <!-- Bottom Sheet Overlay -->
         <ContentView x:Name="BottomSheetView" IsVisible="False" VerticalOptions="End">
             <Border BackgroundColor="White" StrokeShape="RoundRectangle 24, 24, 0, 0" StrokeThickness="0"
@@ -89,4 +98,5 @@
             </Border>
         </ContentView>
     </Grid>
+
 </ContentPage>

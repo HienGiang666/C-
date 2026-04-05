@@ -1,110 +1,128 @@
-using System.Net.Http.Json;
+using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using TourApp.Mobile.Models;
 
 namespace TourApp.Mobile.Services
 {
     public class ApiService
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
+        // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
+        private const string DefaultUrl = "http://192.168.1.5:5254";
 
-        public ApiService()
+        public static string BaseUrl
         {
-            // Cấu hình DevHttpsConnectionHelper để bypass SSL trên Android giả lập/thiết bị
-#if ANDROID
-            var handler = new HttpsClientHandlerService().GetPlatformMessageHandler();
-            _httpClient = new HttpClient(handler);
-#else
-            _httpClient = new HttpClient();
-#endif
-            
-            // TODO: BẠN CẦN THAY {IP} BẰNG ĐỊA CHỈ IP LAN CỦA MÁY TÍNH CỦA BẠN (VD: 192.168.1.5)
-            // IP máy tính của bạn khi kết nối cùng wifi với điện thoại (chạy lệnh ipconfig trên CMD để xem ipv4)
-            _baseUrl = "http://192.168.1.7:5254";
-            
-            _httpClient.BaseAddress = new Uri(_baseUrl);
-            _httpClient.Timeout = TimeSpan.FromSeconds(30);
+            get => Preferences.Default.Get("api_base_url", DefaultUrl);
+            set => Preferences.Default.Set("api_base_url", value);
         }
 
-        public async Task<bool> TestConnectionAsync()
+        public static void UpdateBaseUrl(string newUrl) =>
+            BaseUrl = newUrl.TrimEnd('/');
+
+        /// <summary>
+        /// Gọi 1 lần sau khi app khởi động xong để reset IP cũ nếu cần.
+        /// KHÔNG gọi trong static constructor — Preferences chưa sẵn sàng lúc đó.
+        /// </summary>
+        public static void ResetCachedUrlIfNeeded()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/api/poi");
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error testing connection: {ex.Message}");
-                return false;
-            }
-        }
-
-        public async Task<List<POI>> GetAllPOIsAsync()
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync("/api/poi");
-                if (response.IsSuccessStatusCode)
+                var cached = Preferences.Default.Get("api_base_url", "");
+                if (!string.IsNullOrEmpty(cached) && cached != DefaultUrl)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    var list = JsonSerializer.Deserialize<List<POI>>(content, options);
-                    
-                    // Map lại Id và Name vì Mobile dùng PoiId, PoiName
-                    // Tốt nhất là dùng [JsonPropertyName("id")] trong Model POI,
-                    // Nếu model chưa có thì gán tay tạm tại đây để tránh lỗi bind UI
-                    // (Chúng ta sẽ update POI.cs sớm thôi)
-                    
-                    return list ?? new List<POI>();
+                    Preferences.Default.Remove("api_base_url");
+                    Debug.WriteLine($"[ApiService] Reset cached URL: {cached} → {DefaultUrl}");
                 }
             }
-            catch (Exception ex)
+            catch { /* Preferences chưa sẵn sàng — bỏ qua */ }
+        }
+
+        [DebuggerNonUserCode]
+        public Task<bool> TestConnectionAsync() =>
+            TryFetch("/api/poi", _ => true, () => false);
+
+        [DebuggerNonUserCode]
+        public Task<List<POI>> GetAllPOIsAsync() =>
+            TryFetch<List<POI>>(
+                "/api/poi",
+                body =>
+                {
+                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    return JsonSerializer.Deserialize<List<POI>>(body, opts) ?? new();
+                },
+                () => new List<POI>()
+            );
+
+        public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
+            Task.FromResult<Audio?>(null);
+
+        public Task LogNarrationAsync(int poiId, int? audioId, string triggerType) =>
+            Task.CompletedTask;
+
+        [DebuggerNonUserCode]
+        private static Task<T> TryFetch<T>(
+            string path,
+            Func<string, T> parse,
+            Func<T> fallback)
+        {
+            return Task.Run(async () =>
             {
-                Console.WriteLine($"Error getting POIs: {ex.Message}");
-            }
-            
-            // Fallback trả về list trống nếu lỗi kết nối
-            return new List<POI>();
+                HttpClient? client = null;
+                try
+                {
+                    client = CreateClient();
+                    var getTask = client.GetAsync(path);
+                    var winner = await Task.WhenAny(getTask, Task.Delay(5000)).ConfigureAwait(false);
+
+                    if (winner != getTask || !getTask.IsCompletedSuccessfully)
+                    {
+                        Debug.WriteLine($"[ApiService] {path}: timeout/error");
+                        return fallback();
+                    }
+
+                    var response = getTask.Result;
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}");
+                        return fallback();
+                    }
+
+                    var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    return parse(body);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
+                    return fallback();
+                }
+                finally
+                {
+                    client?.Dispose();
+                }
+            });
         }
 
-        public async Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi")
+        [DebuggerNonUserCode]
+        private static HttpClient CreateClient()
         {
-            await Task.CompletedTask;
-            return null; // chưa có API audio thật, trả về null để xài TTS theo như cũ
-        }
-
-        public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
-        {
-            await Task.CompletedTask;
-            // TODO: gọi HttpPost API log sau
-        }
-    }
-    
-    // Helper bypass SSL (quan trọng khi gọi API localhost từ App thật / Emulator)
-    public class HttpsClientHandlerService
-    {
-        public HttpMessageHandler GetPlatformMessageHandler()
-        {
+            HttpMessageHandler handler;
 #if ANDROID
-            var handler = new Xamarin.Android.Net.AndroidMessageHandler();
-            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
-            {
-                if (cert != null && cert.Issuer.Equals("CN=localhost"))
-                    return true;
-                return errors == System.Net.Security.SslPolicyErrors.None;
-            };
-            return handler;
+            var h = new Xamarin.Android.Net.AndroidMessageHandler();
+            h.ServerCertificateCustomValidationCallback =
+                (_, cert, _, errors) =>
+                    cert?.Issuer == "CN=localhost" ||
+                    errors == System.Net.Security.SslPolicyErrors.None;
+            handler = h;
 #else
-            return new HttpClientHandler();
+            handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+            };
 #endif
+            return new HttpClient(handler)
+            {
+                BaseAddress = new Uri(BaseUrl),
+                Timeout = Timeout.InfiniteTimeSpan
+            };
         }
     }
 }

@@ -13,15 +13,25 @@ namespace TourApp.Mobile.Services
 
             try
             {
-                // [CRITICAL] Permissions.RequestAsync() BẮT BUỘC phải chạy trên Main Thread
-                // Nếu gọi từ ThreadPool (Task.Run) → crash Android (không có Activity context)
-                var status = await MainThread.InvokeOnMainThreadAsync(async () =>
+                // Permissions.RequestAsync() PHẢI chạy trên Main Thread (Activity context)
+                PermissionStatus status;
+                if (MainThread.IsMainThread)
                 {
-                    var perm = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                    var perm = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>().ConfigureAwait(true);
                     if (perm != PermissionStatus.Granted)
-                        perm = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-                    return perm;
-                });
+                        perm = await Permissions.RequestAsync<Permissions.LocationWhenInUse>().ConfigureAwait(true);
+                    status = perm;
+                }
+                else
+                {
+                    status = await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        var perm = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                        if (perm != PermissionStatus.Granted)
+                            perm = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+                        return perm;
+                    });
+                }
 
                 if (status != PermissionStatus.Granted)
                 {
@@ -31,39 +41,57 @@ namespace TourApp.Mobile.Services
 
                 _isTracking = true;
 
-                // GPS polling loop chạy trên background thread (đúng)
-                _ = Task.Run(async () =>
-                {
-                    while (_isTracking)
-                    {
-                        try
-                        {
-                            // [FIX] Timeout 2s thay vì 5s — tránh block thread quá lâu gây ANR
-                            // Medium accuracy: lock GPS nhanh hơn, đủ tốt cho Geofence 20-80m
-                            var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(2));
-                            var location = await Geolocation.Default.GetLocationAsync(request);
-
-                            if (location != null)
-                            {
-                                MainThread.BeginInvokeOnMainThread(() =>
-                                {
-                                    LocationChanged?.Invoke(this, location);
-                                });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[LocationService] GPS error: {ex.Message}");
-                        }
-
-                        await Task.Delay(5000); // Poll mỗi 5 giây
-                    }
-                });
+                // [FIX] Dùng SafeFireAndForget thay vì _ = Task.Run(...)
+                // _ = Task.Run(...) nếu throw exception trước while-loop → UnobservedTaskException → crash lặng lẽ
+                RunGpsLoopSafe();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[LocationService] StartTracking error: {ex}");
             }
+        }
+
+        /// <summary>
+        /// Chạy GPS polling loop an toàn — mọi exception đều được bắt,
+        /// không bao giờ làm crash app.
+        /// </summary>
+        private void RunGpsLoopSafe()
+        {
+            Task.Run(async () =>
+            {
+                while (_isTracking)
+                {
+                    try
+                    {
+                        var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(2));
+                        var location = await Geolocation.Default.GetLocationAsync(request).ConfigureAwait(false);
+
+                        if (location != null)
+                        {
+                            MainThread.BeginInvokeOnMainThread(() =>
+                            {
+                                try { LocationChanged?.Invoke(this, location); }
+                                catch (Exception uiEx)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[LocationService] UI callback error: {uiEx.Message}");
+                                }
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[LocationService] GPS poll error: {ex.Message}");
+                        // Không re-throw — loop tiếp tục chạy
+                    }
+
+                    await Task.Delay(5000).ConfigureAwait(false);
+                }
+            }).ContinueWith(t =>
+            {
+                // Bắt mọi exception không được catch bên trong Task.Run
+                if (t.IsFaulted)
+                    System.Diagnostics.Debug.WriteLine($"[LocationService] GPS loop faulted: {t.Exception}");
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public void StopTracking()

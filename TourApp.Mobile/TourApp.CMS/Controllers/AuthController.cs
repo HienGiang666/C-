@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography;
-using System.Text;
+using System.Text.Json;
 using TourApp.CMS.Models;
 using TourApp.CMS.Services;
 
@@ -8,105 +7,70 @@ namespace TourApp.CMS.Controllers;
 
 public class AuthController : Controller
 {
+    private readonly IHttpClientFactory _clientFactory;
     private readonly IActivityLogger _activityLogger;
 
-    // Temporary in-memory storage (Replace with database later)
-    private static List<AdminUser> _users = new List<AdminUser>
+    public AuthController(IHttpClientFactory clientFactory, IActivityLogger activityLogger)
     {
-        new AdminUser
-        {
-            Id = 1,
-            Username = "admin",
-            Email = "admin@tourapp.com",
-            PasswordHash = HashPassword("admin123"),
-            FullName = "Administrator",
-            Role = "Admin",
-            IsActive = true
-        }
-    };
-
-    public AuthController(IActivityLogger activityLogger)
-    {
+        _clientFactory = clientFactory;
         _activityLogger = activityLogger;
     }
 
+    [HttpGet]
     public IActionResult Login()
     {
         if (HttpContext.Session.GetString("UserId") != null)
             return RedirectToAction("Index", "Home");
-
         ViewData["Title"] = "Đăng nhập";
         return View();
     }
 
     [HttpPost]
-    public IActionResult Login(LoginViewModel model)
+    public async Task<IActionResult> Login(LoginViewModel model)
     {
-        if (!ModelState.IsValid)
-            return View(model);
+        if (!ModelState.IsValid) return View(model);
 
-        var user = _users.FirstOrDefault(u => u.Username == model.Username && u.IsActive);
-
-        if (user == null || !VerifyPassword(model.Password, user.PasswordHash))
+        try
         {
-            ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng!");
-            return View(model);
+            var client = _clientFactory.CreateClient("TourApi");
+            var response = await client.PostAsJsonAsync("api/user/login", new
+            {
+                Username = model.Username,
+                Password = model.Password
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                HttpContext.Session.SetString("UserId", root.GetProperty("id").GetInt32().ToString());
+                HttpContext.Session.SetString("Username", root.GetProperty("username").GetString() ?? "");
+                HttpContext.Session.SetString("FullName", root.GetProperty("fullName").GetString() ?? "");
+                HttpContext.Session.SetString("Role", root.GetProperty("role").GetString() ?? "");
+                HttpContext.Session.SetString("Email", root.GetProperty("email").GetString() ?? "");
+
+                _activityLogger.LogActivity(HttpContext, "Login", "Auth", null, model.Username);
+                TempData["success"] = $"Xin chào {HttpContext.Session.GetString("FullName")}!";
+                return RedirectToAction("Index", "Home");
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng!");
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, "Không thể kết nối đến máy chủ API. Vui lòng kiểm tra API đang chạy!");
+            }
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: Hãy đảm bảo TourApp.API đang chạy song song.");
+            System.Diagnostics.Debug.WriteLine($"[Auth Login] {ex.Message}");
         }
 
-        // Set session
-        HttpContext.Session.SetString("UserId", user.Id.ToString());
-        HttpContext.Session.SetString("Username", user.Username);
-        HttpContext.Session.SetString("FullName", user.FullName);
-        HttpContext.Session.SetString("Role", user.Role);
-        HttpContext.Session.SetString("Email", user.Email);
-
-        // Update last login
-        user.LastLogin = DateTime.Now;
-
-        _activityLogger.LogActivity(HttpContext, "Login", "Auth", null, user.Username);
-
-        TempData["success"] = $"Xin chào {user.FullName}!";
-        return RedirectToAction("Index", "Home");
-    }
-
-    public IActionResult Register()
-    {
-        ViewData["Title"] = "Đăng ký";
-        return View();
-    }
-
-    [HttpPost]
-    public IActionResult Register(RegisterViewModel model)
-    {
-        if (!ModelState.IsValid)
-            return View(model);
-
-        if (model.Password != model.ConfirmPassword)
-        {
-            ModelState.AddModelError(string.Empty, "Mật khẩu không khớp!");
-            return View(model);
-        }
-
-        if (_users.Any(u => u.Username == model.Username))
-        {
-            ModelState.AddModelError(string.Empty, "Tên đăng nhập đã tồn tại!");
-            return View(model);
-        }
-
-        var newUser = new AdminUser
-        {
-            Id = _users.Any() ? _users.Max(u => u.Id) + 1 : 1,
-            Username = model.Username,
-            Email = model.Email,
-            PasswordHash = HashPassword(model.Password),
-            FullName = model.FullName,
-            Role = "Staff"
-        };
-
-        _users.Add(newUser);
-
-        TempData["success"] = "Đăng ký thành công! Vui lòng đăng nhập.";
-        return RedirectToAction(nameof(Login));
+        return View(model);
     }
 
     public IActionResult Logout()
@@ -123,24 +87,7 @@ public class AuthController : Controller
         var userId = HttpContext.Session.GetString("UserId");
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction(nameof(Login));
-
         ViewData["Title"] = "Hồ sơ cá nhân";
-        var user = _users.FirstOrDefault(u => u.Id == int.Parse(userId));
-        return View(user);
-    }
-
-    private static string HashPassword(string password)
-    {
-        using (var sha256 = SHA256.Create())
-        {
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(hashedBytes);
-        }
-    }
-
-    private static bool VerifyPassword(string password, string hash)
-    {
-        var hashOfInput = HashPassword(password);
-        return hashOfInput == hash;
+        return View();
     }
 }

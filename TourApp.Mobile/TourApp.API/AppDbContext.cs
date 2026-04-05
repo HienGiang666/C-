@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<Booking> Bookings { get; set; }
     public DbSet<Audio> Audios { get; set; }
     public DbSet<NarrationLog> NarrationLogs { get; set; }
+    public DbSet<UserLocationLog> UserLocationLogs { get; set; }
+    public DbSet<TourPOI> TourPOIs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
