@@ -18,22 +18,93 @@ namespace TourApp.Mobile.Services
         public static void UpdateBaseUrl(string newUrl) =>
             BaseUrl = newUrl.TrimEnd('/');
 
-        /// <summary>
-        /// Gọi 1 lần sau khi app khởi động xong để reset IP cũ nếu cần.
-        /// KHÔNG gọi trong static constructor — Preferences chưa sẵn sàng lúc đó.
-        /// </summary>
-        public static void ResetCachedUrlIfNeeded()
+        public static async Task AutoDiscoverApiAsync()
         {
             try
             {
-                var cached = Preferences.Default.Get("api_base_url", "");
-                if (!string.IsNullOrEmpty(cached) && cached != DefaultUrl)
+                // Nếu URL hiện tại còn sống thì không cần quét
+                if (await new ApiService().TestConnectionAsync()) return;
+
+                Debug.WriteLine("[ApiService] Start Auto Discovery...");
+                var subnet = GetLocalSubnet();
+                var tasks = new List<Task<string?>>();
+
+                // Try emulator standard IP first if virtual
+                if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
                 {
-                    Preferences.Default.Remove("api_base_url");
-                    Debug.WriteLine($"[ApiService] Reset cached URL: {cached} → {DefaultUrl}");
+                    tasks.Add(TestUrlAsync("http://10.0.2.2:5254"));
+                }
+
+                // Scan local network x.x.x.1 to x.x.x.254
+                for (int i = 1; i <= 254; i++)
+                {
+                    string url = $"http://{subnet}.{i}:5254";
+                    tasks.Add(TestUrlAsync(url));
+                }
+
+                // Also scan common local if different
+                if (subnet != "192.168.1")
+                {
+                    for (int i = 1; i <= 254; i++)
+                    {
+                        string url = $"http://192.168.1.{i}:5254";
+                        tasks.Add(TestUrlAsync(url));
+                    }
+                }
+
+                while (tasks.Count > 0)
+                {
+                    var finished = await Task.WhenAny(tasks);
+                    tasks.Remove(finished);
+                    var res = await finished;
+                    if (res != null)
+                    {
+                        BaseUrl = res;
+                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
+                        return;
+                    }
                 }
             }
-            catch { /* Preferences chưa sẵn sàng — bỏ qua */ }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Auto-Discovery FAIL: {ex.Message}");
+            }
+        }
+
+        private static async Task<string?> TestUrlAsync(string url)
+        {
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2.5) };
+                var r = await client.GetAsync($"{url}/api/poi");
+                if (r.IsSuccessStatusCode) return url;
+            }
+            catch { }
+            return null;
+        }
+
+        private static string GetLocalSubnet()
+        {
+            try {
+                foreach (var netInterface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (netInterface.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
+                    {
+                        foreach (var addrInfo in netInterface.GetIPProperties().UnicastAddresses)
+                        {
+                            if (addrInfo.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            {
+                                var ip = addrInfo.Address.ToString();
+                                if (ip.StartsWith("192.168.") || ip.StartsWith("10.") || ip.StartsWith("172."))
+                                {
+                                    return ip.Substring(0, ip.LastIndexOf('.'));
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch { }
+            return "192.168.1";
         }
 
         [DebuggerNonUserCode]

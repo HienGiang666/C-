@@ -87,7 +87,17 @@ public class AuthController : Controller
         var userId = HttpContext.Session.GetString("UserId");
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction(nameof(Login));
+
+        // [FIX] Khởi tạo Model từ Session thay vì trả View() rỗng gây NullRef
+        var model = new AdminUser
+        {
+            Username = HttpContext.Session.GetString("Username"),
+            FullName = HttpContext.Session.GetString("FullName"),
+            Email = HttpContext.Session.GetString("Email"),
+            Role = HttpContext.Session.GetString("Role")
+        };
+
         ViewData["Title"] = "Hồ sơ cá nhân";
-        return View();
+        return View(model);
     }
 }

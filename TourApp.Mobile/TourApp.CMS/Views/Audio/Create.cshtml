@@ -74,7 +74,10 @@
                             <div class="box-header">
                                 <span class="fw-semibold text-secondary" style="font-size:.85rem">📤 Văn Bản Gốc</span>
                                 <span id="detectedLang">Đang nhận diện...</span>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="speakSource()" title="Đọc thử văn bản gốc">🔊 Nghe thử</button>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="speakSource()" title="Đọc thử văn bản gốc">🔊 Nghe thử</button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Dừng">⏹</button>
+                                </div>
                             </div>
                             <textarea id="srcText" class="form-control" rows="5"
                                 placeholder="Gõ hoặc dán nội dung thuyết minh vào đây..."
@@ -92,8 +95,7 @@
                             <div class="box-header">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="fw-semibold text-secondary" style="font-size:.85rem">🌍 Ngôn Ngữ Đích</span>
-                                    <select id="targetLang" asp-for="Language" class="form-select form-select-sm" style="width:auto;"
-                                        onchange="speakTarget()">
+                                    <select id="targetLang" asp-for="Language" class="form-select form-select-sm" style="width:auto;">
                                         <option value="vi">🇻🇳 Tiếng Việt</option>
                                         <option value="en">🇺🇸 English</option>
                                         <option value="zh">🇨🇳 中文</option>
@@ -246,7 +248,7 @@ function translateText() {
 function estimateDuration(text) {
     if (!text) return;
     const words = text.split(/\s+/).filter(Boolean).length;
-    const secs = Math.max(5, Math.round(words / 2.5));
+    const secs = Math.max(5, Math.round(words / 2.0)); // 120 từ/phút cho tiếng Việt
     document.getElementById('hidDuration').value = secs;
     document.getElementById('durSec').textContent = secs;
     document.getElementById('durationBadge').style.display = 'inline-flex';
@@ -270,7 +272,18 @@ function speak(text, lang) {
     stopSpeech();
     currentUtterance = new SpeechSynthesisUtterance(text);
     currentUtterance.lang = lang;
-    currentUtterance.rate = 0.95;
+    currentUtterance.rate = 1.0;
+
+    // Ưu tiên chọn giọng Nữ
+    let voices = synth.getVoices();
+    let voice = voices.find(v => v.lang.startsWith(lang.split('-')[0]) && 
+        (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('hoaimy') || v.name.toLowerCase().includes('zira')));
+    
+    if (!voice) {
+        voice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+    }
+    if (voice) currentUtterance.voice = voice;
+
     synth.speak(currentUtterance);
 }
 

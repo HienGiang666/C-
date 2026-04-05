@@ -67,16 +67,24 @@ public class AudioController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(Audio audio, IFormFile? uploadAudio)
     {
-        if (uploadAudio == null || uploadAudio.Length == 0)
+        // Chỉ yêu cầu file âm thanh nếu KHÔNG có nội dung ScriptText (Text-To-Speech)
+        if ((uploadAudio == null || uploadAudio.Length == 0) && string.IsNullOrWhiteSpace(audio.ScriptText))
         {
-            ModelState.AddModelError("uploadAudio", "Vui lòng chọn file âm thanh (.mp3, .wav)");
+            ModelState.AddModelError("uploadAudio", "Vui lòng chọn file âm thanh hoặc nhập nội dung TTS");
         }
 
         if (ModelState.IsValid)
         {
             try
             {
-                audio.AudioPath = await _fileUploadService.UploadAudioAsync(uploadAudio!, "audios");
+                if (uploadAudio != null && uploadAudio.Length > 0)
+                {
+                    audio.AudioPath = await _fileUploadService.UploadAudioAsync(uploadAudio, "audios");
+                }
+                else
+                {
+                    audio.AudioPath = "TTS_ONLY";
+                }
 
                 var client = _clientFactory.CreateClient("TourApi");
                 var response = await client.PostAsJsonAsync("api/Audio", audio);

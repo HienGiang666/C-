@@ -60,12 +60,18 @@ public partial class MapPage : ContentPage
         {
             base.OnAppearing();
 
+            // Tránh lỗi nén tài nguyên trên Android cũ khi load quá nhanh lúc bật app
+            await Task.Delay(200);
+
             // Load map ngay lập tức với danh sách POI trống
             if (!_isMapLoaded)
             {
                 LoadMap();
                 _isMapLoaded = true;
             }
+
+            // [ANTI CRASH] Đợi WebView nạp HTML vào bộ nhớ đệm an toàn rồi mới xin quyền GPS (tránh xung đột vòng đời Activity gây văng app)
+            await Task.Delay(1000); 
 
             // Load POI từ API trong background — an toàn, không crash app
             LoadPoisInBackgroundAsync().ContinueWith(t =>
@@ -100,7 +106,10 @@ public partial class MapPage : ContentPage
                 // Chạy HTTP call trên background thread — tránh VS break trên UI thread
                 var pois = await Task.Run(async () =>
                 {
-                    try { return await _apiService.GetAllPOIsAsync(); }
+                    try { 
+                        await ApiService.AutoDiscoverApiAsync();
+                        return await _apiService.GetAllPOIsAsync(); 
+                    }
                     catch { return new List<POI>(); } // nuốt tất cả lỗi kết nối
                 });
 
@@ -203,7 +212,7 @@ public partial class MapPage : ContentPage
     {
         System.Diagnostics.Debug.WriteLine($"[MapWebView Navigation] URL: {e.Url}");
 
-        if (e.Url.StartsWith("poi://selected"))
+        if (e.Url.StartsWith("poi://selected") || e.Url.StartsWith("http://poi/selected"))
         {
             e.Cancel = true;
             System.Diagnostics.Debug.WriteLine($"[MapWebView] POI selected: {e.Url}");
@@ -526,9 +535,8 @@ function addMarkers(poiList) {{
     el.addEventListener('click', function(e) {{
       console.log('[Marker Click Event Fired] POI ID: ' + poiId);
       e.stopPropagation();
-      e.preventDefault();
-      // Navigate using custom scheme
-      window.location.href = 'poi://selected?id=' + poiId;
+      // Navigate using standard scheme to ensure WebView catches it
+      window.location.href = 'http://poi/selected?id=' + poiId;
     }}, false);
 
     // Make element explicitly clickable
@@ -548,7 +556,6 @@ function updateUserLocation(lng, lat) {{
     var el = document.createElement('div');
     el.id = 'user-marker';
     userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
-    map.flyTo({{center: [lng, lat], zoom: 16}});
   }} else {{
     userMarker.setLngLat([lng, lat]);
   }}
