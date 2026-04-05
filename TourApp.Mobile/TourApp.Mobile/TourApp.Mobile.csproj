@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<TargetFrameworks>net9.0-android</TargetFrameworks>
-		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
+		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>TourApp.Mobile</RootNamespace>
@@ -31,7 +31,7 @@
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(TargetFramework)' == 'net9.0-android'">
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(TargetFramework)' == 'net10.0-android'">
 		<AndroidUseInterpreter>true</AndroidUseInterpreter>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 	</PropertyGroup>

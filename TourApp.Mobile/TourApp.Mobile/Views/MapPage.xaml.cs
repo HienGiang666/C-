@@ -201,16 +201,35 @@ public partial class MapPage : ContentPage
 
     private void OnMapWebViewNavigating(object? sender, WebNavigatingEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"[MapWebView Navigation] URL: {e.Url}");
+
         if (e.Url.StartsWith("poi://selected"))
         {
             e.Cancel = true;
-            var uri = new Uri(e.Url);
-            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            if (int.TryParse(query["id"], out int poiId))
+            System.Diagnostics.Debug.WriteLine($"[MapWebView] POI selected: {e.Url}");
+
+            try
             {
-                var poi = _pois?.FirstOrDefault(p => p.PoiId == poiId);
-                if (poi != null)
-                    MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
+                var uri = new Uri(e.Url);
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                if (int.TryParse(query["id"], out int poiId))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MapWebView] Looking for POI ID: {poiId}");
+                    var poi = _pois?.FirstOrDefault(p => p.PoiId == poiId);
+                    if (poi != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MapWebView] Found POI: {poi.PoiName}");
+                        MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MapWebView] POI not found. Available POIs: {string.Join(", ", _pois?.Select(p => $"ID:{p.PoiId}") ?? new[] { "none" })}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapWebView] Error: {ex.Message}");
             }
         }
     }
@@ -413,9 +432,11 @@ public partial class MapPage : ContentPage
     width:40px; height:40px; border-radius:50%; background:#4F46E5;
     border:3px solid white; cursor:pointer; display:flex; align-items:center;
     justify-content:center; font-size:18px; box-shadow:0 2px 8px rgba(0,0,0,0.3);
-    transition:transform 0.2s;
+    transition:transform 0.2s, background-color 0.2s; user-select:none;
+    -webkit-user-select:none; -webkit-touch-callout:none;
   }}
-  .poi-marker:hover {{ transform:scale(1.2); }}
+  .poi-marker:hover {{ transform:scale(1.2); background:#6366F1; }}
+  .poi-marker:active {{ transform:scale(0.95); }}
   .poi-marker.triggered {{ background:#EF4444; animation:pulse 1s infinite; }}
   @keyframes pulse {{
     0%,100% {{ box-shadow:0 0 0 0 rgba(239,68,68,0.5); }}
@@ -480,16 +501,39 @@ function onGoongLoaded() {{
 
 function addMarkers(poiList) {{
   if (!map) return;
+
   poiList.forEach(function(poi) {{
+    // JSON from C# uses lowercase property names due to [JsonPropertyName(""id"")]
+    var poiId = poi.id || poi.poiId || poi.PoiId || poi.Id || 0;
+    var poiName = poi.name || poi.PoiName || poi.Name || 'Địa điểm';
+
+    // Create marker element
     var el = document.createElement('div');
     el.className = 'poi-marker';
-    var poiId = poi.PoiId !== undefined ? poi.PoiId : (poi.Id || 0);
     el.setAttribute('data-poi-id', poiId);
-    el.innerHTML = '\ud83c\udf7d\ufe0f';
-    el.addEventListener('click', function() {{
+    el.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
+    el.innerHTML = '🍽️';
+
+    // Create marker with Goong
+    var marker = new goongjs.Marker(el)
+      .setLngLat([poi.Longitude, poi.Latitude])
+      .addTo(map);
+
+    // Log for debugging
+    console.log('[Marker Created] POI ID: ' + poiId + ', Name: ' + poiName);
+
+    // Attach click handler to the DOM element - use capture phase
+    el.addEventListener('click', function(e) {{
+      console.log('[Marker Click Event Fired] POI ID: ' + poiId);
+      e.stopPropagation();
+      e.preventDefault();
+      // Navigate using custom scheme
       window.location.href = 'poi://selected?id=' + poiId;
-    }});
-    new goongjs.Marker(el).setLngLat([poi.Longitude, poi.Latitude]).addTo(map);
+    }}, false);
+
+    // Make element explicitly clickable
+    el.style.pointerEvents = 'auto';
+    el.style.zIndex = '1000';
   }});
 }}
 
