@@ -7,564 +7,130 @@
     <title>TourApp Mobile — Hệ Thống Du Lịch Ẩm Thực Quận 4</title>
     <style>
         :root {
-            --primary: #16a34a;
-            --primary-light: #4ade80;
-            --primary-dark: #15803d;
-            --accent: #0891b2;
-            --accent-light: #38bdf8;
-            --bg: #f8fffe;
-            --surface: #ffffff;
-            --text: #052e16;
-            --text-secondary: #4b5563;
-            --border: #d1fae5;
-            --code-bg: #1a2e26;
-            --code-text: #d1fae5;
-            --success: #059669;
-            --warning: #d97706;
-            --info: #2563eb;
-            --danger: #dc2626;
+            --primary: #16a34a; --primary-light: #4ade80; --primary-dark: #15803d;
+            --accent: #0891b2; --accent-light: #38bdf8;
+            --purple: #7c3aed; --orange: #d97706; --red: #dc2626; --blue: #2563eb;
+            --bg: #f8fffe; --surface: #ffffff;
+            --text: #052e16; --text-secondary: #4b5563;
+            --border: #d1fae5; --code-bg: #1a2e26; --code-text: #d1fae5;
+            --success: #059669; --warning: #d97706; --info: #2563eb; --danger: #dc2626;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            scroll-behavior: smooth;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; scroll-behavior:smooth; }
 
         /* NAV */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background: linear-gradient(90deg, var(--primary-dark), var(--primary));
-            color: white;
-            padding: 0 1.5rem;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 12px rgba(21, 128, 61, .35);
-        }
-
-        nav .logo {
-            font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: -.5px;
-            white-space: nowrap;
-        }
-
-        nav .nav-links {
-            display: flex;
-            gap: .3rem;
-            list-style: none;
-            flex-wrap: wrap;
-        }
-
-        nav .nav-links a {
-            color: rgba(255, 255, 255, .85);
-            text-decoration: none;
-            font-size: .78rem;
-            padding: .3rem .6rem;
-            border-radius: 4px;
-            transition: background .2s;
-            white-space: nowrap;
-        }
-
-        nav .nav-links a:hover {
-            background: rgba(255, 255, 255, .2);
-            color: #fff;
-        }
+        nav { position:fixed; top:0; left:0; right:0; z-index:100; background:linear-gradient(90deg,var(--primary-dark),var(--primary)); color:white; padding:0 1.5rem; height:56px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 12px rgba(21,128,61,.35); }
+        nav .logo { font-weight:700; font-size:1.05rem; letter-spacing:-.5px; white-space:nowrap; }
+        nav .nav-links { display:flex; gap:.3rem; list-style:none; flex-wrap:wrap; }
+        nav .nav-links a { color:rgba(255,255,255,.85); text-decoration:none; font-size:.78rem; padding:.3rem .6rem; border-radius:4px; transition:background .2s; white-space:nowrap; }
+        nav .nav-links a:hover { background:rgba(255,255,255,.2); color:#fff; }
 
         /* HERO */
-        .hero {
-            margin-top: 56px;
-            background: linear-gradient(135deg, var(--primary-dark), var(--primary), #22c55e);
-            color: white;
-            padding: 4rem 2rem 3rem;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 2.4rem;
-            font-weight: 800;
-            margin-bottom: .5rem;
-            letter-spacing: -1px;
-        }
-
-        .hero .subtitle {
-            font-size: 1.1rem;
-            opacity: .9;
-            max-width: 680px;
-            margin: 0 auto 1.5rem;
-        }
-
-        .hero .badges {
-            display: flex;
-            justify-content: center;
-            gap: .6rem;
-            flex-wrap: wrap;
-        }
-
-        .hero .badge {
-            background: rgba(255, 255, 255, .2);
-            padding: .3rem .8rem;
-            border-radius: 20px;
-            font-size: .8rem;
-            backdrop-filter: blur(4px);
-        }
+        .hero { margin-top:56px; background:linear-gradient(135deg,var(--primary-dark),var(--primary),#22c55e); color:white; padding:4rem 2rem 3rem; text-align:center; }
+        .hero h1 { font-size:2.4rem; font-weight:800; margin-bottom:.5rem; letter-spacing:-1px; }
+        .hero .subtitle { font-size:1.1rem; opacity:.9; max-width:680px; margin:0 auto 1.5rem; }
+        .hero .badges { display:flex; justify-content:center; gap:.6rem; flex-wrap:wrap; }
+        .hero .badge { background:rgba(255,255,255,.2); padding:.3rem .8rem; border-radius:20px; font-size:.8rem; backdrop-filter:blur(4px); }
 
         /* SECTIONS */
-        .section-wrap {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-
-        .section-bg {
-            background: var(--surface);
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: .8rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-header .icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-
-        .section-header h2 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .section-header .section-num {
-            font-size: .75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary);
-            font-weight: 600;
-        }
+        .section-wrap { max-width:1100px; margin:0 auto; padding:3rem 2rem; }
+        .section-bg { background:var(--surface); }
+        .section-header { display:flex; align-items:center; gap:.8rem; margin-bottom:1.5rem; }
+        .section-header .icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+        .section-header h2 { font-size:1.6rem; font-weight:700; color:var(--text); }
+        .section-header .section-num { font-size:.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--primary); font-weight:600; }
 
         /* CARDS */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-            gap: 1.2rem;
-            margin: 1.5rem 0;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: box-shadow .2s, transform .2s;
-        }
-
-        .card:hover {
-            box-shadow: 0 4px 20px rgba(22, 163, 74, .12);
-            transform: translateY(-2px);
-        }
-
-        .card h3 {
-            font-size: 1rem;
-            margin-bottom: .5rem;
-            color: var(--primary-dark);
-        }
-
-        .card p,
-        .card li {
-            font-size: .88rem;
-            color: var(--text-secondary);
-        }
-
-        .card ul {
-            padding-left: 1.2rem;
-            margin-top: .4rem;
-        }
-
-        .card li {
-            margin-bottom: .2rem;
-        }
+        .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:1.2rem; margin:1.5rem 0; }
+        .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; transition:box-shadow .2s,transform .2s; }
+        .card:hover { box-shadow:0 4px 20px rgba(22,163,74,.12); transform:translateY(-2px); }
+        .card h3 { font-size:1rem; margin-bottom:.5rem; color:var(--primary-dark); }
+        .card p,.card li { font-size:.88rem; color:var(--text-secondary); }
+        .card ul { padding-left:1.2rem; margin-top:.4rem; }
+        .card li { margin-bottom:.2rem; }
 
         /* TABLE */
-        .table-wrap {
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: .88rem;
-        }
-
-        th {
-            background: var(--primary);
-            color: white;
-            padding: .6rem .8rem;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        td {
-            padding: .55rem .8rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        tr:hover td {
-            background: #f0fdf4;
-        }
+        .table-wrap { overflow-x:auto; margin:1rem 0; }
+        table { width:100%; border-collapse:collapse; font-size:.88rem; }
+        th { background:var(--primary); color:white; padding:.6rem .8rem; text-align:left; font-weight:600; }
+        td { padding:.55rem .8rem; border-bottom:1px solid var(--border); }
+        tr:hover td { background:#f0fdf4; }
 
         /* CODE */
-        .code-block {
-            background: var(--code-bg);
-            color: var(--code-text);
-            padding: 1.2rem 1.5rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-            font-size: .82rem;
-            line-height: 1.7;
-            margin: 1rem 0;
-        }
-
-        .code-block .keyword {
-            color: #86efac;
-        }
-
-        .code-block .string {
-            color: #fde68a;
-        }
-
-        .code-block .comment {
-            color: #4b6b59;
-        }
-
-        .code-block .number {
-            color: #fb923c;
-        }
-
-        .code-block .fn {
-            color: #67e8f9;
-        }
-
-        code {
-            background: #f0fdf4;
-            padding: .15rem .4rem;
-            border-radius: 3px;
-            font-family: 'Cascadia Code', 'Fira Code', monospace;
-            font-size: .85em;
-            color: var(--primary-dark);
-            border: 1px solid #bbf7d0;
-        }
+        .code-block { background:var(--code-bg); color:var(--code-text); padding:1.2rem 1.5rem; border-radius:8px; overflow-x:auto; font-family:'Cascadia Code','Fira Code','Consolas',monospace; font-size:.82rem; line-height:1.7; margin:1rem 0; }
+        .code-block .kw { color:#86efac; } .code-block .str { color:#fde68a; } .code-block .cm { color:#4b6b59; } .code-block .fn { color:#67e8f9; }
+        code { background:#f0fdf4; padding:.15rem .4rem; border-radius:3px; font-family:'Cascadia Code','Fira Code',monospace; font-size:.85em; color:var(--primary-dark); border:1px solid #bbf7d0; }
 
         /* FLOW */
-        .flow {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            flex-wrap: wrap;
-            margin: 1rem 0;
-        }
-
-        .flow-step {
-            background: var(--primary);
-            color: white;
-            padding: .4rem .9rem;
-            border-radius: 8px;
-            font-size: .82rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .flow-step.alt {
-            background: var(--accent);
-        }
-
-        .flow-step.success {
-            background: var(--success);
-        }
-
-        .flow-step.warning {
-            background: var(--warning);
-        }
-
-        .flow-step.danger {
-            background: var(--danger);
-        }
-
-        .flow-arrow {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-        }
+        .flow { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; margin:1rem 0; }
+        .flow-step { background:var(--primary); color:white; padding:.4rem .9rem; border-radius:8px; font-size:.82rem; font-weight:600; white-space:nowrap; }
+        .flow-step.alt { background:var(--accent); } .flow-step.success { background:var(--success); }
+        .flow-step.warning { background:var(--warning); } .flow-step.danger { background:var(--danger); }
+        .flow-step.purple { background:var(--purple); } .flow-arrow { font-size:1.2rem; color:var(--text-secondary); }
 
         /* TIER */
-        .tier-list {
-            margin: 1rem 0;
-        }
-
-        .tier-item {
-            display: flex;
-            align-items: stretch;
-            margin-bottom: .6rem;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        .tier-label {
-            width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: .85rem;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .tier-content {
-            flex: 1;
-            padding: .7rem 1rem;
-            background: var(--surface);
-        }
-
-        .tier-content strong {
-            display: block;
-            font-size: .9rem;
-            margin-bottom: .2rem;
-        }
-
-        .tier-content span {
-            font-size: .82rem;
-            color: var(--text-secondary);
-        }
+        .tier-list { margin:1rem 0; }
+        .tier-item { display:flex; align-items:stretch; margin-bottom:.6rem; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+        .tier-label { width:80px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; color:white; flex-shrink:0; }
+        .tier-content { flex:1; padding:.7rem 1rem; background:var(--surface); }
+        .tier-content strong { display:block; font-size:.9rem; margin-bottom:.2rem; }
+        .tier-content span { font-size:.82rem; color:var(--text-secondary); }
 
         /* STATS */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 1.2rem .8rem;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: box-shadow .2s;
-        }
-
-        .stat-card:hover {
-            box-shadow: 0 4px 16px rgba(22, 163, 74, .15);
-        }
-
-        .stat-card .value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-
-        .stat-card .label {
-            font-size: .78rem;
-            color: var(--text-secondary);
-            margin-top: .2rem;
-        }
+        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1rem; margin:1.5rem 0; }
+        .stat-card { text-align:center; padding:1.2rem .8rem; background:var(--surface); border:1px solid var(--border); border-radius:12px; transition:box-shadow .2s; }
+        .stat-card:hover { box-shadow:0 4px 16px rgba(22,163,74,.15); }
+        .stat-card .value { font-size:1.8rem; font-weight:800; color:var(--primary); }
+        .stat-card .label { font-size:.78rem; color:var(--text-secondary); margin-top:.2rem; }
 
         /* TIMELINE */
-        .timeline {
-            position: relative;
-            padding-left: 2rem;
-            margin: 1.5rem 0;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--primary);
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -2rem;
-            top: 6px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--primary);
-            border: 2px solid white;
-            box-shadow: 0 0 0 2px var(--primary);
-        }
-
-        .timeline-item h4 {
-            font-size: .95rem;
-            color: var(--primary-dark);
-            margin-bottom: .3rem;
-        }
-
-        .timeline-item p {
-            font-size: .85rem;
-            color: var(--text-secondary);
-        }
+        .timeline { position:relative; padding-left:2rem; margin:1.5rem 0; }
+        .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--primary); }
+        .timeline-item { position:relative; margin-bottom:1.5rem; }
+        .timeline-item::before { content:''; position:absolute; left:-2rem; top:6px; width:14px; height:14px; border-radius:50%; background:var(--primary); border:2px solid white; box-shadow:0 0 0 2px var(--primary); }
+        .timeline-item h4 { font-size:.95rem; color:var(--primary-dark); margin-bottom:.3rem; }
+        .timeline-item p { font-size:.85rem; color:var(--text-secondary); }
 
         /* HIGHLIGHT */
-        .highlight {
-            border-left: 4px solid var(--primary);
-            background: #f0fdf4;
-            padding: 1rem 1.2rem;
-            border-radius: 0 8px 8px 0;
-            margin: 1rem 0;
-        }
+        .highlight { border-left:4px solid var(--primary); background:#f0fdf4; padding:1rem 1.2rem; border-radius:0 8px 8px 0; margin:1rem 0; }
+        .highlight.info { border-color:var(--info); background:#eff6ff; }
+        .highlight.success { border-color:var(--success); background:#f0fdf4; }
+        .highlight.warning { border-color:var(--warning); background:#fffbeb; }
+        .highlight.danger { border-color:var(--danger); background:#fef2f2; }
+        .highlight.purple { border-color:var(--purple); background:#f5f3ff; }
 
-        .highlight.info {
-            border-color: var(--info);
-            background: #eff6ff;
-        }
-
-        .highlight.success {
-            border-color: var(--success);
-            background: #f0fdf4;
-        }
-
-        .highlight.warning {
-            border-color: var(--warning);
-            background: #fffbeb;
-        }
-
-        .highlight.danger {
-            border-color: var(--danger);
-            background: #fef2f2;
-        }
-
-        /* ARCH GRID */
-        .arch-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: .8rem;
-            margin: 1.5rem 0;
-        }
-
-        .arch-module {
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-            transition: all .2s;
-        }
-
-        .arch-module:hover {
-            border-color: var(--primary);
-            box-shadow: 0 2px 12px rgba(22, 163, 74, .18);
-        }
-
-        .arch-module .mod-icon {
-            font-size: 1.8rem;
-            margin-bottom: .3rem;
-        }
-
-        .arch-module .mod-name {
-            font-weight: 700;
-            font-size: .9rem;
-            color: var(--primary-dark);
-        }
-
-        .arch-module .mod-desc {
-            font-size: .75rem;
-            color: var(--text-secondary);
-            margin-top: .2rem;
-        }
-
-        .arch-module.todo {
-            opacity: .5;
-            border-style: dashed;
-        }
+        /* ARCH */
+        .arch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.8rem; margin:1.5rem 0; }
+        .arch-module { border:2px solid var(--border); border-radius:10px; padding:1rem; text-align:center; transition:all .2s; }
+        .arch-module:hover { border-color:var(--primary); box-shadow:0 2px 12px rgba(22,163,74,.18); }
+        .arch-module .mod-icon { font-size:1.8rem; margin-bottom:.3rem; }
+        .arch-module .mod-name { font-weight:700; font-size:.9rem; color:var(--primary-dark); }
+        .arch-module .mod-desc { font-size:.75rem; color:var(--text-secondary); margin-top:.2rem; }
+        .arch-module.new { border-color:#10b981; border-style:solid; background:#f0fdf4; }
 
         /* FOOTER */
-        footer {
-            text-align: center;
-            padding: 2rem;
-            background: var(--code-bg);
-            color: rgba(255, 255, 255, .6);
-            font-size: .8rem;
-        }
-
-        footer strong {
-            color: rgba(255, 255, 255, .9);
-        }
-
-        /* RESPONSIVE */
-        @media(max-width:768px) {
-            .hero h1 {
-                font-size: 1.6rem;
-            }
-
-            .section-wrap {
-                padding: 2rem 1rem;
-            }
-
-            .card-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .arch-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            nav .nav-links {
-                display: none;
-            }
-        }
+        footer { text-align:center; padding:2rem; background:var(--code-bg); color:rgba(255,255,255,.6); font-size:.8rem; }
+        footer strong { color:rgba(255,255,255,.9); }
 
         /* MERMAID */
-        .mermaid {
-            text-align: center;
-            margin: 1.5rem 0;
-            background: #f8fffe;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1rem;
-            overflow-x: auto;
+        .mermaid { text-align:center; margin:1.5rem 0; background:#f8fffe; border:1px solid var(--border); border-radius:10px; padding:1rem; overflow-x:auto; }
+
+        /* STATUS BADGE */
+        .status { display:inline-block; padding:.2rem .7rem; border-radius:12px; font-size:.78rem; font-weight:700; }
+        .status.done { background:#d1fae5; color:#065f46; }
+        .status.new  { background:#dbeafe; color:#1e40af; }
+        .status.todo { background:#fef3c7; color:#92400e; }
+
+        @media(max-width:768px) {
+            .hero h1 { font-size:1.6rem; } .section-wrap { padding:2rem 1rem; }
+            .card-grid { grid-template-columns:1fr; } .arch-grid { grid-template-columns:repeat(2,1fr); }
+            nav .nav-links { display:none; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 
 <body>
-
     <!-- NAV -->
     <nav>
         <div class="logo">🍜 TourApp — Ẩm Thực Quận 4</div>
@@ -572,13 +138,11 @@
             <li><a href="#overview">Tổng quan</a></li>
             <li><a href="#startup">Khởi động</a></li>
             <li><a href="#geofence">GPS/Geofence</a></li>
-            <li><a href="#content">POI Content</a></li>
             <li><a href="#audio">Audio TTS</a></li>
-            <li><a href="#auth">Auth</a></li>
-            <li><a href="#i18n">i18n</a></li>
-            <li><a href="#offline">Offline</a></li>
+            <li><a href="#qrcode">QR Code</a></li>
+            <li><a href="#cms">CMS Admin</a></li>
+            <li><a href="#analytics">Analytics</a></li>
             <li><a href="#maps">Bản đồ</a></li>
-            <li><a href="#admin">Admin/Log</a></li>
             <li><a href="#patterns">Patterns</a></li>
             <li><a href="#diagrams">Diagrams</a></li>
         </ul>
@@ -587,17 +151,16 @@
     <!-- HERO -->
     <div class="hero">
         <h1>TourApp Mobile</h1>
-        <p class="subtitle">Ứng dụng du lịch ẩm thực Quận 4 — Bản đồ tương tác Goong Maps, tự động thuyết minh GPS
-            Geofence, chạy native trên Android</p>
+        <p class="subtitle">Ứng dụng du lịch ẩm thực Quận 4 — Bản đồ Goong Maps, GPS Geofence tự động thuyết minh, QR Code bypass, CMS đa ngôn ngữ</p>
         <div class="badges">
             <span class="badge">.NET MAUI Android</span>
             <span class="badge">Goong Maps JS</span>
             <span class="badge">GPS + Geofence</span>
             <span class="badge">MAUI TextToSpeech</span>
             <span class="badge">SQL Server / REST API</span>
-            <span class="badge">C# / XAML</span>
-            <span class="badge">TTS / Audio File</span>
-            <span class="badge">$0 TTS Cost</span>
+            <span class="badge">QR Code Scanner</span>
+            <span class="badge">Auto-Translate 10 ngôn ngữ</span>
+            <span class="badge">Analytics Dashboard</span>
         </div>
     </div>
 
@@ -605,38 +168,14 @@
     <div class="section-bg">
         <div class="section-wrap">
             <div class="stats-row">
-                <div class="stat-card">
-                    <div class="value">1</div>
-                    <div class="label">Services</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">4</div>
-                    <div class="label">Models</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">3</div>
-                    <div class="label">Views</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">30m</div>
-                    <div class="label">Default Geofence Radius</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">5s</div>
-                    <div class="label">GPS Poll Interval</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">2m</div>
-                    <div class="label">Audio Cooldown / POI</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">5</div>
-                    <div class="label">POI Demo (Vĩnh Khánh)</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">$0</div>
-                    <div class="label">Core TTS Cost</div>
-                </div>
+                <div class="stat-card"><div class="value">3</div><div class="label">Projects (API/CMS/Mobile)</div></div>
+                <div class="stat-card"><div class="value">10</div><div class="label">Ngôn ngữ TTS Auto-dịch</div></div>
+                <div class="stat-card"><div class="value">30m</div><div class="label">Default Geofence Radius</div></div>
+                <div class="stat-card"><div class="value">5s</div><div class="label">GPS Poll Interval</div></div>
+                <div class="stat-card"><div class="value">2m</div><div class="label">Audio Cooldown / POI</div></div>
+                <div class="stat-card"><div class="value">QR</div><div class="label">Bypass GPS Radius</div></div>
+                <div class="stat-card"><div class="value">5</div><div class="label">POI Demo (Vĩnh Khánh)</div></div>
+                <div class="stat-card"><div class="value">$0</div><div class="label">Core TTS Cost</div></div>
             </div>
         </div>
     </div>
@@ -646,82 +185,29 @@
         <div class="section-wrap">
             <div class="section-header">
                 <div class="icon" style="background:#f0fdf4;color:var(--primary);">🏗️</div>
-                <div>
-                    <div class="section-num">Chapter 00</div>
-                    <h2>Kiến Trúc Tổng Quan</h2>
-                </div>
+                <div><div class="section-num">Chapter 00</div><h2>Kiến Trúc Tổng Quan</h2></div>
             </div>
-            <p style="margin-bottom:1rem;color:var(--text-secondary);">App native Android viết bằng <strong>.NET MAUI
-                    C#/XAML</strong>. Bản đồ <strong>Goong Maps JS</strong> nhúng trong WebView. Không có backend server
-                riêng — dữ liệu POI từ mock/SQLite, kế hoạch kết nối <strong>MySQL REST API</strong> do bạn kia làm.</p>
+            <p style="margin-bottom:1rem;color:var(--text-secondary);">App native Android viết bằng <strong>.NET MAUI C#/XAML</strong>. Bản đồ <strong>Goong Maps JS</strong> nhúng trong WebView. Backend <strong>ASP.NET Core REST API</strong> + CMS Web Admin. Database <strong>SQL Server</strong>.</p>
             <div class="arch-grid">
-                <div class="arch-module">
-                    <div class="mod-icon">📍</div>
-                    <div class="mod-name">MapPage</div>
-                    <div class="mod-desc">Trang chính: bản đồ Goong, markers POI, bottom sheet, search</div>
-                </div>
-                <div class="arch-module">
-                    <div class="mod-icon">📡</div>
-                    <div class="mod-name">LocationService</div>
-                    <div class="mod-desc">Polling GPS mỗi 5s, yêu cầu quyền, phát LocationChanged event</div>
-                </div>
-                <div class="arch-module">
-                    <div class="mod-icon">🔔</div>
-                    <div class="mod-name">GeofenceService</div>
-                    <div class="mod-desc">Haversine distance, phát hiện vào zone, trigger TTS + UI</div>
-                </div>
-                <div class="arch-module">
-                    <div class="mod-icon">💾</div>
-                    <div class="mod-name">ApiClientService</div>
-                    <div class="mod-desc">Gọi REST API lấy DS POI (SQL Server)</div>
-                </div>
-                <div class="arch-module">
-                    <div class="mod-icon">🗣️</div>
-                    <div class="mod-name">TextToSpeech</div>
-                    <div class="mod-desc">MAUI built-in TTS, Android voice, 100% offline</div>
-                </div>
-                <div class="arch-module todo">
-                    <div class="mod-icon">🌐</div>
-                    <div class="mod-name">REST API / Backend</div>
-                    <div class="mod-desc">Phần Backend/CMS xử lý Web quản lý do 1 bạn làm</div>
-                </div>
+                <div class="arch-module"><div class="mod-icon">📍</div><div class="mod-name">MapPage</div><div class="mod-desc">Bản đồ Goong, markers POI, bottom sheet, search, QR button</div></div>
+                <div class="arch-module"><div class="mod-icon">📡</div><div class="mod-name">LocationService</div><div class="mod-desc">Polling GPS mỗi 5s, phát LocationChanged event</div></div>
+                <div class="arch-module"><div class="mod-icon">🔔</div><div class="mod-name">GeofenceService</div><div class="mod-desc">Haversine, cooldown 2 phút, TTS đa ngôn ngữ từ DB, QR bypass</div></div>
+                <div class="arch-module"><div class="mod-icon">💾</div><div class="mod-name">ApiService</div><div class="mod-desc">REST API, Auto-Discovery WiFi, Bulk Audio</div></div>
+                <div class="arch-module"><div class="mod-icon">🗣️</div><div class="mod-name">TextToSpeech</div><div class="mod-desc">MAUI built-in TTS, 10 locale, ScriptText từ DB</div></div>
+                <div class="arch-module new"><div class="mod-icon">🌐</div><div class="mod-name">CMS Web Admin</div><div class="mod-desc">CRUD POI/Audio/Tour, Auto-translate, QR Generator, Analytics</div></div>
             </div>
-            <h3 style="margin:1.5rem 0 .8rem;">MongoDB-style Collections → MySQL Tables</h3>
+
+            <h3 style="margin:1.5rem 0 .8rem;">Database Schema (SQL Server)</h3>
             <div class="table-wrap">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Table (SQL Server)</th>
-                            <th>Module</th>
-                            <th>Mục đích</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Table</th><th>Mục đích</th><th>Trạng thái</th></tr></thead>
                     <tbody>
-                        <tr>
-                            <td><code>POI</code></td>
-                            <td>ApiClientService</td>
-                            <td>Địa điểm Q4: Tọa độ, Bán kính (Radius), Mức ưu tiên (Priority), Address</td>
-                        </tr>
-                        <tr>
-                            <td><code>Audio</code></td>
-                            <td>ApiClientService</td>
-                            <td>Đa ngôn ngữ: File Audio (AudioPath) hoặc Kịch bản TTS (ScriptText)</td>
-                        </tr>
-                        <tr>
-                            <td><code>Tour</code>, <code>TourPOI</code></td>
-                            <td>ApiClientService</td>
-                            <td>Nhóm POI thành lịch trình hoặc khu vực</td>
-                        </tr>
-                        <tr>
-                            <td><code>NarrationLog</code></td>
-                            <td>GeofenceService</td>
-                            <td>Lịch sử thuyết minh (poi_id, triggered_at, type)</td>
-                        </tr>
-                        <tr>
-                            <td><code>UserLocationLog</code></td>
-                            <td>LoginPage</td>
-                            <td>Tracking GPS (Background/Foreground) - Phục vụ Analytics</td>
-                        </tr>
+                        <tr><td><code>POIs</code></td><td>Địa điểm: tọa độ, radius, priority, image, openTime, rating</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td><code>Audios</code></td><td>Script TTS / MP3 path — đa ngôn ngữ (1 POI → nhiều Audio record)</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td><code>NarrationLogs</code></td><td>Lịch sử phát: poiId, triggerType (geofence/qr), timestamp, deviceId</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td><code>Tours / TourPOIs</code></td><td>Nhóm POI thành lịch trình</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td><code>Users / Bookings</code></td><td>Quản lý thành viên và đặt vé</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td><code>UserLocationLogs</code></td><td>Tracking GPS ẩn danh phục vụ heatmap</td><td><span class="status todo">🔜 Planned</span></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -733,50 +219,23 @@
         <div class="section-wrap">
             <div class="section-header">
                 <div class="icon" style="background:#f0fdf4;color:var(--success);">🚀</div>
-                <div>
-                    <div class="section-num">Chapter 01</div>
-                    <h2>Luồng Khởi Động App</h2>
-                </div>
+                <div><div class="section-num">Chapter 01</div><h2>Luồng Khởi Động App</h2></div>
             </div>
-            <h3>Backend Startup (MauiProgram.cs)</h3>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <h4>Tầng 1 — WebView Android Config</h4>
-                    <p>Cấu hình trước khi build: <code>JavaScriptEnabled = true</code>,
-                        <code>DomStorageEnabled = true</code>, <code>MixedContentMode = AlwaysAllow</code>,
-                        <code>LayerType.Hardware</code>. Bắt buộc để Goong Maps JS chạy được.
-                    </p>
-                </div>
-                <div class="timeline-item">
-                    <h4>Tầng 2 — DI Container</h4>
-                    <p>Đăng ký Singleton: <code>ApiClientService</code>, <code>LocationService</code>,
-                        <code>GeofenceService</code>. Đăng ký Transient: <code>MapPage</code>.
-                    </p>
-                </div>
-                <div class="timeline-item">
-                    <h4>Tầng 3 — AppShell → MapPage</h4>
-                    <p>Shell route mặc định đến <code>MapPage</code>. Constructor inject 3 services, đăng ký 2 events.
-                    </p>
-                </div>
-                <div class="timeline-item">
-                    <h4>Tầng 4 — OnAppearing() [Critical Path]</h4>
-                    <p><code>InitializeAsync()</code> → <code>GetAllPOIsAsync()</code> → <code>LoadMap()</code> inject
-                        HTML+Goong JS vào WebView → <code>StartTracking()</code> bắt đầu poll GPS.</p>
-                </div>
-            </div>
-            <h3 style="margin-top:1.5rem;">Frontend Startup Flow</h3>
             <div class="flow">
                 <span class="flow-step">App Launch</span><span class="flow-arrow">→</span>
-                <span class="flow-step alt">MauiProgram DI</span><span class="flow-arrow">→</span>
+                <span class="flow-step alt">MAUI DI</span><span class="flow-arrow">→</span>
                 <span class="flow-step warning">AppShell</span><span class="flow-arrow">→</span>
                 <span class="flow-step">MapPage</span><span class="flow-arrow">→</span>
-                <span class="flow-step alt">Load POIs (mock)</span><span class="flow-arrow">→</span>
-                <span class="flow-step success">Goong Map Render</span><span class="flow-arrow">→</span>
+                <span class="flow-step alt">Load Map (empty)</span><span class="flow-arrow">→</span>
+                <span class="flow-step danger">Auto-Discover API</span><span class="flow-arrow">→</span>
+                <span class="flow-step success">Load POIs + Audios</span><span class="flow-arrow">→</span>
                 <span class="flow-step">GPS Tracking</span>
             </div>
             <div class="highlight success">
-                <strong>✅ App Khởi Động Tối Ưu:</strong> Dữ liệu POI được tải bất đồng bộ (Async) từ Backend REST API.
-                Giao diện thiết kế đảm bảo GPS chạy Background Thread không blocks UI, bypass timeout.
+                <strong>✅ Anti-Crash Strategy:</strong> Map load ngay với empty POI list. API Discovery chạy background thread. Nếu API không tồn tại → app vẫn hiển thị bản đồ bình thường (graceful degradation).
+            </div>
+            <div class="highlight info" style="margin-top:.8rem;">
+                <strong>🆕 Auto-Discovery WiFi:</strong> <code>ApiService.AutoDiscoverApiAsync()</code> scan <code>x.x.x.1→254:5254</code> tìm server tự động — không cần nhập IP thủ công.
             </div>
         </div>
 
@@ -785,1180 +244,460 @@
             <div class="section-wrap">
                 <div class="section-header">
                     <div class="icon" style="background:#eff6ff;color:var(--info);">📡</div>
-                    <div>
-                        <div class="section-num">Chapter 02</div>
-                        <h2>GPS + Geofence + Audio Narration</h2>
-                    </div>
-                </div>
-                <p style="margin-bottom:1.5rem;color:var(--text-secondary);">LocationService poll GPS mỗi 5 giây. Mỗi
-                    update
-                    kích hoạt CheckGeofences() — tính Haversine đến từng POI, debounce 2 phút cooldown, trigger TTS + UI
-                    khi
-                    vào zone.</p>
-                <h3>Thuyết Minh Tự Động & Chống Spam</h3>
-                <p> Hệ thống hỗ trợ <b>Debounce & Cooldown</b>: Giới hạn 2 phút/POI để tránh lặp thoại nếu user đứng
-                    yên. Geofence trigger tự động khi Location rơi vào Radius của POI.</p>
-                <div class="highlight info" style="margin-top:1rem;">
-                    <strong>🔥 Tính Năng Mới - Quét QR Bypass:</strong> Dán QR tại điểm trạm. User quét QR -> Request
-                    Backend lập tức -> Trả về URL MP3/Script Audio -> Xóa hàng đợi và phát đè luôn (Bypass GPS Radius).
-                </div>
-                <h3>Luồng Geofence Engine (4 Bước)</h3>
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <h4>Giai đoạn 1 — GPS Collection (LocationService)</h4>
-                        <p><code>GetLocationAsync()</code> mỗi 5s trên background thread →
-                            <code>MainThread.BeginInvokeOnMainThread()</code> phát <code>LocationChanged</code> event an
-                            toàn.
-                        </p>
-                    </div>
-                    <div class="timeline-item">
-                        <h4>Giai đoạn 2 — Zone Detection (GeofenceService)</h4>
-                        <p><code>CheckGeofences(pos)</code>: <code>Location.CalculateDistance()</code> tính khoảng cách.
-                            ≤
-                            radius → kiểm tra cooldown → <code>TriggerNarration(poi)</code>. Chỉ trigger 1 POI/lần
-                            (<code>break</code>).</p>
-                    </div>
-                    <div class="timeline-item">
-                        <h4>Giai đoạn 3 — Audio Decision</h4>
-                        <p>Cooldown 2 phút/POI: nếu <code>poi.PoiId == _lastSpokenPoiId</code> và chưa qua 2 phút → bỏ
-                            qua.
-                            Tránh thuyết minh lặp lại khi đứng yên.</p>
-                    </div>
-                    <div class="timeline-item">
-                        <h4>Giai đoạn 4 — Audio Playback + UI</h4>
-                        <p><code>PoiTriggered</code> event → <code>ShowPoiDetails(poi)</code> mở bottom sheet. Song
-                            song:
-                            <code>SpeakNarrationAsync()</code> → <code>TextToSpeech.Default.SpeakAsync()</code>.
-                        </p>
-                    </div>
-                </div>
-                <div class="card-grid" style="margin-top:1rem;">
-                    <div class="card">
-                        <h3>📏 Radius per POI</h3>
-                        <ul>
-                            <li>Ốc Oanh: <strong>30m</strong> (Priority 1)</li>
-                            <li>Lẩu Bò Khu Vực: <strong>25m</strong> (Priority 1)</li>
-                            <li>Trà Sữa Vĩnh Khánh: <strong>20m</strong> (Priority 2)</li>
-                            <li>Default model: <strong>80m</strong></li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>⏱️ Timing Constants</h3>
-                        <ul>
-                            <li>GPS Interval: <strong>5s</strong></li>
-                            <li>Geolocation timeout: <strong>5s</strong></li>
-                            <li>Audio cooldown/POI: <strong>2 phút</strong></li>
-                            <li>Max trigger/cycle: <strong>1 POI</strong></li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🔗 JS Bridge (Map ↔ C#)</h3>
-                        <p><strong>C# → JS:</strong> <code>MapWebView.Eval("updateUserLocation(...)")</code> cập nhật
-                            dot vị
-                            trí, <code>map.flyTo()</code></p>
-                        <p style="margin-top:.4rem;"><strong>JS → C#:</strong> Click marker →
-                            <code>poi://selected?id=1</code> → <code>OnMapWebViewNavigating()</code>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- POI CONTENT -->
-        <div id="content" class="section-bg">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#fce7f3;color:#be185d;">📍</div>
-                    <div>
-                        <div class="section-num">Chapter 03</div>
-                        <h2>POI Content — Vòng Đời Dữ Liệu</h2>
-                    </div>
+                    <div><div class="section-num">Chapter 02</div><h2>GPS + Geofence + Audio Narration</h2></div>
                 </div>
                 <div class="card-grid">
                     <div class="card">
-                        <h3>📖 Load POI (Startup)</h3>
-                        <p><code>GetAllPOIsAsync()</code> → mock 3 POI hardcode (sau này: <code>GET /api/pois</code> từ
-                            MySQL). Dữ liệu load 1 lần khi app mở, lưu trong <code>_pois</code> list.</p>
+                        <h3>📏 Haversine Distance</h3>
+                        <p><code>Location.CalculateDistance()</code> tính khoảng cách thực tế. ≤ Radius → kiểm tra cooldown → trigger TTS.</p>
                     </div>
                     <div class="card">
-                        <h3>🗺️ Render Markers</h3>
-                        <p>Serialize <code>List&lt;POI&gt;</code> → JSON → inject vào HTML Goong Map. JS loop tạo
-                            <code>goongjs.Marker</code> cho từng POI với emoji 🍽️.
-                        </p>
+                        <h3>⏱️ Cooldown 2 phút/POI</h3>
+                        <p>Chống spam: cùng 1 POI chỉ phát lại sau 2 phút đứng yên. Mỗi cycle chỉ trigger 1 POI (break).</p>
                     </div>
                     <div class="card">
-                        <h3>🔍 Search POI</h3>
-                        <p>1. Tìm trong <code>_pois</code> local (PoiName contains). 2. Nếu không có: Goong AutoComplete
-                            API
-                            → Place Detail API → <code>map.flyTo()</code>.</p>
-                    </div>
-                    <div class="card">
-                        <h3>⭐ Favorites</h3>
-                        <p>Lưu qua <code>Preferences.Default</code> với key <code>fav_{poiId}</code>. Không cần DB —
-                            persist
-                            ngay trên device giữa các session.</p>
-                    </div>
-                </div>
-                <h3 style="margin-top:1.5rem;">3-Tier Content Fallback (kế hoạch)</h3>
-                <div class="tier-list">
-                    <div class="tier-item">
-                        <div class="tier-label" style="background:#059669;">Tier 1</div>
-                        <div class="tier-content">
-                            <strong>MySQL REST API (online)</strong>
-                            <span><code>GET /api/pois</code> → dữ liệu đầy đủ, ảnh URL, audio_url từ server.</span>
-                        </div>
-                    </div>
-                    <div class="tier-item">
-                        <div class="tier-label" style="background:#2563eb;">Tier 2</div>
-                        <div class="tier-content">
-                            <strong>SQLite Local Cache (offline)</strong>
-                            <span>Lưu POI sau khi fetch lần đầu → mở lại app không cần mạng vẫn có dữ liệu.</span>
-                        </div>
-                    </div>
-                    <div class="tier-item">
-                        <div class="tier-label" style="background:#d97706;">Tier 3</div>
-                        <div class="tier-content">
-                            <strong>Mock Data Hardcode (fallback cuối)</strong>
-                            <span><code>USE_MOCK_DATA = true</code> — 3 POI demo Vĩnh Khánh. Luôn hoạt động kể cả khi
-                                backend chưa xong.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- AUDIO -->
-        <div id="audio">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#f5f3ff;color:#7c3aed;">🎧</div>
-                    <div>
-                        <div class="section-num">Chapter 04</div>
-                        <h2>Audio / Text-To-Speech</h2>
-                    </div>
-                </div>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>🔥 Admin Web CMS / CRUD Kịch Bản TTS</h3>
-                        <ul>
-                            <li>Admin có quyền CRUD tùy chỉnh đoạn văn TTS theo nhiều ngôn ngữ (vi, en).</li>
-                            <li>Linh hoạt cao: Cập nhật text, mobile tự đổi thoại ngay.</li>
-                            <li>Phù hợp lúc rảnh tay, dung lượng load cực thấp.</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🔔 2 Điểm Trigger Audio</h3>
-                        <ul>
-                            <li><strong>Tự động:</strong> Geofence → <code>SpeakNarrationAsync(poi)</code></li>
-                            <li><strong>Manual:</strong> Nút ▶️ trong bottom sheet</li>
-                            <li>Nội dung: <em>"Chào mừng bạn đến [tên]. [mô tả]"</em></li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🎙️ Audio Thu Sẵn / Hàng Đợi Queue</h3>
-                        <ul>
-                            <li>File MP3 tự nhiên, chất lượng cao cực mượt.</li>
-                            <li>Hỗ trợ AudioTaskManager: Queue hàng đợi.</li>
-                            <li>Trường hợp có Audio = Play MP3. Không có = Play TTS Văn bản.</li>
-                            <li>Tự ngắt khi có sự kiện ưu tiên hơn (QR Code).</li>
-                        </ul>
-                    </div>
-                </div>
-                <h3 style="margin-top:1.5rem;">Audio Generation Pipeline</h3>
-                <div class="flow">
-                    <span class="flow-step warning">Geofence Trigger</span><span class="flow-arrow">→</span>
-                    <span class="flow-step alt">Check Audio DB</span><span class="flow-arrow">→</span>
-                    <span class="flow-step">audio_url tồn tại?</span><span class="flow-arrow">→</span>
-                    <span class="flow-step success">Phát file MP3 (TODO)</span>
-                </div>
-                <div class="flow">
-                    <span class="flow-step warning">Không có file</span><span class="flow-arrow">→</span>
-                    <span class="flow-step alt">Build text string</span><span class="flow-arrow">→</span>
-                    <span class="flow-step">TextToSpeech.SpeakAsync()</span><span class="flow-arrow">→</span>
-                    <span class="flow-step success">Android TTS Engine</span>
-                </div>
-                <div class="highlight success">
-                    <strong>Lợi thế MAUI TTS: </strong> Offline 100%, $0 cost, luôn hoạt động. Phù hợp demo đồ án khi
-                    chưa
-                    có backend audio hosting.
-                </div>
-            </div>
-        </div>
-
-        <!-- AUTH -->
-        <div id="auth" class="section-bg">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#fdf4ff;color:#7e22ce;">🔐</div>
-                    <div>
-                        <div class="section-num">Chapter 05</div>
-                        <h2>Authentication</h2>
-                    </div>
-                </div>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>📄 LoginPage.xaml</h3>
-                        <ul>
-                            <li>Form đăng nhập (username, password)</li>
-                            <li>Điều hướng đến MapPage sau login</li>
-                            <li>Auth logic: TODO kết nối MySQL</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>📝 RegisterPage.xaml</h3>
-                        <ul>
-                            <li>Form đăng ký tài khoản</li>
-                            <li>TODO: <code>POST /api/auth/register</code></li>
-                            <li>Validate input phía client</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🔒 Kế Hoạch Auth</h3>
-                        <ul>
-                            <li>JWT token từ MySQL backend</li>
-                            <li>Lưu: <code>SecureStorage.SetAsync()</code></li>
-                            <li>Roles: <code>user</code> / <code>admin</code></li>
-                            <li>Auto-refresh khi hết hạn</li>
-                        </ul>
+                        <h3>🌐 TTS Đa Ngôn Ngữ</h3>
+                        <p><code>poi.GetScript(CurrentLanguage)</code> lấy ScriptText từ <code>poi.Audios</code> (DB). Fallback vi → Description. Locale TTS tự động theo ngôn ngữ.</p>
                     </div>
                 </div>
                 <div class="highlight info">
-                    <strong>Đủ cho đồ án giữa kỳ:</strong> UI Login/Register hoàn chỉnh, luồng điều hướng hoạt động.
-                    Auth
-                    thật bổ sung sau khi MySQL backend sẵn sàng.
+                    <strong>🆕 ScriptText từ DB (không còn hardcode):</strong> GeofenceService gọi <code>poi.GetScript("vi")</code> lấy nội dung thuyết minh admin đã nhập trong CMS. Thay nội dung CMS → mobile phát đúng ngay, không cần build lại app.
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- I18N -->
-        <div id="i18n">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#ecfeff;color:#0e7490;">🌐</div>
-                    <div>
-                        <div class="section-num">Chapter 06</div>
-                        <h2>Localization / Đa Ngôn Ngữ</h2>
-                    </div>
+    <!-- AUDIO TTS -->
+    <div id="audio">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#f5f3ff;color:var(--purple);">🎧</div>
+                <div><div class="section-num">Chapter 03</div><h2>Audio / Text-To-Speech — Đa Ngôn Ngữ</h2></div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>🆕 Auto-Translate 10 Ngôn Ngữ</h3>
+                    <ul>
+                        <li>Admin nhập 1 văn bản gốc (bất kỳ ngôn ngữ nào)</li>
+                        <li>CMS nhận diện ngôn ngữ tự động (regex)</li>
+                        <li>Nhấn "Tải lên Server" → dịch 10 ngôn ngữ tuần tự</li>
+                        <li>Lưu 10 Audio records vào DB cùng lúc (bulk)</li>
+                        <li>Mobile tự chọn đúng ngôn ngữ user đang dùng</li>
+                    </ul>
                 </div>
-                <p style="margin-bottom:1rem;color:var(--text-secondary);">Hiện tại app chỉ hỗ trợ tiếng Việt.
-                    TextToSpeech
-                    MAUI có thể mở rộng sang đa ngôn ngữ với locale tương ứng.</p>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>🇻🇳 Hiện tại: Tiếng Việt</h3>
-                        <ul>
-                            <li>TTS locale: <code>vi-VN</code> (Android)</li>
-                            <li>Nội dung POI: tiếng Việt</li>
-                            <li>UI labels: tiếng Việt</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🔮 Mở Rộng Đa Ngôn Ngữ (TODO)</h3>
-                        <ul>
-                            <li>MAUI <code>ResourceDictionary</code> cho UI strings</li>
-                            <li>TTS locale: <code>en-US</code>, <code>zh-CN</code>, <code>ja-JP</code></li>
-                            <li>MySQL: thêm cột <code>lang</code> trong <code>audios</code></li>
-                            <li>GetAudioByPoiAsync(<strong>id, lang</strong>) đã có tham số</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>⚡ Goong Maps — Đã đa ngôn ngữ</h3>
-                        <ul>
-                            <li>Goong Maps JS tự render nhãn địa điểm theo locale browser</li>
-                            <li>Không cần config thêm</li>
-                        </ul>
-                    </div>
+                <div class="card">
+                    <h3>🔔 Audio Decision Tree</h3>
+                    <ul>
+                        <li><strong>Có file MP3:</strong> Play file MP3 thật (chất lượng cao)</li>
+                        <li><strong>Có ScriptText DB:</strong> TTS với đúng locale ngôn ngữ</li>
+                        <li><strong>Fallback:</strong> Dùng <code>poi.Description</code> (vi-VN)</li>
+                    </ul>
                 </div>
-                <div class="highlight info">
-                    <strong>Pattern tham khảo :</strong> Tham khảo <code>deep-translator</code> (miễn phí) để tự động
-                    dịch
-                    mô tả POI sang 5 ngôn ngữ và Edge-TTS tạo MP3. TourApp có thể áp dụng tương tự khi kết nối backend.
+                <div class="card">
+                    <h3>🌍 10 Ngôn Ngữ Hỗ Trợ</h3>
+                    <ul>
+                        <li>🇻🇳 vi-VN · 🇺🇸 en-US · 🇨🇳 zh-CN</li>
+                        <li>🇯🇵 ja-JP · 🇰🇷 ko-KR · 🇫🇷 fr-FR</li>
+                        <li>🇪🇸 es-ES · 🇩🇪 de-DE · 🇹🇭 th-TH · 🇷🇺 ru-RU</li>
+                    </ul>
+                </div>
+            </div>
+            <h3 style="margin-top:1.5rem;">CMS Auto-Translate Flow</h3>
+            <div class="flow">
+                <span class="flow-step warning">Admin nhập text</span><span class="flow-arrow">→</span>
+                <span class="flow-step alt">Detect ngôn ngữ</span><span class="flow-arrow">→</span>
+                <span class="flow-step">Click Upload</span><span class="flow-arrow">→</span>
+                <span class="flow-step purple">Dịch × 10 lang</span><span class="flow-arrow">→</span>
+                <span class="flow-step success">POST /api/audio/bulk</span><span class="flow-arrow">→</span>
+                <span class="flow-step">10 records DB</span>
+            </div>
+            <h3 style="margin-top:1.5rem;">Mobile Audio Playback Flow</h3>
+            <div class="flow">
+                <span class="flow-step warning">GeofenceService trigger</span><span class="flow-arrow">→</span>
+                <span class="flow-step alt">poi.GetScript(lang)</span><span class="flow-arrow">→</span>
+                <span class="flow-step">Tìm Audio[lang]</span><span class="flow-arrow">→</span>
+                <span class="flow-step success">TTS locale đúng</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR CODE -->
+    <div id="qrcode" class="section-bg">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#f0fdf4;color:var(--success);">📷</div>
+                <div><div class="section-num">Chapter 04</div><h2>QR Code — Kích Hoạt Nhanh</h2></div>
+            </div>
+            <div class="highlight purple">
+                <strong>💡 Use case:</strong> Dán QR poster tại trạm xe buýt / bảng hiệu. Khách quét QR → nghe thuyết minh ngay — không cần GPS radius, không cần di chuyển.
+            </div>
+            <div class="card-grid" style="margin-top:1.5rem;">
+                <div class="card">
+                    <h3>🖨️ Admin tạo QR (CMS)</h3>
+                    <ul>
+                        <li>Vào trang Quản lý POI</li>
+                        <li>Click nút 📷 QR bên cạnh POI</li>
+                        <li>Modal hiện QR generate realtime (QRCode.js)</li>
+                        <li>Download PNG → in ra → dán tại địa điểm</li>
+                        <li>QR encode: <code>tourapp://poi/{id}</code></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>📱 User quét QR (Mobile)</h3>
+                    <ul>
+                        <li>Nhấn nút 📷 màu tím trên bản đồ</li>
+                        <li>Quét QR poster (hoặc nhập thủ công)</li>
+                        <li>App decode → lấy POI ID</li>
+                        <li>Force phát audio NGAY (bypass cooldown + radius)</li>
+                        <li>Ghi log <code>TriggerType = "qr"</code></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>⚡ QR vs Geofence</h3>
+                    <ul>
+                        <li><strong>Geofence:</strong> Passive, tự động khi vào vùng</li>
+                        <li><strong>QR:</strong> Active, user chủ động quét</li>
+                        <li>QR override cooldown hoàn toàn</li>
+                        <li>QR không cần GPS / radius</li>
+                        <li>Cả 2 đều ghi NarrationLog để analytics</li>
+                    </ul>
+                </div>
+            </div>
+            <h3 style="margin-top:1.5rem;">QR End-to-End Flow</h3>
+            <div class="flow">
+                <span class="flow-step alt">Admin: POI Index</span><span class="flow-arrow">→</span>
+                <span class="flow-step">Click QR Button</span><span class="flow-arrow">→</span>
+                <span class="flow-step warning">QRCode.js generate</span><span class="flow-arrow">→</span>
+                <span class="flow-step">Download PNG</span><span class="flow-arrow">→</span>
+                <span class="flow-step">In & dán poster</span>
+            </div>
+            <div class="flow" style="margin-top:.5rem;">
+                <span class="flow-step alt">User: Nhấn 📷 app</span><span class="flow-arrow">→</span>
+                <span class="flow-step warning">Decode QR</span><span class="flow-arrow">→</span>
+                <span class="flow-step">Parse POI ID</span><span class="flow-arrow">→</span>
+                <span class="flow-step purple">TriggerFromQRAsync()</span><span class="flow-arrow">→</span>
+                <span class="flow-step success">Audio phát ngay</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CMS -->
+    <div id="cms">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#fefce8;color:#854d0e;">👨‍💼</div>
+                <div><div class="section-num">Chapter 05</div><h2>CMS Web Admin</h2></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Module CMS</th><th>Chức năng</th><th>Trạng thái</th></tr></thead>
+                    <tbody>
+                        <tr><td>Dashboard</td><td>POI/Tour/User count + Analytics charts (Chart.js)</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Quản lý POI</td><td>CRUD + Upload ảnh + <strong>Tạo QR Code</strong></td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Quản lý Audio</td><td>Nhập text → <strong>Auto-dịch 10 ngôn ngữ</strong> → Bulk upload; hoặc tải MP3</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Quản lý Tour</td><td>CRUD Tour + gắn POI theo thứ tự</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Quản lý Booking</td><td>CRUD đặt vé, trạng thái booking</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Quản lý User</td><td>CRUD tài khoản, phân quyền role</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Activity Log</td><td>Ghi lịch sử thao tác admin (in-memory)</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                        <tr><td>Auth</td><td>Đăng nhập session, filter bảo vệ toàn trang</td><td><span class="status done">✅ Hoàn chỉnh</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="highlight info" style="margin-top:1rem;">
+                <strong>🆕 Audio Create UX mới:</strong> Nhận diện ngôn ngữ realtime khi gõ. Preview bản dịch từng ngôn ngữ hiển thị ngay. Progress bar dịch tuần tự. 1 click → 10 records DB.
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="analytics" class="section-bg">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#ecfeff;color:#0e7490;">📊</div>
+                <div><div class="section-num">Chapter 06</div><h2>Analytics Dashboard</h2></div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>📈 Lượt Nghe 7 Ngày</h3>
+                    <p>Bar chart Chart.js hiển thị tổng lượt nghe từng ngày. Auto-refresh mỗi 60 giây. Data từ <code>NarrationLogs</code>.</p>
+                </div>
+                <div class="card">
+                    <h3>🥇 Top 5 POI Phổ Biến</h3>
+                    <p>Danh sách POI được nghe nhiều nhất từ <code>GROUP BY poi_id</code>. Hiển thị medal 🥇🥈🥉 realtime.</p>
+                </div>
+                <div class="card">
+                    <h3>📷 Geofence vs QR</h3>
+                    <p>Doughnut chart phân tích tỉ lệ trigger type: Geofence (📡 tự động) vs QR (📷 chủ động) vs Manual (👆). API: <code>GET /api/narrationlog/stats</code>.</p>
+                </div>
+            </div>
+            <h3 style="margin-top:1.5rem;">API Stats Endpoint</h3>
+            <div class="code-block"><span class="kw">GET</span> /api/narrationlog/stats
+
+<span class="cm">// Response:</span>
+{
+  <span class="str">"total"</span>: 148,
+  <span class="str">"topPoi"</span>: [
+    { <span class="str">"poiId"</span>: 3, <span class="str">"poiName"</span>: <span class="str">"Ốc Oanh"</span>, <span class="str">"count"</span>: 42 },
+    ...
+  ],
+  <span class="str">"triggerStats"</span>: [
+    { <span class="str">"type"</span>: <span class="str">"geofence"</span>, <span class="str">"count"</span>: 120 },
+    { <span class="str">"type"</span>: <span class="str">"qr"</span>, <span class="str">"count"</span>: 28 }
+  ],
+  <span class="str">"dailyPlays"</span>: [{ <span class="str">"date"</span>: <span class="str">"31/03"</span>, <span class="str">"count"</span>: 12 }, ...]
+}</div>
+        </div>
+    </div>
+
+    <!-- MAPS -->
+    <div id="maps">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#f0fdf4;color:#15803d;">🗺️</div>
+                <div><div class="section-num">Chapter 07</div><h2>Bản Đồ — Goong Maps</h2></div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>🗺️ Goong Maps JS</h3>
+                    <ul><li>Version 1.0.9 (CDN)</li><li>Vector map tiles → style <code>goong_map_web.json</code></li><li>Default center: [106.7018, 10.7596] Vĩnh Khánh Q4</li></ul>
+                </div>
+                <div class="card">
+                    <h3>🔗 JS Bridge (C# ↔ JS)</h3>
+                    <ul>
+                        <li><strong>C# → JS:</strong> <code>MapWebView.Eval("updateUserLocation(...)")</code></li>
+                        <li><strong>JS → C#:</strong> <code>http://poi/selected?id=X</code> URL scheme</li>
+                        <li>Highlight POI marker khi geofence/QR trigger</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🔍 Search 3 Chế Độ</h3>
+                    <ul><li><strong>Local:</strong> <code>PoiName.Contains(query)</code></li><li><strong>Goong AutoComplete:</strong> <code>rsapi.goong.io/Place/AutoComplete</code></li><li><strong>Place Detail:</strong> lấy lat/lng → <code>map.flyTo()</code></li></ul>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- OFFLINE -->
-        <div id="offline" class="section-bg">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#f0f9ff;color:#0369a1;">📴</div>
-                    <div>
-                        <div class="section-num">Chapter 07</div>
-                        <h2>Offline Capability</h2>
-                    </div>
-                </div>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>✅ Đã offline: TTS</h3>
-                        <p><code>TextToSpeech.Default</code> dùng Android TTS engine tích hợp. Không cần mạng để phát
-                            thuyết
-                            minh. Phiên bản <strong>vi-VN</strong> tải sẵn trong device.</p>
-                    </div>
-                    <div class="card">
-                        <h3>✅ Đã offline: POI Data</h3>
-                        <p>Mock data hardcode → luôn có dữ liệu kể cả mất mạng. Khi có MySQL: cần thêm SQLite cache lần
-                            đầu
-                            load.</p>
-                    </div>
-                    <div class="card">
-                        <h3>✅ Đã offline: Favorites</h3>
-                        <p><code>Preferences.Default</code> lưu local trong app storage. Persist giữa các lần mở app,
-                            không
-                            cần mạng.</p>
-                    </div>
-                    <div class="card">
-                        <h3>❌ Chưa offline: Bản đồ</h3>
-                        <p>Goong Maps JS load tile từ CDN. Mất mạng = bản đồ trắng. Giải pháp: cache tile lần đầu hoặc
-                            dùng
-                            map tĩnh fallback.</p>
-                    </div>
-                </div>
-                <h3 style="margin-top:1.5rem;">4 Lớp Defense (hiện tại)</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Lớp</th>
-                                <th>Thành phần</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1 — Audio</td>
-                                <td>MAUI TextToSpeech (device TTS)</td>
-                                <td>✅ Offline hoàn toàn</td>
-                            </tr>
-                            <tr>
-                                <td>2 — POI Data</td>
-                                <td>Mock data / SQLite local cache</td>
-                                <td>✅ Mock xong, SQLite TODO</td>
-                            </tr>
-                            <tr>
-                                <td>3 — Favorites</td>
-                                <td>MAUI Preferences local storage</td>
-                                <td>✅ Hoàn chỉnh</td>
-                            </tr>
-                            <tr>
-                                <td>4 — Bản đồ</td>
-                                <td>Goong Maps JS (CDN)</td>
-                                <td>❌ Cần internet</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- PATTERNS -->
+    <div id="patterns" class="section-bg">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#f5f3ff;color:#4c1d95;">⚡</div>
+                <div><div class="section-num">Chapter 08</div><h2>Design Patterns & Architecture</h2></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Pattern</th><th>Mô tả</th><th>File</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Event-Driven</strong></td><td><code>LocationChanged</code>, <code>PoiTriggered</code>, <code>HighlightRequested</code></td><td>GeofenceService.cs</td></tr>
+                        <tr><td><strong>Dependency Injection</strong></td><td>MAUI DI Singleton: LocationSvc, GeofenceSvc, ApiSvc</td><td>MauiProgram.cs</td></tr>
+                        <tr><td><strong>JS Bridge (Hybrid)</strong></td><td>WebView ↔ C# qua URL scheme + Eval()</td><td>MapPage.xaml.cs</td></tr>
+                        <tr><td><strong>Fallback Chain</strong></td><td>ScriptText[lang] → ScriptText[vi] → Description</td><td>POI.cs GetScript()</td></tr>
+                        <tr><td><strong>Cooldown / Debounce</strong></td><td>2 phút/POI, break sau trigger đầu, QR reset cooldown</td><td>GeofenceService.cs</td></tr>
+                        <tr><td><strong>Bulk Insert Pattern</strong></td><td>Xóa TTS cũ → insert 10 bản dịch mới / click</td><td>API AudioController</td></tr>
+                        <tr><td><strong>Proxy Pattern (CMS)</strong></td><td>CMS forward request tới API → tránh CORS</td><td>HomeController.cs</td></tr>
+                        <tr><td><strong>Auto-Discovery</strong></td><td>Scan WiFi subnet tìm API server tự động</td><td>ApiService.cs</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
 
-        <!-- MAPS -->
-        <div id="maps">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#f0fdf4;color:#15803d;">🗺️</div>
-                    <div>
-                        <div class="section-num">Chapter 08</div>
-                        <h2>Bản Đồ — Goong Maps</h2>
-                    </div>
-                </div>
-                <p style="margin-bottom:1.5rem;color:var(--text-secondary);">Goong Maps JS nhúng trong MAUI WebView dưới
-                    dạng HTML inline. Giao tiếp hai chiều C# ↔ JS qua URL scheme và Eval().</p>
-                <h3>Chuỗi 4 Tầng Map</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tầng</th>
-                                <th>Thành phần</th>
-                                <th>Vai trò</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1. WebView Config</td>
-                                <td><code>MauiProgram.cs</code> Android mapper</td>
-                                <td>Bật JS, DomStorage, Hardware Layer cho Goong JS hoạt động</td>
-                            </tr>
-                            <tr>
-                                <td>2. HTML Gen</td>
-                                <td><code>BuildMapHtml(poisJson)</code> trong MapPage</td>
-                                <td>Tạo HTML string nhúng Goong JS + inject danh sách POI qua JSON</td>
-                            </tr>
-                            <tr>
-                                <td>3. JS Bridge</td>
-                                <td><code>MapWebView.Eval()</code> / URL scheme</td>
-                                <td>C#→JS: updateLocation, flyTo. JS→C#: poi://selected?id=X</td>
-                            </tr>
-                            <tr>
-                                <td>4. Runtime</td>
-                                <td>Goong Maps GL JS 1.0.9</td>
-                                <td>Render vector map, POI markers, user dot, search flyTo</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <h3 style="margin-top:1.5rem;">3 Chế Độ Search</h3>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>🔍 Local Search</h3>
-                        <p>Tìm trong <code>_pois</code> list: <code>PoiName.Contains(query)</code>. Nhanh nhất, không
-                            cần
-                            mạng. Hiện thị bottom sheet + flyTo.</p>
-                    </div>
-                    <div class="card">
-                        <h3>🌐 Goong AutoComplete</h3>
-                        <p><code>GET rsapi.goong.io/Place/AutoComplete?input=...</code> → lấy <code>place_id</code> từ
-                            kết
-                            quả đầu.</p>
-                    </div>
-                    <div class="card">
-                        <h3>📍 Goong Place Detail</h3>
-                        <p><code>GET rsapi.goong.io/Place/Detail?place_id=...</code> → lấy lat/lng →
-                            <code>map.flyTo({zoom:17})</code>.
-                        </p>
-                    </div>
-                </div>
-                <h3 style="margin-top:1.5rem;">Goong Map Service Config</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Thông số</th>
-                                <th>Giá trị</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Library version</td>
-                                <td><code>@goongmaps/goong-js 1.0.9</code> (CDN)</td>
-                            </tr>
-                            <tr>
-                                <td>Map Style</td>
-                                <td><code>goong_map_web.json</code> (tiles.goong.io)</td>
-                            </tr>
-                            <tr>
-                                <td>Default center</td>
-                                <td><code>[106.7018, 10.7596]</code> — Vĩnh Khánh, Q4</td>
-                            </tr>
-                            <tr>
-                                <td>Default zoom</td>
-                                <td><code>16</code></td>
-                            </tr>
-                            <tr>
-                                <td>Places API base</td>
-                                <td><code>rsapi.goong.io</code></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="highlight warning">
-                    <strong>⚠️ Phụ thuộc Internet:</strong> Goong Maps tile cần CDN. Mất mạng → bản đồ không load.
+    <!-- DIAGRAMS -->
+    <div id="diagrams">
+        <div class="section-wrap">
+            <div class="section-header">
+                <div class="icon" style="background:#fdf4ff;color:#7c3aed;">📐</div>
+                <div><div class="section-num">Chapter 09</div><h2>UML Diagrams</h2></div>
+            </div>
+
+            <!-- ACTIVITY -->
+            <div style="margin-bottom:3rem;">
+                <h3 style="margin-bottom:.8rem;color:var(--primary);">1. Activity Diagram — Full User Flow (incl. QR)</h3>
+                <div class="mermaid">
+flowchart TD
+    A([Launch App]) --> B["Fetch POIs + Audios (REST API)"]
+    B --> C["Load Map (Goong Maps JS)"]
+    C --> D{"GPS Permission?"}
+    D -->|Denied| E["GPS Required Dialog"] --> Z([End])
+    D -->|Granted| G["Start GPS Tracking Background"]
+
+    %% QR Lane
+    C --> QR1["📷 User tap QR Button"]
+    QR1 --> QR2["Decode QR → Parse POI ID"]
+    QR2 --> QR3["TriggerFromQRAsync(poi)"]
+    QR3 --> O
+
+    %% GPS Loop
+    G --> H["GetLocationAsync every 5s"]
+    H --> I{Valid Location?}
+    I -->|No| H
+    I -->|Yes| J["Update Blue Dot"]
+    J --> K{Moved > 5m?}
+    K -->|No| H
+    K -->|Yes| L["Haversine Distance Check"]
+    L --> M{Inside Radius?}
+    M -->|No| H
+    M -->|Yes| N{Cooldown > 2min?}
+    N -->|No| H
+    N -->|Yes| O["poi.GetScript(lang)"]
+    O --> P{Has ScriptText?}
+    P -->|Yes| P1["TTS SpeakAsync(script, locale)"]
+    P -->|No| P2["Fallback: Description vi-VN"]
+    P1 --> Q["PoiTriggered → Bottom Sheet"]
+    P2 --> Q
+    Q --> R["LogNarration(type)"]
+    R --> H
+
+    style A fill:#16a34a,color:#fff
+    style QR1 fill:#2563eb,color:#fff
+    style O fill:#7c3aed,color:#fff
                 </div>
             </div>
-        </div>
 
-        <!-- ADMIN / LOG -->
-        <div id="admin" class="section-bg">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#fefce8;color:#854d0e;">👨‍💼</div>
-                    <div>
-                        <div class="section-num">Chapter 09</div>
-                        <h2>Admin / NarrationLog</h2>
-                    </div>
-                </div>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>📋 NarrationLog Model</h3>
-                        <ul>
-                            <li><code>NarrationLog.cs</code> — model đã tạo</li>
-                            <li><code>LogNarrationAsync(poiId, audioId, type)</code> — stub trong ApiClientService</li>
-                            <li>Ghi: poiId, thời gian, trigger type (geofence/manual)</li>
-                            <li>TODO: ghi vào MySQL mỗi khi TTS phát</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🔑 Admin Flow (dự kiến)</h3>
-                        <ul>
-                            <li>Login với role <code>admin</code></li>
-                            <li>Xem danh sách narration logs</li>
-                            <li>CRUD POI qua MySQL backend</li>
-                            <li>Upload audio URL cho POI</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>📊 Analytics (TODO)</h3>
-                        <ul>
-                            <li>Thống kê: POI nào được nghe nhiều nhất</li>
-                            <li>Thời gian thuyết minh trung bình / POI</li>
-                            <li>Bản đồ nhiệt (heatmap tương lai)</li>
-                        </ul>
-                    </div>
-                </div>
-                <h3 style="margin-top:1.5rem;">Owner Registration Flow (tương lai)</h3>
-                <div class="flow">
-                    <span class="flow-step">Chủ quán đăng ký</span><span class="flow-arrow">→</span>
-                    <span class="flow-step alt">POST /api/auth/register-owner</span><span class="flow-arrow">→</span>
-                    <span class="flow-step warning">Admin duyệt (MySQL)</span><span class="flow-arrow">→</span>
-                    <span class="flow-step success">Verified → cập nhật POI</span>
+            <hr style="border:0;border-top:1px dashed #ccc;margin:3rem 0;">
+
+            <!-- SEQUENCE -->
+            <div style="margin-bottom:3rem;">
+                <h3 style="margin-bottom:.8rem;color:var(--primary);">2. Sequence Diagram — Geofence + QR + Auto-Translate</h3>
+                <div class="mermaid">
+sequenceDiagram
+    actor Admin
+    actor Tourist
+    participant CMS as CMS Web Admin
+    participant API as Backend REST API
+    participant Mobile as Mobile App
+    participant GPS as GPS Service
+    participant TTS as TextToSpeech
+
+    %% Admin: Auto-translate & bulk upload
+    Admin->>CMS: Nhập văn bản + Click "Tải lên"
+    CMS->>CMS: Detect ngôn ngữ (regex)
+    loop 10 ngôn ngữ
+        CMS->>CMS: Google Translate free API
+    end
+    CMS->>API: POST /api/audio/bulk (10 records)
+    API-->>CMS: 200 OK {inserted: 10}
+
+    %% Startup
+    Mobile->>API: GET /api/poi (include Audios)
+    API-->>Mobile: List[POI] + List[Audio] mỗi POI
+
+    %% GPS Flow
+    GPS-->>Mobile: Location every 5s
+    Mobile->>Mobile: Haversine + Cooldown check
+    Mobile->>Mobile: poi.GetScript("vi")
+    Mobile->>TTS: SpeakAsync(scriptText, vi-VN)
+    TTS-->>Tourist: 🔊 Thuyết minh tiếng Việt
+    Mobile->>API: POST /api/narrationlog {type:"geofence"}
+
+    %% QR Flow
+    Tourist->>Mobile: Quét QR poster
+    Mobile->>Mobile: Decode → POI ID = 3
+    Mobile->>Mobile: TriggerFromQRAsync(poi)
+    Mobile->>TTS: SpeakAsync(script, locale)
+    TTS-->>Tourist: 🔊 Thuyết minh ngay
+    Mobile->>API: POST /api/narrationlog {type:"qr"}
                 </div>
             </div>
-        </div>
 
-        <!-- PATTERNS -->
-        <div id="patterns">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#f5f3ff;color:#4c1d95;">⚡</div>
-                    <div>
-                        <div class="section-num">Chapter 10</div>
-                        <h2>Design Patterns &amp; Key Constants</h2>
-                    </div>
-                </div>
-                <h3>Architecture Patterns</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Pattern</th>
-                                <th>Mô tả trong TourApp</th>
-                                <th>Tham chiếu</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Event-Driven (C#)</strong></td>
-                                <td><code>LocationChanged</code>, <code>PoiTriggered</code> — services không biết nhau,
-                                    giao
-                                    tiếp qua events</td>
-                                <td>Publisher-Subscriber pattern</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Dependency Injection</strong></td>
-                                <td>MAUI DI: Singleton Services inject vào MapPage qua constructor</td>
-                                <td>Microsoft DI Container</td>
-                            </tr>
-                            <tr>
-                                <td><strong>JS Bridge Pattern</strong></td>
-                                <td>HTML WebView ↔ C# qua URL scheme + Eval(). Tách biệt map logic khỏi app logic</td>
-                                <td>Hybrid App pattern</td>
-                            </tr>
-                            <tr>
-                                <td><strong>3-Tier Content Fallback</strong></td>
-                                <td>MySQL API → SQLite cache → Mock data hardcode</td>
-                                <td>Tham khảo</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Cooldown / Debounce</strong></td>
-                                <td>2 phút cooldown/POI tránh spam audio, break sau trigger đầu tiên</td>
-                                <td>iOS CLLocationManager patterns</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Preferences Local Store</strong></td>
-                                <td>Favorites lưu <code>fav_{id}</code> qua MAUI Preferences — không cần DB</td>
-                                <td>Android SharedPreferences</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Polling GPS</strong></td>
-                                <td>Background Task.Run() loop, phát event về Main Thread an toàn</td>
-                                <td>MAUI Threading model</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Hardware WebView Layer</strong></td>
-                                <td><code>SetLayerType(Hardware)</code> → GPU accelerate map rendering</td>
-                                <td>Android WebView optimization</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <h3 style="margin-top:1.5rem;">Key Constants</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Constant</th>
-                                <th>Giá trị</th>
-                                <th>File</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>GPS Poll Interval</td>
-                                <td>5s</td>
-                                <td>LocationService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Geolocation Timeout</td>
-                                <td>5s</td>
-                                <td>LocationService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>GPS Accuracy</td>
-                                <td>GeolocationAccuracy.Best</td>
-                                <td>LocationService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Audio Cooldown</td>
-                                <td>2 phút / POI</td>
-                                <td>GeofenceService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Max Trigger / Cycle</td>
-                                <td>1 POI (break)</td>
-                                <td>GeofenceService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Default Geofence Radius</td>
-                                <td>80m (POI model default)</td>
-                                <td>POI.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Map Default Center</td>
-                                <td>[106.7018, 10.7596] Vĩnh Khánh Q4</td>
-                                <td>MapPage.xaml.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Map Default Zoom</td>
-                                <td>16</td>
-                                <td>MapPage.xaml.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Search flyTo Zoom</td>
-                                <td>17</td>
-                                <td>MapPage.xaml.cs</td>
-                            </tr>
-                            <tr>
-                                <td>USE_MOCK_DATA</td>
-                                <td>true (hiện tại)</td>
-                                <td>ApiClientService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Goong API Base</td>
-                                <td>rsapi.goong.io</td>
-                                <td>MapPage.xaml.cs</td>
-                            </tr>
-                            <tr>
-                                <td>Goong Map Library</td>
-                                <td>goong-js 1.0.9 (CDN)</td>
-                                <td>BuildMapHtml()</td>
-                            </tr>
-                            <tr>
-                                <td>TTS Pitch</td>
-                                <td>1.0f</td>
-                                <td>GeofenceService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>TTS Volume</td>
-                                <td>1.0f</td>
-                                <td>GeofenceService.cs</td>
-                            </tr>
-                            <tr>
-                                <td>TTS Locale Priority</td>
-                                <td>vi-VN → system default</td>
-                                <td>GeofenceService.cs</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <hr style="border:0;border-top:1px dashed #ccc;margin:3rem 0;">
 
-                <!-- FULL END-TO-END FLOW -->
-                <h3 style="margin-top:2rem;">End-to-End Flow — Mở App → Nghe Thuyết Minh</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Bước</th>
-                                <th>Thành phần</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td><code>MauiProgram</code></td>
-                                <td>DI container khởi động, cấu hình WebView Android Hardware layer</td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td><code>AppShell</code></td>
-                                <td>Route mặc định → <code>MapPage</code></td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td><code>MapPage</code> Constructor</td>
-                                <td>Inject services, subscribe <code>LocationChanged</code> + <code>PoiTriggered</code>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>4</td>
-                                <td><code>OnAppearing()</code></td>
-                                <td><code>InitializeAsync()</code> → <code>GetAllPOIsAsync()</code> →
-                                    <code>LoadMap()</code>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>5</td>
-                                <td><code>LoadMap()</code></td>
-                                <td>Serialize POI → JSON → inject vào HTML string → WebView.Source</td>
-                            </tr>
-                            <tr>
-                                <td>6</td>
-                                <td>Goong Maps JS</td>
-                                <td>Map init → <code>map.on('load')</code> → tạo markers cho từng POI</td>
-                            </tr>
-                            <tr>
-                                <td>7</td>
-                                <td><code>LocationService</code></td>
-                                <td>Background loop: <code>GetLocationAsync(5s)</code> → phát
-                                    <code>LocationChanged</code>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>8</td>
-                                <td><code>OnLocationChanged()</code></td>
-                                <td><code>Eval("updateUserLocation(...)")</code> + <code>CheckGeofences(loc)</code></td>
-                            </tr>
-                            <tr>
-                                <td>9</td>
-                                <td><code>GeofenceService</code></td>
-                                <td>Tính Haversine distance. Nếu ≤ radius &amp;&amp; cooldown xong →
-                                    <code>TriggerNarration()</code>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>10</td>
-                                <td><code>PoiTriggered</code> event</td>
-                                <td><code>ShowPoiDetails(poi)</code> → Bottom Sheet mở</td>
-                            </tr>
-                            <tr>
-                                <td>11</td>
-                                <td><code>SpeakNarrationAsync()</code></td>
-                                <td><code>TextToSpeech.Default.SpeakAsync("Chào mừng...")</code> → Android TTS phát</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <!-- CLASS -->
+            <div style="margin-bottom:3rem;">
+                <h3 style="margin-bottom:.8rem;color:var(--primary);">3. Class Diagram — Core Models & Services</h3>
+                <div class="mermaid">
+classDiagram
+    class POI {
+        +int PoiId
+        +string PoiName
+        +double Latitude
+        +double Longitude
+        +double Radius
+        +int Priority
+        +bool IsActive
+        +List~Audio~ Audios
+        +GetScript(lang) string
+    }
 
-                <!-- TECH STACK -->
-                <h3 style="margin-top:2rem;">Technology Stack &amp; Cost Analysis</h3>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>📱 Mobile App</h3>
-                        <ul>
-                            <li><strong>.NET MAUI 8</strong> — cross-platform native</li>
-                            <li><strong>C# / XAML</strong> — UI + logic</li>
-                            <li><strong>Microsoft DI</strong> — dependency injection</li>
-                            <li><strong>MAUI Geolocation</strong> — GPS API</li>
-                            <li><strong>MAUI TextToSpeech</strong> — TTS offline</li>
-                            <li><strong>MAUI Preferences</strong> — local storage</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>🗺️ Bản Đồ</h3>
-                        <ul>
-                            <li><strong>Goong Maps JS 1.0.9</strong> — vector map</li>
-                            <li><strong>Goong Places API</strong> — autocomplete</li>
-                            <li><strong>Goong Place Detail API</strong> — geocode</li>
-                            <li><strong>MAUI WebView</strong> — host container</li>
-                            <li><strong>URL Scheme Bridge</strong> — JS↔C# comms</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>💰 Zero-Cost Core</h3>
-                        <ul>
-                            <li>✅ MAUI TTS: built-in, miễn phí</li>
-                            <li>✅ Mock data: hardcode, không cần server</li>
-                            <li>✅ MAUI Preferences: local, miễn phí</li>
-                            <li>⚠️ Goong Maps: cần API key (<a href="https://goong.io" target="_blank">goong.io</a>)
-                            </li>
-                            <li>⚠️ MySQL: cần server hosting</li>
-                        </ul>
-                    </div>
+    class Audio {
+        +int AudioId
+        +int PoiId
+        +string Language
+        +string ScriptText
+        +string AudioPath
+        +int Duration
+        +bool IsActive
+        +bool HasAudioFile
+    }
+
+    class NarrationLog {
+        +int Id
+        +int POIId
+        +string TriggerType
+        +DateTime Timestamp
+        +string DeviceId
+    }
+
+    class GeofenceService {
+        +string CurrentLanguage
+        -int _lastSpokenPoiId
+        -DateTime _lastSpokenTime
+        +CheckGeofences(location)
+        +TriggerFromQRAsync(poi)
+        +SpeakNarrationAsync(poi, lang)
+        +SetPois(pois)
+    }
+
+    class ApiService {
+        +static string BaseUrl
+        +GetAllPOIsAsync() List~POI~
+        +LogNarrationAsync(poiId, type)
+        +AutoDiscoverApiAsync()
+    }
+
+    class LocationService {
+        -bool _isTracking
+        +StartTracking()
+        +StopTracking()
+        +LocationChanged event
+    }
+
+    POI "1" --> "*" Audio
+    POI "1" --> "*" NarrationLog
+    GeofenceService --> ApiService
+    GeofenceService --> POI : reads Audios
+    LocationService ..> GeofenceService : triggers
                 </div>
             </div>
-        </div>
 
-
-        <!-- CHAPTER 11: UML DIAGRAMS -->
-        <div id="diagrams" class="section-bg">
-            <div class="section-wrap">
-                <div class="section-header">
-                    <div class="icon" style="background:#fdf4ff;color:#7c3aed;">📐</div>
-                    <div>
-                        <div class="section-num">Chapter 11</div>
-                        <h2>UML Diagrams — Activity, Sequence, State, Class</h2>
-                    </div>
-                </div>
-
-                <div class="diagram-wrap" style="margin-top: 2rem;">
-
-                    <!-- ACTIVITY -->
-                    <div style="margin-bottom: 3rem;">
-                        <h3 style="margin-bottom:.8rem;color:var(--primary);">1. Activity Diagram — Main User Flow</h3>
-                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">The core user
-                            activity flow: Launch -> Load POI (REST API) -> GPS Auth -> Background Service Location
-                            Tracker -> Priority Check & Cooldown -> Narration Engine Play.</p>
-                        <div class="mermaid">
-                            flowchart TD
-                            A([Launch App]) --> B["Fetch POIs (REST API)
-                            Filter: District 4 Only"]
-                            B --> C["GeofenceService
-                            .InitializeAsync()"]
-                            C --> D["Load Map View
-                            (Goong Maps JS)"]
-                            D --> E{"Permissions.RequestAsync
-                            [GPS Access]"}
-
-                            E -->|Denied| F["GPS Required Dialog"]
-                            F --> Z([Wait / End])
-
-                            E -->|Granted| G["Start GPS Tracking
-                            Background Service"]
-
-                            %% QR Bypass Lane
-                            D --> QR1["Scan QR Code
-                            at Bus Stop"]
-                            QR1 --> QR2["Fetch POI Audio/Text
-                            Bypass GPS"]
-                            QR2 --> O
-
-                            G --> H["GetLocationAsync
-                            (Poll every 5s)"]
-                            H --> I{Valid Location?}
-
-                            I -->|No| H
-                            I -->|Yes| J["Update Blue Dot (URL Scheme)"]
-                            J --> K{Moved > 5m?}
-
-                            K -->|No| H
-                            K -->|Yes| L["Geofence Engine
-                            Calculate Haversine Distance"]
-                            L --> M{Inside Radius
-                            Priority Check?}
-
-                            M -->|No| H
-                            M -->|Yes| N{Cooldown > 2 mins?}
-
-                            N -->|No| H
-                            N -->|Yes| O["Narration Engine
-                            Manage Audio Queue"]
-                            O --> P{Has pre-recorded
-                            Audio file?}
-                            P --> |Yes| P1["Play natural MP3"]
-                            P --> |No| P2["SpeakAsync(vi-VN)
-                            Lightweight TTS"]
-
-                            P1 --> Q
-                            P2 --> Q
-
-                            Q["PoiTriggered Event → UI
-                            Highlight bottom sheet"] --> R["ApiClient.LogNarration()"]
-                            R --> H
-
-                            style A fill:#16a34a,color:#fff
-                            style Z fill:#dc2626,color:#fff
-                            style O fill:#7c3aed,color:#fff
-                            style E fill:#d97706,color:#fff
-                            style QR1 fill:#2563eb,color:#fff
-
-                        </div>
-                    </div>
-
-                    <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
-
-                    <!-- SEQUENCE -->
-                    <div style="margin-bottom: 3rem;">
-                        <h3 style="margin-bottom:.8rem;color:var(--primary);">2. Sequence Diagram — Geofence Trigger
-                            (Core Feature)</h3>
-                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Detailed interaction
-                            between Mobile App, Background GPS, Location/Geofence Services, Narration Engine and the
-                            Backend REST API (SQL Server). Includes QR Code scan bypass.</p>
-                        <div class="mermaid">
-                            sequenceDiagram
-                            actor Tourist
-                            participant GPS as Background GPS
-                            participant Scanner as QR Scanner
-                            participant App as Mobile App
-                            participant Geofence as Geofence Engine
-                            participant Narration as Narration Engine
-                            participant Map as Goong Maps
-                            participant API as Backend REST API (SQL Server)
-
-                            %% Startup & Data Load
-                            App->>API: GET /api/pois (District 4)
-                            API-->>App: List[POI] Data + Radiuses
-                            App->>Map: WebView.Source = BuildMapHtml()
-                            App->>GPS: Start Tracking Service
-
-                            %% Main GPS Loop
-                            loop Every 5 Seconds
-                            GPS-->>App: Location (Lat, Lng)
-                            App->>Map: Update Blue Dot (Eval)
-
-                            alt User moved > 5m
-                            App->>Geofence: CheckGeofences(location, List[POI])
-                            Geofence->>Geofence: Sort by Priority
-
-                            alt Inside Radius & Cooldown Passed
-                            Geofence->>App: PoiTriggeredEvent(POI)
-                            App->>Map: Highlight Marker (Eval)
-                            App->>App: Show POI Bottom Sheet
-
-                            %% Audio Decision
-                            App->>API: GET /api/audio?poiId=X&lang=vi
-                            alt Configured Audio File Exists
-                            API-->>App: MP3 File URL
-                            App->>Narration: Play Natural Offline Audio
-                            else No Audio File Available
-                            API-->>App: Text Script Only
-                            App->>Narration: SpeakAsync(Text, vi-VN)
-                            end
-
-                            Narration-->>Tourist: Audio Instructions
-                            App->>API: POST /api/narration-log (Type: Geofence)
-                            end
-                            end
-                            end
-
-                            %% Manual QR Code Bypass
-                            Tourist->>Scanner: Scan QR Code at Bus Stop
-                            Scanner-->>App: Discovered URL / POI ID
-                            App->>API: GET /api/audio?poiId=X
-                            API-->>App: Text or MP3 Info
-                            App->>Narration: Clear Queue & Force Play
-                            Narration-->>Tourist: Instant Audio (Bypass GPS)
-                            App->>API: POST /api/narration-log (Type: QRCode)
-
-                        </div>
-                    </div>
-
-                    <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
-
-                    <!-- STATE -->
-                    <div style="margin-bottom: 3rem;">
-                        <h3 style="margin-bottom:.8rem;color:var(--primary);">3. State Diagram — App &amp; Geofence
-                            Lifecycle</h3>
-                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">State lifecycle
-                            covering: Initialization -> Validation (Permissions) -> Location Tracking -> Audio Playback
-                            -> Idle.</p>
-                        <div class="mermaid">
-                            stateDiagram-v2
-                            [*] --> AppLaunch
-                            AppLaunch --> FetchingOnlinePOIs
-                            FetchingOnlinePOIs --> InitLocalCache
-                            InitLocalCache --> RequestPermission
-
-                            %% Validation
-                            RequestPermission --> TrackingGPS : Approved
-                            RequestPermission --> WaitingPermission : Denied
-                            WaitingPermission --> RequestPermission : Retry
-
-                            %% Tracking State
-                            state TrackingGPS {
-                            [*] --> WaitingLocation
-                            WaitingLocation --> LocationReceived
-                            LocationReceived --> FilterMovement
-                            FilterMovement --> WaitingLocation : Moved Under 5m
-                            FilterMovement --> GeofencingCheck : Moved Over 5m
-                                GeofencingCheck --> WaitingLocation : Outside Zone
-                                GeofencingCheck --> CooldownCheck : Inside Zone
-
-                                CooldownCheck --> WaitingLocation : Still in cooldown
-                                CooldownCheck --> TriggerEvents : Cool to play
-
-                                TriggerEvents --> WaitingLocation
-                                }
-
-                                %% Narration State
-                                state AudioPlayback {
-                                [*] --> Idle
-                                Idle --> QueuingAudio : Event Received
-                                QueuingAudio --> ResolvingURL : Has MP3
-                                QueuingAudio --> GeneratingTTS : Text Only
-                                ResolvingURL --> Playing
-                                GeneratingTTS --> Playing
-                                Playing --> LoggingDB
-                                LoggingDB --> Idle
-                                }
-
-                                %% Links between states
-                                TriggerEvents --> AudioPlayback : Play Auto
-
-                                %% QR Code State
-                                CameraScanner --> Scanning
-                                Scanning --> AudioPlayback : QR Match (Force Play)
-
-                        </div>
-                    </div>
-
-                    <hr style="border:0; border-top:1px dashed #ccc; margin: 3rem 0;">
-
-                    <!-- CLASS -->
-                    <div style="margin-bottom: 3rem;">
-                        <h3 style="margin-bottom:.8rem;color:var(--primary);">4. Class Diagram — Unit Test Perspective
-                        </h3>
-                        <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Core database
-                            entities representing SQL Server schema (TourAppDB) matching exactly with the Mobile Service
-                            classes.</p>
-                        <div class="mermaid">
-                            classDiagram
-                            %% Core Entities (Matches SQL Server Database)
-                            class Tour {
-                            +int TourId
-                            +string TourName
-                            +string Description
-                            +string ImageUrl
-                            +bool IsActive
-                            }
-
-                            class POI {
-                            +int PoiId
-                            +string PoiName
-                            +string Address
-                            +double Latitude
-                            +double Longitude
-                            +double Radius
-                            +int Priority
-                            +string OpenTime
-                            }
-
-                            class TourPOI {
-                            +int TourPOIId
-                            +int TourId
-                            +int PoiId
-                            +int OrderIndex
-                            }
-
-                            class Audio {
-                            +int AudioId
-                            +int PoiId
-                            +string Language
-                            +string AudioPath
-                            +string ScriptText
-                            +int Duration
-                            }
-
-                            class NarrationLog {
-                            +int LogId
-                            +string DeviceId
-                            +int PoiId
-                            +int AudioId
-                            +string TriggerType
-                            +DateTime PlayedAt
-                            }
-
-                            %% Services
-                            class IApiService {
-                            &lt;&lt;interface&gt;&gt;
-                                +GetAllPOIsAsync() List~POI~
-                                    +GetAudioScriptAsync(poiId, lang) Audio
-                                    +LogNarrationAsync(log) bool
-                                    }
-
-                                    class GeofenceService {
-                                    -int _lastSpokenPoiId
-                                    -DateTime _lastSpokenTime
-                                    +InitializeAsync()
-                                    +CheckGeofences(location)
-                                    }
-
-                                    class NarrationEngine {
-                                    -Queue~Audio~ _audioQueue
-                                        +PlayNarration(poi)
-                                        +PlayFromQRCode(poiId)
-                                        +StopCurrent()
-                                        }
-
-                                        class LocationService {
-                                        -_isTracking bool
-                                        +StartTracking()
-                                        +StopTracking()
-                                        }
-
-                                        Tour "1" -- "*" TourPOI
-                                        POI "1" -- "*" TourPOI
-                                        POI "1" -- "*" Audio
-                                        POI "1" -- "*" NarrationLog
-                                        Audio "1" -- "*" NarrationLog
-
-                                        GeofenceService --> IApiService
-                                        GeofenceService --> NarrationEngine
-                                        LocationService ..> GeofenceService : triggers
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- UNIT TEST CASES TABLE -->
-                <h3 style="margin-top:2rem;">Unit Test Cases — GeofenceService (Business Logic Core)</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Test Method</th>
-                                <th>Input</th>
-                                <th>Expected</th>
-                                <th>Priority</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>Test_InsideRadius_Triggers()</code></td>
-                                <td>POI Radius=30m, distance=15m, cooldown=none</td>
-                                <td>PoiTriggered event fired</td>
-                                <td>🔴 Critical</td>
-                            </tr>
-                            <tr>
-                                <td><code>Test_OutsideRadius_NoTrigger()</code></td>
-                                <td>POI Radius=30m, distance=50m</td>
-                                <td>No event fired</td>
-                                <td>🔴 Critical</td>
-                            </tr>
-                            <tr>
-                                <td><code>Test_Cooldown_Skips()</code></td>
-                                <td>Same POI triggered 30s ago</td>
-                                <td>No event fired</td>
-                                <td>🔴 Critical</td>
-                            </tr>
-                            <tr>
-                                <td><code>Test_CooldownExpired_Triggers()</code></td>
-                                <td>Same POI triggered 3min ago</td>
-                                <td>Event fired again</td>
-                                <td>🟡 High</td>
-                            </tr>
-                            <tr>
-                                <td><code>Test_SortsByPriority()</code></td>
-                                <td>POI A Priority=2, POI B Priority=1, both in range</td>
-                                <td>POI B triggers first</td>
-                                <td>🟡 High</td>
-                            </tr>
-                            <tr>
-                                <td><code>Test_InactivePOI_Skipped()</code></td>
-                                <td>POI IsActive=false, distance=5m</td>
-                                <td>No event fired</td>
-                                <td>🟢 Medium</td>
-                            </tr>
-                            <tr>
-                                <td><code>Test_OnlyOnePOI_PerCycle()</code></td>
-                                <td>3 POI all in range</td>
-                                <td>Only 1 event fired</td>
-                                <td>🟢 Medium</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <!-- UNIT TESTS -->
+            <h3 style="margin-top:2rem;">Unit Test Cases</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Test Method</th><th>Input</th><th>Expected</th><th>Priority</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>Test_InsideRadius_Triggers()</code></td><td>Radius=30m, distance=15m, cooldown=none</td><td>PoiTriggered fired</td><td>🔴 Critical</td></tr>
+                        <tr><td><code>Test_OutsideRadius_NoTrigger()</code></td><td>Radius=30m, distance=50m</td><td>No event</td><td>🔴 Critical</td></tr>
+                        <tr><td><code>Test_Cooldown_Skips()</code></td><td>Same POI triggered 30s ago</td><td>No event</td><td>🔴 Critical</td></tr>
+                        <tr><td><code>Test_QR_BypassCooldown()</code></td><td>TriggerFromQRAsync() cooldown active</td><td>Event fired anyway</td><td>🔴 Critical</td></tr>
+                        <tr><td><code>Test_GetScript_LangFallback()</code></td><td>lang="zh", no zh Audio, has vi Audio</td><td>Returns vi ScriptText</td><td>🔴 Critical</td></tr>
+                        <tr><td><code>Test_GetScript_NoAudio()</code></td><td>lang="vi", Audios empty</td><td>Returns "Chào mừng..." + Description</td><td>🟡 High</td></tr>
+                        <tr><td><code>Test_BulkAudio_Replaces()</code></td><td>POI có 10 TTS cũ, bulk insert 10 mới</td><td>20→10 records (cũ bị xóa)</td><td>🟡 High</td></tr>
+                        <tr><td><code>Test_ParseQrId_AllFormats()</code></td><td>"tourapp://poi/3", "3", "?id=3"</td><td>Returns 3</td><td>🟢 Medium</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
 
-        <footer>
-            <p><strong>TourApp Mobile — Hệ Thống Du Lịch Ẩm Thực Quận 4</strong></p>
-            <p>.NET MAUI Android · Goong Maps JS · GPS Geofence · MAUI TextToSpeech · SQL Server / REST API</p>
-            <p style="margin-top:.5rem;opacity:.5;">Đồ án giữa kỳ · Phân tích từ source code · 25/03/2026</p>
-        </footer>
+    <footer>
+        <p><strong>TourApp Mobile — Hệ Thống Du Lịch Ẩm Thực Quận 4</strong></p>
+        <p>.NET MAUI Android · Goong Maps JS · GPS Geofence · Auto-Translate 10 Ngôn Ngữ · QR Code · Analytics · SQL Server</p>
+        <p style="margin-top:.5rem;opacity:.5;">Đồ án giữa kỳ · Cập nhật 06/04/2026</p>
+    </footer>
 
-        <script>
-            mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
-        </script>
-
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    </script>
 </body>
-
 </html>

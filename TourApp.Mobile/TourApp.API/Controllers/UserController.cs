@@ -89,6 +89,58 @@ public class UserController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{id}/favorites")]
+    public async Task<ActionResult<IEnumerable<POI>>> GetFavorites(int id)
+    {
+        var favorites = await _context.FavoritePOIs
+            .Where(f => f.UserId == id)
+            .Include(f => f.POI)
+            .Select(f => f.POI)
+            .ToListAsync();
+        return Ok(favorites);
+    }
+
+    [HttpPost("{id}/favorites/{poiId}")]
+    public async Task<IActionResult> AddFavorite(int id, int poiId)
+    {
+        var exists = await _context.FavoritePOIs.AnyAsync(f => f.UserId == id && f.POIId == poiId);
+        if (!exists)
+        {
+            _context.FavoritePOIs.Add(new FavoritePOI { UserId = id, POIId = poiId });
+            await _context.SaveChangesAsync();
+        }
+        return Ok();
+    }
+
+    [HttpDelete("{id}/favorites/{poiId}")]
+    public async Task<IActionResult> RemoveFavorite(int id, int poiId)
+    {
+        var fav = await _context.FavoritePOIs.FirstOrDefaultAsync(f => f.UserId == id && f.POIId == poiId);
+        if (fav != null)
+        {
+            _context.FavoritePOIs.Remove(fav);
+            await _context.SaveChangesAsync();
+        }
+        return Ok();
+    }
+
+    [HttpGet("{id}/bookings")]
+    public async Task<ActionResult<IEnumerable<Booking>>> GetBookings(int id)
+    {
+        var bookings = await _context.Bookings
+            .Where(b => b.UserId == id)
+            .OrderByDescending(b => b.BookingDate)
+            .ToListAsync();
+        
+        // Populate Tour names if needed, but we can just return bookings
+        foreach(var booking in bookings)
+        {
+            var tour = await _context.Tours.FindAsync(booking.TourId);
+            if (tour != null) booking.Notes = tour.Name; // Temporarily using Notes to pass Tour Name for UI
+        }
+        return Ok(bookings);
+    }
+
     private static string HashPassword(string password)
     {
         using var sha256 = SHA256.Create();

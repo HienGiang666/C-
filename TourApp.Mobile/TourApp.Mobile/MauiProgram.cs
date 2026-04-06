@@ -37,6 +37,15 @@ namespace TourApp.Mobile
             builder.Services.AddSingleton<GeofenceService>();
             
             builder.Services.AddTransient<Views.MapPage>();
+            builder.Services.AddTransient<Views.HomePage>();
+            builder.Services.AddTransient<Views.POIPage>();
+            builder.Services.AddTransient<Views.TourPage>();
+            builder.Services.AddTransient<Views.ProfilePage>();
+            
+            builder.Services.AddTransient<Views.Auth.LoginPage>();
+            builder.Services.AddTransient<Views.Auth.SignUpPage>();
+            builder.Services.AddTransient<Views.Auth.ForgotPasswordPage>();
+            builder.Services.AddTransient<Views.Auth.VerificationPage>();
 
 #if DEBUG
             builder.Logging.AddDebug();

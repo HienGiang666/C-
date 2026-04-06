@@ -18,6 +18,7 @@ namespace TourApp.Mobile.Services
         public static void UpdateBaseUrl(string newUrl) =>
             BaseUrl = newUrl.TrimEnd('/');
 
+        [DebuggerNonUserCode]
         public static async Task AutoDiscoverApiAsync()
         {
             try
@@ -27,41 +28,40 @@ namespace TourApp.Mobile.Services
 
                 Debug.WriteLine("[ApiService] Start Auto Discovery...");
                 var subnet = GetLocalSubnet();
-                var tasks = new List<Task<string?>>();
-
-                // Try emulator standard IP first if virtual
+                var ipsToTest = new List<string>();
+                
+                // 1. Emulator
                 if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
                 {
-                    tasks.Add(TestUrlAsync("http://10.0.2.2:5254"));
+                    ipsToTest.Add("http://10.0.2.2:5254");
+                    ipsToTest.Add("http://10.0.2.2:7244");
                 }
 
-                // Scan local network x.x.x.1 to x.x.x.254
-                for (int i = 1; i <= 254; i++)
+                // 2. Local network common IPs (1-20 instead of 254 to prevent ANR freeze) 
+                for (int i = 1; i <= 20; i++)
                 {
-                    string url = $"http://{subnet}.{i}:5254";
-                    tasks.Add(TestUrlAsync(url));
+                    ipsToTest.Add($"http://{subnet}.{i}:5254");
                 }
+                
+                // Also add default fallback
+                ipsToTest.Add(DefaultUrl);
 
-                // Also scan common local if different
-                if (subnet != "192.168.1")
+                // Batch testing (5 at a time max) to avoid socket exhaustion
+                for (int i = 0; i < ipsToTest.Count; i += 5)
                 {
-                    for (int i = 1; i <= 254; i++)
+                    var batch = ipsToTest.Skip(i).Take(5).Select(url => TestUrlAsync(url)).ToList();
+                    
+                    while (batch.Count > 0)
                     {
-                        string url = $"http://192.168.1.{i}:5254";
-                        tasks.Add(TestUrlAsync(url));
-                    }
-                }
-
-                while (tasks.Count > 0)
-                {
-                    var finished = await Task.WhenAny(tasks);
-                    tasks.Remove(finished);
-                    var res = await finished;
-                    if (res != null)
-                    {
-                        BaseUrl = res;
-                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
-                        return;
+                        var finished = await Task.WhenAny(batch);
+                        batch.Remove(finished);
+                        var res = await finished;
+                        if (res != null)
+                        {
+                            BaseUrl = res;
+                            Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
+                            return;
+                        }
                     }
                 }
             }
@@ -71,6 +71,7 @@ namespace TourApp.Mobile.Services
             }
         }
 
+        [DebuggerNonUserCode]
         private static async Task<string?> TestUrlAsync(string url)
         {
             try
@@ -126,8 +127,44 @@ namespace TourApp.Mobile.Services
         public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
             Task.FromResult<Audio?>(null);
 
-        public Task LogNarrationAsync(int poiId, int? audioId, string triggerType) =>
-            Task.CompletedTask;
+        public Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
+        {
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    string deviceId = "Unknown";
+                    try { deviceId = DeviceInfo.Current.Platform.ToString() + "-" + DeviceInfo.Current.Idiom.ToString(); } catch { }
+
+                    using var client = CreateClient();
+                    var payload = new
+                    {
+                        POIId = poiId,
+                        AudioId = audioId,
+                        TriggerType = triggerType,
+                        DeviceId = deviceId
+                    };
+                    var json = JsonSerializer.Serialize(payload);
+                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                    var postTask = client.PostAsync("/api/NarrationLog", content);
+                    var winner = await Task.WhenAny(postTask, Task.Delay(5000));
+                    
+                    if (winner == postTask && postTask.IsCompletedSuccessfully)
+                    {
+                        var response = postTask.Result;
+                        if (response.IsSuccessStatusCode)
+                        {
+                            Debug.WriteLine($"[ApiService] LogNarration [OK] Type: {triggerType}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ApiService] LogNarration error: {ex.Message}");
+                }
+            });
+        }
 
         [DebuggerNonUserCode]
         private static Task<T> TryFetch<T>(

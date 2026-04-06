@@ -202,4 +202,29 @@ public class AudioController : Controller
         TempData["success"] = "Xóa audio thành công!";
         return RedirectToAction(nameof(Index), new { poiId = poiId });
     }
+
+    /// <summary>
+    /// POST /Audio/BulkCreate — nhận JSON array từ frontend, forward tới API bulk endpoint.
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> BulkCreate([FromBody] List<Audio> audios)
+    {
+        if (audios == null || audios.Count == 0)
+            return BadRequest(new { error = "Danh sách rỗng" });
+
+        var client = _clientFactory.CreateClient("TourApi");
+        var response = await client.PostAsJsonAsync("api/Audio/bulk", audios);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var firstPoiId = audios[0].POIId;
+            _activityLogger.LogActivity(HttpContext, "BulkCreate", "Audio",
+                null, $"{audios.Count} bản dịch cho POI {firstPoiId}");
+            var result = await response.Content.ReadFromJsonAsync<object>();
+            return Ok(result);
+        }
+
+        var err = await response.Content.ReadAsStringAsync();
+        return StatusCode((int)response.StatusCode, new { error = err });
+    }
 }

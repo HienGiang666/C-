@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TourApp.Mobile.Views.HomePage"
+             BackgroundColor="#F5F6F8"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <Grid RowDefinitions="Auto,*">
+
+            <!-- Header Content (Gradient Orange) -->
+            <VerticalStackLayout Grid.Row="0">
+                <Grid>
+                    <!-- Simulated Gradient Background Area -->
+                    <BoxView Color="#FF3D00" HeightRequest="150" VerticalOptions="Start" />
+                    
+                    <VerticalStackLayout Padding="20,40,20,20">
+                        <!-- Top Bar -->
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+                                <Label Text="🗺️" FontSize="24" />
+                                <Label Text="Tour Quận 4" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                            
+                            <!-- QR Code Scanner button -->
+                            <Frame Grid.Column="2" WidthRequest="40" HeightRequest="40" CornerRadius="20" BackgroundColor="White" Padding="0" HasShadow="False">
+                                <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+                                </Frame.GestureRecognizers>
+                            </Frame>
+                        </Grid>
+
+                        <!-- Search Bar -->
+                        <Frame BackgroundColor="White" CornerRadius="25" HasShadow="False" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" BorderColor="Transparent">
+                            <Grid ColumnDefinitions="30,*">
+                                <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
+                                <Entry Grid.Column="1" Placeholder="Tìm món, tìm quán..." TextColor="Black" BackgroundColor="Transparent"/>
+                            </Grid>
+                        </Frame>
+                    </VerticalStackLayout>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Main Scrollable Area -->
+            <VerticalStackLayout Grid.Row="1" Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
+                
+                <!-- Category Grid -->
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+                    <Frame Grid.Column="0" CornerRadius="15" BackgroundColor="#FFF0E5" Padding="5,15" HasShadow="False">
+                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
+                            <Label Text="🔥" FontSize="24" HorizontalOptions="Center"/>
+                            <Label Text="Nướng" FontSize="12" TextColor="#444"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                    <Frame Grid.Column="1" CornerRadius="15" BackgroundColor="#FCE4E4" Padding="5,15" HasShadow="False">
+                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
+                            <Label Text="🍲" FontSize="24" HorizontalOptions="Center"/>
+                            <Label Text="Lẩu" FontSize="12" TextColor="#444"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                    <Frame Grid.Column="2" CornerRadius="15" BackgroundColor="#E6F0FF" Padding="5,15" HasShadow="False">
+                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
+                            <Label Text="🐚" FontSize="24" HorizontalOptions="Center"/>
+                            <Label Text="Ốc" FontSize="12" TextColor="#444"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                    <Frame Grid.Column="3" CornerRadius="15" BackgroundColor="#E6FCEF" Padding="5,15" HasShadow="False">
+                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
+                            <Label Text="🍢" FontSize="24" HorizontalOptions="Center"/>
+                            <Label Text="Ăn vặt" FontSize="12" TextColor="#444"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Lộ Trình Gợi Ý -->
+                <VerticalStackLayout Spacing="15">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="🔥 Gợi ý Lộ trình" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
+                        <Label Grid.Column="1" Text="Xem thêm >" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnXemThemTourTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <CollectionView x:Name="TourCollectionView" HeightRequest="250">
+                        <!-- Mock setup for item layout -->
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="20" Padding="0" IsClippedToBounds="True" HasShadow="True" Margin="0,0,0,15" BorderColor="Transparent" BackgroundColor="White">
+                                    <Grid RowDefinitions="120,Auto">
+                                        <Image Grid.Row="0" Source="media__1775454533773.jpg" Aspect="AspectFill"/>
+                                        <VerticalStackLayout Grid.Row="1" Padding="15">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
+                                            <Label Text="{Binding Summary}" FontSize="12" TextColor="#888" Margin="0,5,0,0"/>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Top Nổi Bật -->
+                <VerticalStackLayout Spacing="15">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Top Nổi Bật" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
+                        <Label Grid.Column="1" Text="Xem thêm >" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnXemThemPoiTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <CollectionView x:Name="PoiCollectionView" HeightRequest="200" ItemsLayout="HorizontalList">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame WidthRequest="200" CornerRadius="20" Padding="0" IsClippedToBounds="True" HasShadow="True" Margin="0,0,15,5" BorderColor="Transparent" BackgroundColor="White">
+                                    <Grid RowDefinitions="120,Auto">
+                                        <Image Grid.Row="0" Source="media__1775454545663.jpg" Aspect="AspectFill"/>
+                                        <VerticalStackLayout Grid.Row="1" Padding="15">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
+                                            <Label Text="{Binding Summary}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>

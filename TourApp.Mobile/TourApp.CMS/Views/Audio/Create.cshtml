@@ -5,176 +5,162 @@
 
 <style>
     .translate-box {
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        background: #fff;
-        box-shadow: 0 2px 12px rgba(0,0,0,.06);
-        transition: border-color .2s;
+        border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden;
+        background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.06); transition: border-color .2s;
     }
     .translate-box:focus-within { border-color: #4f46e5; }
     .translate-box .box-header {
-        background: #f8fafc;
-        padding: 10px 16px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid #e2e8f0;
-        flex-wrap: wrap; gap: 6px;
+        background: #f8fafc; padding: 10px 16px; display: flex;
+        align-items: center; justify-content: space-between;
+        border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 6px;
     }
     .translate-box textarea {
-        border: none !important;
-        box-shadow: none !important;
-        resize: none;
-        font-size: 1rem;
-        padding: 14px 16px;
-        min-height: 130px;
-        background: transparent;
+        border: none !important; box-shadow: none !important; resize: none;
+        font-size: 1rem; padding: 14px 16px; min-height: 130px; background: transparent;
     }
-    .tab-option { cursor: pointer; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size:.85rem; transition:.2s; }
+    .tab-option { cursor:pointer; padding:6px 12px; border-radius:8px; font-weight:600; font-size:.85rem; transition:.2s; }
     .tab-option.active { background:#4f46e5; color:#fff; }
     .tab-option:not(.active):hover { background:#e0e7ff; color:#4f46e5; }
-    .lang-badge {
-        background:#e0e7ff; color:#4f46e5; padding:3px 10px;
-        border-radius:20px; font-size:.78rem; font-weight:700;
-    }
     #detectedLang { font-size:.78rem; color:#64748b; }
-    .divider-row { display:flex; align-items:center; gap:10px; color:#94a3b8; font-size:.82rem; margin:8px 0; }
-    .divider-row::before,.divider-row::after { content:''; flex:1; height:1px; background:#e2e8f0; }
     #durationBadge { background:#d1fae5; color:#065f46; padding:4px 14px; border-radius:20px; font-weight:700; font-size:.85rem; display:none; }
+    /* Translation preview table */
+    .lang-row { display:flex; align-items:stretch; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; margin-bottom:8px; }
+    .lang-badge-col { width:110px; min-width:110px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.82rem; background:#f1f5f9; color:#334155; flex-shrink:0; padding:8px; text-align:center; }
+    .lang-text-col { flex:1; padding:8px 12px; font-size:.85rem; color:#475569; background:#fff; min-height:48px; word-break:break-word; }
+    .lang-text-col.pending { color:#94a3b8; font-style:italic; }
+    .lang-text-col.done { color:#1e293b; }
+    .lang-text-col.error { color:#ef4444; }
+    #uploadProgress { display:none; }
 </style>
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 fw-bold"><i class="fa-solid fa-waveform-lines me-2 text-info"></i> @ViewData["Title"]</h5>
             </div>
             <div class="card-body p-4">
-                <form asp-action="Create" method="post" enctype="multipart/form-data" id="audioForm">
 
-                    @* POI *@
-                    <div class="mb-4">
-                        <label asp-for="POIId" class="form-label fw-medium">Thuộc địa điểm (POI) <span class="text-danger">*</span></label>
-                        <select asp-for="POIId" class="form-select" asp-items="@ViewBag.PoiList" required>
-                            <option value="">-- Chọn Địa điểm cần gắn âm thanh --</option>
-                        </select>
-                    </div>
+                @* ========== POI ========== *@
+                <div class="mb-4">
+                    <label asp-for="POIId" class="form-label fw-medium">Thuộc địa điểm (POI) <span class="text-danger">*</span></label>
+                    <select asp-for="POIId" id="selPoi" class="form-select" asp-items="@ViewBag.PoiList" required>
+                        <option value="">-- Chọn Địa điểm --</option>
+                    </select>
+                </div>
 
-                    @* Tabs *@
-                    <div class="d-flex gap-2 mb-3">
-                        <div class="tab-option active" id="tab-text" onclick="switchTab('text')">📝 Nhập Chữ (TTS)</div>
-                        <div class="tab-option" id="tab-mp3" onclick="switchTab('mp3')">🎵 Tải File MP3</div>
-                    </div>
+                @* ========== TABS ========== *@
+                <div class="d-flex gap-2 mb-3">
+                    <div class="tab-option active" id="tab-text" onclick="switchTab('text')">📝 Nhập Chữ (TTS + Auto-dịch)</div>
+                    <div class="tab-option" id="tab-mp3" onclick="switchTab('mp3')">🎵 Tải File MP3</div>
+                </div>
 
-                    @* ============ OPTION 1: TTS ============ *@
-                    <div id="panel-text">
-                        @* Box Nguồn *@
-                        <div class="translate-box mb-1">
-                            <div class="box-header">
-                                <span class="fw-semibold text-secondary" style="font-size:.85rem">📤 Văn Bản Gốc</span>
-                                <span id="detectedLang">Đang nhận diện...</span>
-                                <div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="speakSource()" title="Đọc thử văn bản gốc">🔊 Nghe thử</button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Dừng">⏹</button>
-                                </div>
-                            </div>
-                            <textarea id="srcText" class="form-control" rows="5"
-                                placeholder="Gõ hoặc dán nội dung thuyết minh vào đây..."
-                                oninput="detectLang(this.value)"></textarea>
-                        </div>
-
-                        <div class="text-center my-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="translateText()">
-                                🌐 Dịch sang ngôn ngữ đích ↕
-                            </button>
-                        </div>
-
-                        @* Box Đích *@
-                        <div class="translate-box mb-3">
-                            <div class="box-header">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-semibold text-secondary" style="font-size:.85rem">🌍 Ngôn Ngữ Đích</span>
-                                    <select id="targetLang" asp-for="Language" class="form-select form-select-sm" style="width:auto;">
-                                        <option value="vi">🇻🇳 Tiếng Việt</option>
-                                        <option value="en">🇺🇸 English</option>
-                                        <option value="zh">🇨🇳 中文</option>
-                                        <option value="ja">🇯🇵 日本語</option>
-                                        <option value="ko">🇰🇷 한국어</option>
-                                        <option value="fr">🇫🇷 Français</option>
-                                        <option value="es">🇪🇸 Español</option>
-                                        <option value="de">🇩🇪 Deutsch</option>
-                                        <option value="th">🇹🇭 ภาษาไทย</option>
-                                        <option value="ru">🇷🇺 Русский</option>
-                                    </select>
-                                </div>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <span id="durationBadge">⏱ <span id="durSec">0</span>s</span>
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="speakTarget()" title="Đọc thử bản dịch">🔊 Nghe thử</button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Dừng">⏹</button>
-                                </div>
-                            </div>
-                            <textarea id="dstText" asp-for="ScriptText" class="form-control" rows="5"
-                                placeholder="Bản dịch sẽ hiển thị ở đây (hoặc gõ thẳng)..."
-                                oninput="estimateDuration(this.value)"></textarea>
-                        </div>
-                    </div>
-
-                    @* ============ OPTION 2: MP3 ============ *@
-                    <div id="panel-mp3" style="display:none">
-                        <div class="p-4 rounded-3 border border-dashed border-info bg-light text-center mb-3">
-                            <i class="fa-solid fa-file-audio fa-3x text-info mb-2"></i>
-                            <p class="mb-2 text-muted">Chọn hoặc kéo thả file MP3/WAV vào đây</p>
-                            <input type="file" id="mp3File" name="uploadAudio" class="form-control" accept="audio/*" onchange="loadMp3(this)" />
-                        </div>
-
-                        <div id="mp3Player" style="display:none" class="mb-3">
-                            <audio id="audioPreview" controls class="w-100 mb-2"></audio>
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="text-muted small">Thời lượng:</span>
-                                <span id="mp3Duration" class="fw-bold text-success">---</span>
-                                <span class="text-muted small ms-3">Ngôn ngữ file:</span>
-                                <select id="mp3Lang" asp-for="Language" class="form-select form-select-sm" style="width:auto;">
-                                    <option value="vi">🇻🇳 Tiếng Việt</option>
-                                    <option value="en">🇺🇸 English</option>
-                                    <option value="zh">🇨🇳 中文</option>
-                                    <option value="ja">🇯🇵 日本語</option>
-                                    <option value="ko">🇰🇷 한국어</option>
-                                    <option value="fr">🇫🇷 Français</option>
-                                    <option value="es">🇪🇸 Español</option>
-                                    <option value="de">🇩🇪 Deutsch</option>
-                                    <option value="th">🇹🇭 ภาษาไทย</option>
-                                    <option value="ru">🇷🇺 Русский</option>
-                                </select>
+                @* ========== PANEL TTS ========== *@
+                <div id="panel-text">
+                    <div class="translate-box mb-2">
+                        <div class="box-header">
+                            <span class="fw-semibold text-secondary" style="font-size:.85rem">📤 Văn Bản Gốc</span>
+                            <span id="detectedLang">Đang nhận diện...</span>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="speakSource()" title="Nghe thử">🔊 Nghe thử</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()">⏹</button>
                             </div>
                         </div>
+                        <textarea id="srcText" class="form-control" rows="5"
+                            placeholder="Gõ nội dung thuyết minh vào đây... Hệ thống sẽ tự dịch sang 10 ngôn ngữ khi bấm 'Tải lên Server'."
+                            oninput="detectLang(this.value)"></textarea>
+                    </div>
 
-                        @* Script text cho file mp3 (tùy chọn) *@
-                        <div class="mb-3">
-                            <label class="form-label fw-medium">Nội dung thuyết minh (Subtitle hiển thị khi phát) <span class="text-muted small">- Không bắt buộc</span></label>
-                            <textarea asp-for="ScriptText" id="mp3Script" class="form-control" rows="3"
-                                placeholder="Copy nội dung script của file audio vào đây..."></textarea>
+                    <div class="alert alert-info py-2 px-3 mb-3" style="font-size:.85rem">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        Khi nhấn <strong>"Tải lên Server"</strong>, hệ thống tự động dịch sang <strong>10 ngôn ngữ</strong>
+                        (🇻🇳vi · 🇺🇸en · 🇨🇳zh · 🇯🇵ja · 🇰🇷ko · 🇫🇷fr · 🇪🇸es · 🇩🇪de · 🇹🇭th · 🇷🇺ru)
+                        và lưu tất cả vào DB. App mobile sẽ tự chọn đúng ngôn ngữ user.
+                    </div>
+
+                    @* Preview bản dịch *@
+                    <div id="translationPreview" style="display:none" class="mb-3">
+                        <div class="fw-semibold text-secondary mb-2" style="font-size:.88rem">🌍 Bản dịch tự động (xem trước)</div>
+                        <div id="langRows"></div>
+                    </div>
+                </div>
+
+                @* ========== PANEL MP3 ========== *@
+                <div id="panel-mp3" style="display:none">
+                    <div class="p-4 rounded-3 border border-dashed border-info bg-light text-center mb-3">
+                        <i class="fa-solid fa-file-audio fa-3x text-info mb-2"></i>
+                        <p class="mb-2 text-muted">Chọn hoặc kéo thả file MP3/WAV</p>
+                        <input type="file" id="mp3File" name="uploadAudio" class="form-control" accept="audio/*" onchange="loadMp3(this)" />
+                    </div>
+                    <div id="mp3Player" style="display:none" class="mb-3">
+                        <audio id="audioPreview" controls class="w-100 mb-2"></audio>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="text-muted small">Thời lượng:</span>
+                            <span id="mp3Duration" class="fw-bold text-success">---</span>
+                            <span class="text-muted small ms-3">Ngôn ngữ file:</span>
+                            <select id="mp3Lang" name="Language" class="form-select form-select-sm" style="width:auto;">
+                                <option value="vi">🇻🇳 Tiếng Việt</option>
+                                <option value="en">🇺🇸 English</option>
+                                <option value="zh">🇨🇳 中文</option>
+                                <option value="ja">🇯🇵 日本語</option>
+                                <option value="ko">🇰🇷 한국어</option>
+                                <option value="fr">🇫🇷 Français</option>
+                                <option value="es">🇪🇸 Español</option>
+                                <option value="de">🇩🇪 Deutsch</option>
+                                <option value="th">🇹🇭 ภาษาไทย</option>
+                                <option value="ru">🇷🇺 Русский</option>
+                            </select>
                         </div>
                     </div>
-
-                    @* hidden nhận Duration *@
-                    <input type="hidden" asp-for="Duration" id="hidDuration" value="0" />
-                    <input type="hidden" asp-for="IsActive" value="true" />
-
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="isActiveToggle" checked onchange="document.getElementById('hidActive').value=this.checked">
-                        <label class="form-check-label" for="isActiveToggle">Kích hoạt phát trên App ngay khi lưu</label>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Script / Subtitle <span class="text-muted small">- Không bắt buộc</span></label>
+                        <textarea id="mp3Script" name="ScriptText" class="form-control" rows="3"
+                            placeholder="Nội dung script của file audio..."></textarea>
                     </div>
-                    <input type="hidden" id="hidActive" asp-for="IsActive" value="true" />
+                </div>
 
-                    <hr />
-                    <div class="d-flex gap-2 justify-content-end">
-                        <a href="javascript:history.back()" class="btn btn-light border">Hủy bỏ</a>
-                        <button type="submit" class="btn btn-info text-white px-4">
-                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên Server
+                @* ========== HIDDEN + SWITCH + BUTTONS ========== *@
+                <input type="hidden" id="hidDuration" name="Duration" value="0" />
+                <input type="hidden" id="hidIsActive" name="IsActive" value="true" />
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="isActiveToggle" checked
+                           onchange="document.getElementById('hidIsActive').value=this.checked">
+                    <label class="form-check-label" for="isActiveToggle">Kích hoạt phát trên App ngay khi lưu</label>
+                </div>
+
+                @* Progress bar *@
+                <div id="uploadProgress" class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold text-primary" style="font-size:.88rem" id="progressLabel">Đang dịch...</span>
+                        <span id="progressPct" class="text-muted" style="font-size:.82rem">0%</span>
+                    </div>
+                    <div class="progress" style="height:8px">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                             id="progressBar" role="progressbar" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <hr />
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="javascript:history.back()" class="btn btn-light border">Hủy bỏ</a>
+                    @* TTS mode: nút bulk upload *@
+                    <button type="button" id="btnUploadTts" class="btn btn-info text-white px-4" onclick="startBulkUpload()">
+                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên Server (Auto-dịch 10 ngôn ngữ)
+                    </button>
+                    @* MP3 mode: form upload thường *@
+                    <form asp-action="Create" method="post" enctype="multipart/form-data" id="mp3Form" style="display:none">
+                        <input type="hidden" name="POIId" id="mp3PoiId" />
+                        <input type="hidden" name="Language" id="mp3LangHid" />
+                        <input type="hidden" name="ScriptText" id="mp3ScriptHid" />
+                        <input type="hidden" name="Duration" id="mp3DurHid" />
+                        <input type="hidden" name="IsActive" value="true" />
+                        <button type="submit" id="btnUploadMp3" class="btn btn-info text-white px-4">
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên Server (MP3)
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
@@ -182,116 +168,175 @@
 
 @section Scripts {
 <script>
+// === CONFIG ===
+const ALL_LANGS = [
+    { code:'vi', flag:'🇻🇳', name:'Tiếng Việt' },
+    { code:'en', flag:'🇺🇸', name:'English' },
+    { code:'zh', flag:'🇨🇳', name:'中文' },
+    { code:'ja', flag:'🇯🇵', name:'日本語' },
+    { code:'ko', flag:'🇰🇷', name:'한국어' },
+    { code:'fr', flag:'🇫🇷', name:'Français' },
+    { code:'es', flag:'🇪🇸', name:'Español' },
+    { code:'de', flag:'🇩🇪', name:'Deutsch' },
+    { code:'th', flag:'🇹🇭', name:'ภาษาไทย' },
+    { code:'ru', flag:'🇷🇺', name:'Русский' },
+];
+const langMap = { vi:'vi-VN',en:'en-US',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',fr:'fr-FR',es:'es-ES',de:'de-DE',th:'th-TH',ru:'ru-RU' };
 let synth = window.speechSynthesis;
-let currentUtterance = null;
-let isPlaying = false;
+let currentTab = 'text';
 
-/* ===== TAB SWITCH ===== */
+// === TAB SWITCH ===
 function switchTab(tab) {
-    document.getElementById('tab-text').classList.toggle('active', tab === 'text');
-    document.getElementById('tab-mp3').classList.toggle('active', tab === 'mp3');
-    document.getElementById('panel-text').style.display = tab === 'text' ? '' : 'none';
-    document.getElementById('panel-mp3').style.display = tab === 'mp3' ? '' : 'none';
+    currentTab = tab;
+    document.getElementById('tab-text').classList.toggle('active', tab==='text');
+    document.getElementById('tab-mp3').classList.toggle('active', tab==='mp3');
+    document.getElementById('panel-text').style.display = tab==='text' ? '' : 'none';
+    document.getElementById('panel-mp3').style.display = tab==='mp3' ? '' : 'none';
+    document.getElementById('btnUploadTts').style.display = tab==='text' ? '' : 'none';
+    document.getElementById('mp3Form').style.display = tab==='mp3' ? '' : 'none';
 }
 
-/* ===== DETECT LANGUAGE ===== */
-const langMap = {
-    vi: 'vi-VN', en: 'en-US', zh: 'zh-CN', ja: 'ja-JP',
-    ko: 'ko-KR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE',
-    th: 'th-TH', ru: 'ru-RU'
-};
-const langNames = {
-    vi: '🇻🇳 Tiếng Việt', en: '🇺🇸 English', zh: '🇨🇳 中文', ja: '🇯🇵 日本語',
-    ko: '🇰🇷 한국어', fr: '🇫🇷 Français', es: '🇪🇸 Español', de: '🇩🇪 Deutsch',
-    th: '🇹🇭 ภาษาไทย', ru: '🇷🇺 Русский'
-};
-
+// === DETECT LANGUAGE ===
 let detectTimeout;
 function detectLang(text) {
     clearTimeout(detectTimeout);
-    if (!text.trim()) { document.getElementById('detectedLang').textContent = 'Đang nhận diện...'; return; }
+    if (!text.trim()) { document.getElementById('detectedLang').textContent='Đang nhận diện...'; return; }
     detectTimeout = setTimeout(() => {
-        let detected = 'vi';
-        if (/[\u4e00-\u9fff]/.test(text)) detected = 'zh';
-        else if (/[\u3040-\u30ff]/.test(text)) detected = 'ja';
-        else if (/[\uac00-\ud7af]/.test(text)) detected = 'ko';
-        else if (/[\u0400-\u04ff]/.test(text)) detected = 'ru';
-        else if (/[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/.test(text)) detected = 'vi';
-        else if (/[a-zA-Z]/.test(text)) detected = 'en';
-        document.getElementById('detectedLang').textContent = 'Phát hiện: ' + (langNames[detected] || detected);
+        let d = 'vi';
+        if (/[\u4e00-\u9fff]/.test(text)) d='zh';
+        else if (/[\u3040-\u30ff]/.test(text)) d='ja';
+        else if (/[\uac00-\ud7af]/.test(text)) d='ko';
+        else if (/[\u0400-\u04ff]/.test(text)) d='ru';
+        else if (/[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/.test(text)) d='vi';
+        else if (/[a-zA-Z]/.test(text)) d='en';
+        const ln = ALL_LANGS.find(l=>l.code===d);
+        document.getElementById('detectedLang').textContent = 'Phát hiện: ' + (ln ? ln.flag+' '+ln.name : d);
     }, 400);
 }
 
-/* ===== TRANSLATE (Google free endpoint client-side) ===== */
-function translateText() {
-    const src = document.getElementById('srcText').value.trim();
-    const tgt = document.getElementById('targetLang').value;
-    if (!src) { alert('Vui lòng nhập văn bản trước!'); return; }
-
-    document.getElementById('dstText').value = '⏳ Đang dịch...';
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tgt}&dt=t&q=${encodeURIComponent(src)}`;
-
-    fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            const translated = data[0].map(x => x[0]).join('');
-            document.getElementById('dstText').value = translated;
-            estimateDuration(translated);
-        })
-        .catch(() => {
-            document.getElementById('dstText').value = src;
-            alert('Không dịch được (có thể do CORS). Bạn vẫn có thể nhập tay!');
-        });
-}
-
-/* ===== ESTIMATE DURATION ===== */
-function estimateDuration(text) {
-    if (!text) return;
-    const words = text.split(/\s+/).filter(Boolean).length;
-    const secs = Math.max(5, Math.round(words / 2.0)); // 120 từ/phút cho tiếng Việt
-    document.getElementById('hidDuration').value = secs;
-    document.getElementById('durSec').textContent = secs;
-    document.getElementById('durationBadge').style.display = 'inline-flex';
-}
-
-/* ===== SPEAK ===== */
-function speakSource() {
-    const text = document.getElementById('srcText').value;
-    if (!text) return;
-    speak(text, 'vi-VN');
-}
-
-function speakTarget() {
-    const text = document.getElementById('dstText').value;
-    const lang = document.getElementById('targetLang').value;
-    if (!text) return;
-    speak(text, langMap[lang] || 'vi-VN');
-}
-
-function speak(text, lang) {
-    stopSpeech();
-    currentUtterance = new SpeechSynthesisUtterance(text);
-    currentUtterance.lang = lang;
-    currentUtterance.rate = 1.0;
-
-    // Ưu tiên chọn giọng Nữ
-    let voices = synth.getVoices();
-    let voice = voices.find(v => v.lang.startsWith(lang.split('-')[0]) && 
-        (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('hoaimy') || v.name.toLowerCase().includes('zira')));
-    
-    if (!voice) {
-        voice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+// === TRANSLATE ONE TEXT → lang ===
+async function translateOne(text, targetLang) {
+    if (targetLang === 'vi') return text; // không dịch nguồn sang chính nó nếu src là vi
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+        const r = await fetch(url);
+        const data = await r.json();
+        return data[0].map(x=>x[0]).join('');
+    } catch {
+        return text; // fallback: dùng text gốc
     }
-    if (voice) currentUtterance.voice = voice;
-
-    synth.speak(currentUtterance);
 }
 
-function stopSpeech() {
-    synth.cancel();
+// === ESTIMATE DURATION ===
+function estimateDuration(text) {
+    const words = text.split(/\s+/).filter(Boolean).length;
+    return Math.max(5, Math.round(words / 2.0));
 }
 
-/* ===== LOAD MP3 ===== */
+// === BUILD PREVIEW TABLE ===
+function buildPreviewRows() {
+    const container = document.getElementById('langRows');
+    container.innerHTML = '';
+    ALL_LANGS.forEach(l => {
+        const row = document.createElement('div');
+        row.className = 'lang-row';
+        row.id = 'row_' + l.code;
+        row.innerHTML = `
+            <div class="lang-badge-col">${l.flag}<br><span style="font-size:.72rem">${l.name}</span></div>
+            <div class="lang-text-col pending" id="txt_${l.code}">Đang chờ dịch...</div>`;
+        container.appendChild(row);
+    });
+    document.getElementById('translationPreview').style.display = '';
+}
+
+// === MAIN: BULK UPLOAD ===
+async function startBulkUpload() {
+    const srcText = (document.getElementById('srcText').value || '').trim();
+    const poiId = parseInt(document.getElementById('selPoi').value);
+    const isActive = document.getElementById('isActiveToggle').checked;
+
+    if (!srcText) { alert('Vui lòng nhập văn bản nguồn!'); return; }
+    if (!poiId) { alert('Vui lòng chọn POI!'); return; }
+
+    // Build preview table
+    buildPreviewRows();
+
+    // Show progress
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressLabel = document.getElementById('progressLabel');
+    const progressPct = document.getElementById('progressPct');
+    progressDiv.style.display = '';
+    document.getElementById('btnUploadTts').disabled = true;
+
+    const results = [];
+    let done = 0;
+
+    // Translate each language
+    for (const lang of ALL_LANGS) {
+        progressLabel.textContent = `Đang dịch ${lang.flag} ${lang.name}...`;
+        document.getElementById('txt_' + lang.code).textContent = '⏳ Đang dịch...';
+        document.getElementById('txt_' + lang.code).className = 'lang-text-col pending';
+
+        const translated = await translateOne(srcText, lang.code);
+        const dur = estimateDuration(translated);
+
+        document.getElementById('txt_' + lang.code).textContent = translated;
+        document.getElementById('txt_' + lang.code).className = 'lang-text-col done';
+
+        results.push({
+            poiId: poiId,
+            language: lang.code,
+            scriptText: translated,
+            audioPath: 'TTS_ONLY',
+            duration: dur,
+            isActive: isActive
+        });
+
+        done++;
+        const pct = Math.round(done / ALL_LANGS.length * 90);
+        progressBar.style.width = pct + '%';
+        progressPct.textContent = pct + '%';
+    }
+
+    // POST bulk to API
+    progressLabel.textContent = '📤 Đang lưu vào Server...';
+    try {
+        // CMS gọi qua endpoint của chính CMS (proxy tới API)
+        const res = await fetch('/Audio/BulkCreate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(results)
+        });
+        if (res.ok) {
+            progressBar.style.width = '100%';
+            progressPct.textContent = '100%';
+            progressBar.classList.remove('progress-bar-animated');
+            progressBar.classList.add('bg-success');
+            progressLabel.textContent = `✅ Đã lưu ${ALL_LANGS.length} bản dịch thành công!`;
+            setTimeout(() => {
+                window.location.href = `/Audio?poiId=${poiId}`;
+            }, 1500);
+        } else {
+            throw new Error('HTTP ' + res.status);
+        }
+    } catch(e) {
+        progressLabel.textContent = '❌ Lỗi lưu: ' + e.message;
+        progressBar.classList.add('bg-danger');
+        document.getElementById('btnUploadTts').disabled = false;
+    }
+}
+
+// === MP3 FORM SUBMIT ===
+function submitMp3() {
+    document.getElementById('mp3PoiId').value = document.getElementById('selPoi').value;
+    document.getElementById('mp3LangHid').value = document.getElementById('mp3Lang').value;
+    document.getElementById('mp3ScriptHid').value = document.getElementById('mp3Script').value;
+    document.getElementById('mp3DurHid').value = document.getElementById('hidDuration').value;
+    document.getElementById('mp3Form').submit();
+}
+
+// === LOAD MP3 ===
 function loadMp3(input) {
     const file = input.files[0];
     if (!file) return;
@@ -304,6 +349,22 @@ function loadMp3(input) {
         document.getElementById('mp3Duration').textContent = secs + 's (' + Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0') + ')';
         document.getElementById('hidDuration').value = secs;
     };
+    // Override submit button to call submitMp3()
+    document.getElementById('btnUploadMp3').onclick = (e) => { e.preventDefault(); submitMp3(); };
 }
+
+// === SPEAK ===
+function speakSource() {
+    const text = document.getElementById('srcText').value;
+    if (!text) return;
+    stopSpeech();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'vi-VN'; u.rate = 1.0;
+    synth.speak(u);
+}
+function stopSpeech() { synth.cancel(); }
+
+// Initial tab setup
+switchTab('text');
 </script>
 }

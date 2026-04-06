@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<NarrationLog> NarrationLogs { get; set; }
     public DbSet<UserLocationLog> UserLocationLogs { get; set; }
     public DbSet<TourPOI> TourPOIs { get; set; }
+    public DbSet<FavoritePOI> FavoritePOIs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

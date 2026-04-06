@@ -10,7 +10,29 @@ namespace TourApp.Mobile.Services
         private int _lastSpokenPoiId = -1;
         private DateTime _lastSpokenTime = DateTime.MinValue;
 
+        /// <summary>
+        /// Ngôn ngữ hiện tại của app (có thể thay đổi từ UI settings).
+        /// vi | en | zh | ja | ko | fr | es | de | th | ru
+        /// </summary>
+        public string CurrentLanguage { get; set; } = "vi";
+
         public event EventHandler<POI>? PoiTriggered;
+        public event EventHandler<int>? HighlightRequested;
+
+        // Map language code → TTS locale
+        private static readonly Dictionary<string, string> LangToLocale = new()
+        {
+            ["vi"] = "vi-VN",
+            ["en"] = "en-US",
+            ["zh"] = "zh-CN",
+            ["ja"] = "ja-JP",
+            ["ko"] = "ko-KR",
+            ["fr"] = "fr-FR",
+            ["es"] = "es-ES",
+            ["de"] = "de-DE",
+            ["th"] = "th-TH",
+            ["ru"] = "ru-RU",
+        };
 
         public GeofenceService(ApiService apiService)
         {
@@ -48,7 +70,6 @@ namespace TourApp.Mobile.Services
         {
             if (_pois == null || !_pois.Any()) return;
 
-            // [FIX] Sort theo Priority — POI Priority=1 được kiểm tra trước
             var sortedPois = _pois.Where(p => p.IsActive).OrderBy(p => p.Priority);
 
             foreach (var poi in sortedPois)
@@ -61,9 +82,7 @@ namespace TourApp.Mobile.Services
                 {
                     // Cooldown 2 phút/POI
                     if (poi.PoiId == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
-                    {
                         continue;
-                    }
 
                     TriggerNarration(poi);
                     break; // Chỉ trigger 1 POI/cycle
@@ -76,54 +95,77 @@ namespace TourApp.Mobile.Services
             _lastSpokenPoiId = poi.PoiId;
             _lastSpokenTime = DateTime.Now;
 
-            // Notify UI (hiển bottom sheet + highlight marker)
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 PoiTriggered?.Invoke(this, poi);
-                // [FIX] Highlight đúng marker trên map
                 HighlightRequested?.Invoke(this, poi.PoiId);
             });
 
-            // Phát TTS
             _ = SpeakNarrationAsync(poi);
-
-            // [NEW] Ghi log narration (async, không chặn)
             _ = _apiService.LogNarrationAsync(poi.PoiId, null, "geofence");
         }
 
-        // [NEW] Event để MapPage gọi highlightPoi() JS
-        public event EventHandler<int>? HighlightRequested;
-
-        private async Task SpeakNarrationAsync(POI poi)
+        /// <summary>
+        /// Phát TTS dùng ScriptText từ DB (đúng ngôn ngữ hiện tại).
+        /// Thứ tự ưu tiên: ScriptText[CurrentLanguage] → ScriptText[vi] → Description fallback.
+        /// </summary>
+        public async Task SpeakNarrationAsync(POI poi, string? overrideLang = null)
         {
             try
             {
+                var lang = overrideLang ?? CurrentLanguage;
+                var script = poi.GetScript(lang);
+                var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
+
+                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.PoiName}, lang={lang}, script={script.Substring(0, Math.Min(50, script.Length))}...");
+
                 var locales = await TextToSpeech.Default.GetLocalesAsync();
-                var viLocale = locales.FirstOrDefault(l => l.Language.Contains("vi", StringComparison.OrdinalIgnoreCase));
+                var matchedLocale = locales.FirstOrDefault(l =>
+                    l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
 
                 var options = new SpeechOptions
                 {
                     Pitch = 1.0f,
                     Volume = 1.0f,
-                    Locale = viLocale
+                    Locale = matchedLocale // null = system default, vẫn OK
                 };
 
-                await TextToSpeech.Default.SpeakAsync($"Chào mừng bạn đến {poi.PoiName}. {poi.Description}", options);
+                await TextToSpeech.Default.SpeakAsync(script, options);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[TTS] Error with locale: {ex.Message}");
                 try
                 {
-                    // Fallback: không dùng locale, không crash app nếu TTS không khả dụng
-                    await TextToSpeech.Default.SpeakAsync($"Chào mừng bạn đến {poi.PoiName}. {poi.Description}");
+                    // Fallback hoàn toàn không locale
+                    var script = poi.GetScript("vi");
+                    await TextToSpeech.Default.SpeakAsync(script);
                 }
                 catch (Exception ex2)
                 {
-                    // TTS hoàn toàn không khả dụng trên thiết bị này — bỏ qua, không crash
-                    System.Diagnostics.Debug.WriteLine($"[TTS] Fallback also failed: {ex2.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[TTS] Fallback failed: {ex2.Message}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Phát audio từ QR Code — bypass GPS radius và cooldown.
+        /// </summary>
+        public async Task TriggerFromQRAsync(POI poi)
+        {
+            System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.PoiName}");
+
+            // Reset cooldown để QR luôn phát được
+            _lastSpokenPoiId = -1;
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                PoiTriggered?.Invoke(this, poi);
+                HighlightRequested?.Invoke(this, poi.PoiId);
+            });
+
+            await SpeakNarrationAsync(poi);
+            _ = _apiService.LogNarrationAsync(poi.PoiId, null, "qr");
         }
     }
 }

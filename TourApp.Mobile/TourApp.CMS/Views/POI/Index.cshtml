@@ -5,6 +5,29 @@
     int stt = 0;
 }
 
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-qrcode me-2 text-primary"></i> Mã QR - <span id="qrPoiName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div id="qrcode" class="d-inline-block p-3 bg-white border rounded-3 shadow-sm mb-3"></div>
+                <p class="text-muted small mb-1">Dán poster tại địa điểm. Khách quét QR → nghe thuyết minh ngay.</p>
+                <p class="text-primary small fw-semibold" id="qrUrl"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-primary" onclick="downloadQR()">
+                    <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card border-0 mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Danh sách Địa điểm</h5>
@@ -52,6 +75,11 @@
                                     <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1" title="Quản lý Audio">
                                         <i class="fa-solid fa-headphones"></i> Audios
                                     </a>
+                                    <!-- QR Button -->
+                                    <button class="btn btn-sm btn-outline-success me-1" title="Tạo QR Code"
+                                            onclick="showQR(@item.Id, '@Html.Raw(item.Name.Replace("'", "\\'"))')">
+                                        <i class="fa-solid fa-qrcode"></i>
+                                    </button>
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
@@ -76,3 +104,47 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<!-- QRCode.js library (no build step needed) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let currentQrPoiId = null;
+
+function showQR(poiId, poiName) {
+    currentQrPoiId = poiId;
+    document.getElementById('qrPoiName').textContent = poiName;
+
+    // URL mà app mobile sẽ decode — dạng deep link
+    const qrContent = `tourapp://poi/${poiId}`;
+    document.getElementById('qrUrl').textContent = qrContent;
+
+    // Clear old QR
+    const container = document.getElementById('qrcode');
+    container.innerHTML = '';
+
+    // Generate QR
+    new QRCode(container, {
+        text: qrContent,
+        width: 220,
+        height: 220,
+        colorDark: '#1e293b',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+    modal.show();
+}
+
+function downloadQR() {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (!canvas) { alert('QR chưa sẵn sàng!'); return; }
+    const link = document.createElement('a');
+    link.download = `QR_POI_${currentQrPoiId}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+</script>
+}

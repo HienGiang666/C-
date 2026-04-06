@@ -246,8 +246,8 @@ public partial class MapPage : ContentPage
     private void OnPlayAudioClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
-        _ = TextToSpeech.Default.SpeakAsync(
-            $"Chào mừng bạn đến {_currentPoi.PoiName}. {_currentPoi.Description}");
+        // Dùng ScriptText từ DB (đúng ngôn ngữ CurrentLanguage), fallback về Description
+        _ = _geofenceService.SpeakNarrationAsync(_currentPoi);
     }
 
     private async void OnDirectionsClicked(object? sender, EventArgs e)
@@ -389,6 +389,72 @@ public partial class MapPage : ContentPage
             MapWebView.Eval($"map.flyTo({{center: [{_lastLocation.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {_lastLocation.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
         else
             MapWebView.Eval("map.flyTo({center: [106.7018, 10.7596], zoom: 17});");
+    }
+
+    /// <summary>
+    /// QR Scanner: user quét QR poster tại địa điểm → decode poiId → trigger audio ngay.
+    /// QR format: "tourapp://poi/{id}" (admin tạo trong CMS).
+    /// Hiện tại dùng DisplayPromptAsync để demo (sau cài ZXing.Net.MAUI sẽ dùng camera thật).
+    /// </summary>
+    private async void OnQRScanClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            // --- OPTION A: Popup nhập thủ công (demo, không cần camera) ---
+            var result = await DisplayPromptAsync(
+                "📷 Quét Mã QR",
+                "Nhập mã QR hoặc ID của địa điểm:\n(VD: tourapp://poi/3 hoặc chỉ số: 3)",
+                placeholder: "tourapp://poi/1",
+                keyboard: Keyboard.Url);
+
+            if (string.IsNullOrWhiteSpace(result)) return;
+
+            // Parse POI ID từ QR content
+            int poiId = ParsePoiIdFromQr(result);
+            if (poiId <= 0)
+            {
+                await DisplayAlert("⚠️ Lỗi", "Không nhận diện được mã QR. Format: tourapp://poi/{id}", "OK");
+                return;
+            }
+
+            // Tìm POI trong danh sách đã tải
+            var poi = _pois?.FirstOrDefault(p => p.PoiId == poiId);
+            if (poi == null)
+            {
+                await DisplayAlert("⚠️ Không tìm thấy", $"Không tìm thấy địa điểm ID={poiId} trong danh sách.", "OK");
+                return;
+            }
+
+            // Trigger audio ngay (bypass GPS + cooldown)
+            ShowPoiDetails(poi);
+            MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 18}});");
+            await _geofenceService.TriggerFromQRAsync(poi);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[QR] Error: {ex.Message}");
+        }
+    }
+
+    private static int ParsePoiIdFromQr(string qrText)
+    {
+        // Format: tourapp://poi/3
+        if (qrText.StartsWith("tourapp://poi/", StringComparison.OrdinalIgnoreCase))
+        {
+            var idStr = qrText.Replace("tourapp://poi/", "", StringComparison.OrdinalIgnoreCase).Trim();
+            if (int.TryParse(idStr, out int id)) return id;
+        }
+        // Format: chỉ số: "3"
+        if (int.TryParse(qrText.Trim(), out int directId)) return directId;
+        // Format: URL có ?id=3
+        try
+        {
+            var uri = new Uri(qrText);
+            var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            if (int.TryParse(q["id"], out int qId)) return qId;
+        }
+        catch { }
+        return -1;
     }
 
     private void LoadMap()
