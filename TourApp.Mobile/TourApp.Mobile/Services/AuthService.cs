@@ -9,7 +9,6 @@ namespace TourApp.Mobile.Services
 {
     public class AuthService
     {
-        private static readonly HttpClient _httpClient = new HttpClient();
         private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         public static User? CurrentUser { get; private set; }
@@ -33,7 +32,8 @@ namespace TourApp.Mobile.Services
             {
                 await ApiService.AutoDiscoverApiAsync();
                 var baseUrl = ApiService.BaseUrl;
-                _httpClient.BaseAddress = new Uri(baseUrl);
+
+                using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
 
                 var request = new
                 {
@@ -41,7 +41,7 @@ namespace TourApp.Mobile.Services
                     Password = HashPassword(password)
                 };
 
-                var response = await _httpClient.PostAsJsonAsync("/api/user/login", request);
+                var response = await httpClient.PostAsJsonAsync("/api/user/login", request);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -85,7 +85,8 @@ namespace TourApp.Mobile.Services
             {
                 await ApiService.AutoDiscoverApiAsync();
                 var baseUrl = ApiService.BaseUrl;
-                _httpClient.BaseAddress = new Uri(baseUrl);
+
+                using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
 
                 var request = new
                 {
@@ -98,7 +99,7 @@ namespace TourApp.Mobile.Services
                     CreatedAt = DateTime.Now
                 };
 
-                var response = await _httpClient.PostAsJsonAsync("/api/user", request);
+                var response = await httpClient.PostAsJsonAsync("/api/user", request);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -181,9 +182,9 @@ namespace TourApp.Mobile.Services
             try
             {
                 var baseUrl = ApiService.BaseUrl;
-                _httpClient.BaseAddress = new Uri(baseUrl);
+                using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
                 
-                var response = await _httpClient.GetAsync($"/api/user/{userId}/bookings");
+                var response = await httpClient.GetAsync($"/api/user/{userId}/bookings");
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
