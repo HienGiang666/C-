@@ -15,6 +15,8 @@ public partial class MapPage : ContentPage
     private POI? _currentPoi;
     private Location? _lastLocation;
     private Location? _lastCheckedLocation;
+    private bool _isJsMapReady = false;
+    private string? _pendingMapPoisJson;
 
     // ----------------------------------------------------------------
     //  GOONG KEYS
@@ -42,7 +44,10 @@ public partial class MapPage : ContentPage
             _locationService.LocationChanged += OnLocationChanged;
             _geofenceService.PoiTriggered += OnPoiTriggered;
             _geofenceService.HighlightRequested += (_, poiId) =>
-                MapWebView.Eval($"highlightPoi({poiId});");
+            {
+                if (_isJsMapReady)
+                    MapWebView.Eval($"highlightPoi({poiId});");
+            };
         }
         catch (Exception ex)
         {
@@ -119,12 +124,7 @@ public partial class MapPage : ContentPage
                 _geofenceService.SetPois(_pois);
 
                 // Nếu có POI → refresh markers trên map
-                if (_pois.Any())
-                {
-                    var poisJson = System.Text.Json.JsonSerializer.Serialize(_pois);
-                    MainThread.BeginInvokeOnMainThread(() =>
-                        MapWebView.Eval($"refreshMarkers({poisJson});"));
-                }
+                QueueMapMarkerRefresh();
             }
         }
         catch (Exception ex)
@@ -153,14 +153,17 @@ public partial class MapPage : ContentPage
             shouldCheckGeofence = movedMeters > 5;
         }
 
+        if (shouldCheckGeofence)
+        {
+            _lastCheckedLocation = location;
+            _ = Task.Run(() => _geofenceService.CheckGeofences(location));
+        }
+
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
-
-            if (shouldCheckGeofence)
+            if (_isJsMapReady)
             {
-                _lastCheckedLocation = location;
-                _geofenceService.CheckGeofences(location);
+                MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
             }
 
             if (BottomSheetView.IsVisible && _currentPoi != null)
@@ -211,6 +214,14 @@ public partial class MapPage : ContentPage
     private void OnMapWebViewNavigating(object? sender, WebNavigatingEventArgs e)
     {
         System.Diagnostics.Debug.WriteLine($"[MapWebView Navigation] URL: {e.Url}");
+
+        if (e.Url.StartsWith("http://map/ready", StringComparison.OrdinalIgnoreCase))
+        {
+            e.Cancel = true;
+            _isJsMapReady = true;
+            TryRefreshMapMarkers();
+            return;
+        }
 
         if (e.Url.StartsWith("poi://selected") || e.Url.StartsWith("http://poi/selected"))
         {
@@ -459,9 +470,43 @@ public partial class MapPage : ContentPage
 
     private void LoadMap()
     {
-        var poisJson = System.Text.Json.JsonSerializer.Serialize(_pois ?? new List<POI>());
+        _isJsMapReady = false;
+        _pendingMapPoisJson = SerializeMapPois(_pois);
+        var poisJson = _pendingMapPoisJson;
         var html = BuildMapHtml(poisJson);
         MapWebView.Source = new HtmlWebViewSource { Html = html };
+    }
+
+    private static string SerializeMapPois(IEnumerable<POI>? pois)
+    {
+        var mapPois = (pois ?? Enumerable.Empty<POI>())
+            .Select(p => new
+            {
+                p.PoiId,
+                p.PoiName,
+                p.Latitude,
+                p.Longitude
+            });
+
+        return System.Text.Json.JsonSerializer.Serialize(mapPois);
+    }
+
+    private void QueueMapMarkerRefresh()
+    {
+        _pendingMapPoisJson = SerializeMapPois(_pois);
+        TryRefreshMapMarkers();
+    }
+
+    private void TryRefreshMapMarkers()
+    {
+        if (!_isJsMapReady || string.IsNullOrWhiteSpace(_pendingMapPoisJson))
+            return;
+
+        var poisJson = _pendingMapPoisJson;
+        _pendingMapPoisJson = null;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+            MapWebView.Eval($"refreshMarkers({poisJson});"));
     }
 
     private static string BuildMapHtml(string poisJson)
@@ -544,7 +589,7 @@ public partial class MapPage : ContentPage
      Lý do: onerror/onload của script CDN gọi các hàm này ngay khi CDN load xong.
      Nếu khai báo sau, hàm chưa tồn tại → ReferenceError → map trắng -->
 <script>
-var map, pois = {poisJson}, userMarker = null;
+var map, pois = {poisJson}, userMarker = null, poiMarkers = [];
 
 function onGoongLoadError() {{
   clearTimeout(window.goongLoadTimeout);
@@ -565,6 +610,9 @@ function onGoongLoaded() {{
     map.on('load', function() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
+      setTimeout(function() {{
+        window.location.href = 'http://map/ready';
+      }}, 0);
     }});
     map.on('error', function(e) {{
       document.getElementById('loading').classList.add('hide');
@@ -576,8 +624,22 @@ function onGoongLoaded() {{
 
 function addMarkers(poiList) {{
   if (!map) return;
+  poiMarkers.forEach(function(marker) {{ marker.remove(); }});
+  poiMarkers = [];
 
   poiList.forEach(function(poi) {{
+    var latitude = poi.Latitude;
+    if (latitude === undefined || latitude === null) latitude = poi.latitude;
+    var longitude = poi.Longitude;
+    if (longitude === undefined || longitude === null) longitude = poi.longitude;
+    var lat = Number(latitude);
+    var lng = Number(longitude);
+
+    if (!isFinite(lat) || !isFinite(lng)) {{
+      console.log('[Marker Skipped] Invalid coordinates');
+      return;
+    }}
+
     // JSON from C# uses lowercase property names due to [JsonPropertyName(""id"")]
     var poiId = poi.id || poi.poiId || poi.PoiId || poi.Id || 0;
     var poiName = poi.name || poi.PoiName || poi.Name || 'Địa điểm';
@@ -591,8 +653,9 @@ function addMarkers(poiList) {{
 
     // Create marker with Goong
     var marker = new goongjs.Marker(el)
-      .setLngLat([poi.Longitude, poi.Latitude])
+      .setLngLat([lng, lat])
       .addTo(map);
+    poiMarkers.push(marker);
 
     // Log for debugging
     console.log('[Marker Created] POI ID: ' + poiId + ', Name: ' + poiName);

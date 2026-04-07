@@ -1,11 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<TargetFrameworks>net9.0-android</TargetFrameworks>
+
 		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
+
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>TourApp.Mobile</RootNamespace>
@@ -32,6 +35,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(TargetFramework)' == 'net9.0-android'">
+
 		<AndroidUseInterpreter>true</AndroidUseInterpreter>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 	</PropertyGroup>
