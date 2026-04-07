@@ -14,6 +14,7 @@ namespace TourApp.Mobile
             Routing.RegisterRoute("SignUpPage", typeof(Views.Auth.SignUpPage));
             Routing.RegisterRoute("ForgotPasswordPage", typeof(Views.Auth.ForgotPasswordPage));
             Routing.RegisterRoute("VerificationPage", typeof(Views.Auth.VerificationPage));
+            Routing.RegisterRoute("QRScannerPage", typeof(Views.QRScannerPage));
         }
     }
 }

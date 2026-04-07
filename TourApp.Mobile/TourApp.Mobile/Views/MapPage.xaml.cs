@@ -17,6 +17,8 @@ public partial class MapPage : ContentPage
     private Location? _lastCheckedLocation;
     private bool _isJsMapReady = false;
     private string? _pendingMapPoisJson;
+    private int? _pendingPoiId = null; // Store POI ID from navigation for processing when ready
+    private int? _pendingTourId = null; // Store Tour ID from navigation for processing when ready
 
     // ----------------------------------------------------------------
     //  GOONG KEYS
@@ -36,6 +38,24 @@ public partial class MapPage : ContentPage
         try
         {
             InitializeComponent();
+            
+            // Check for poiId or tourId query parameter
+            var queryParams = Shell.Current?.CurrentState?.Location?.Query;
+            if (!string.IsNullOrEmpty(queryParams))
+            {
+                var query = System.Web.HttpUtility.ParseQueryString(queryParams);
+                if (int.TryParse(query["poiId"], out int poiId))
+                {
+                    _pendingPoiId = poiId;
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Received poiId: {poiId}");
+                }
+                if (int.TryParse(query["tourId"], out int tourId))
+                {
+                    _pendingTourId = tourId;
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Received tourId: {tourId}");
+                }
+            }
+            
             var services = IPlatformApplication.Current?.Services;
             _locationService = services?.GetService<LocationService>() ?? new LocationService();
             _apiService = services?.GetService<ApiService>() ?? new ApiService();
@@ -125,6 +145,12 @@ public partial class MapPage : ContentPage
 
                 // Nếu có POI → refresh markers trên map
                 QueueMapMarkerRefresh();
+                
+                // Xử lý pending POI ID nếu có
+                ProcessPendingPoiId();
+                
+                // Xử lý pending Tour ID nếu có
+                ProcessPendingTourId();
             }
         }
         catch (Exception ex)
@@ -137,6 +163,74 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         _locationService.StopTracking();
+    }
+    
+    /// <summary>
+    /// Xử lý POI ID từ navigation (ví dụ: từ HomePage khi click vào quán ăn)
+    /// </summary>
+    private void ProcessPendingPoiId()
+    {
+        if (_pendingPoiId.HasValue && _pois != null && _pois.Any())
+        {
+            var poi = _pois.FirstOrDefault(p => p.PoiId == _pendingPoiId.Value);
+            if (poi != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending POI: {poi.PoiName}");
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    // Hiển thị chi tiết POI
+                    ShowPoiDetails(poi);
+                    
+                    // Fly đến vị trí POI trên bản đồ
+                    if (_isJsMapReady)
+                    {
+                        MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
+                    }
+                });
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Pending POI ID {_pendingPoiId.Value} not found");
+            }
+            _pendingPoiId = null; // Clear sau khi xử lý
+        }
+    }
+
+    /// <summary>
+    /// Xử lý Tour ID từ navigation (ví dụ: từ TourPage khi click vào tour)
+    /// </summary>
+    private async void ProcessPendingTourId()
+    {
+        if (_pendingTourId.HasValue)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending Tour ID: {_pendingTourId.Value}");
+                
+                // Load tour details
+                var tour = await _apiService.GetTourByIdAsync(_pendingTourId.Value);
+                if (tour != null && _pois != null)
+                {
+                    // Show alert
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        DisplayAlert("Tour", $"Đang hiển thị tour: {tour.Name}", "OK");
+                    });
+                    
+                    // TODO: Load tour POIs and draw route
+                    // For now, just fly to center of Vĩnh Khánh
+                    if (_isJsMapReady)
+                    {
+                        MapWebView.Eval("map.flyTo({center: [106.7018, 10.7596], zoom: 15});");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] ProcessPendingTourId error: {ex.Message}");
+            }
+            _pendingTourId = null;
+        }
     }
 
     private void OnLocationChanged(object? sender, Location location)
@@ -220,6 +314,8 @@ public partial class MapPage : ContentPage
             e.Cancel = true;
             _isJsMapReady = true;
             TryRefreshMapMarkers();
+            // Process pending POI if POIs are already loaded
+            ProcessPendingPoiId();
             return;
         }
 
@@ -403,69 +499,12 @@ public partial class MapPage : ContentPage
     }
 
     /// <summary>
-    /// QR Scanner: user quét QR poster tại địa điểm → decode poiId → trigger audio ngay.
-    /// QR format: "tourapp://poi/{id}" (admin tạo trong CMS).
-    /// Hiện tại dùng DisplayPromptAsync để demo (sau cài ZXing.Net.MAUI sẽ dùng camera thật).
+    /// QR Scanner: Điều hướng đến QRScannerPage để quét mã thực tế
     /// </summary>
     private async void OnQRScanClicked(object? sender, EventArgs e)
     {
-        try
-        {
-            // --- OPTION A: Popup nhập thủ công (demo, không cần camera) ---
-            var result = await DisplayPromptAsync(
-                "📷 Quét Mã QR",
-                "Nhập mã QR hoặc ID của địa điểm:\n(VD: tourapp://poi/3 hoặc chỉ số: 3)",
-                placeholder: "tourapp://poi/1",
-                keyboard: Keyboard.Url);
-
-            if (string.IsNullOrWhiteSpace(result)) return;
-
-            // Parse POI ID từ QR content
-            int poiId = ParsePoiIdFromQr(result);
-            if (poiId <= 0)
-            {
-                await DisplayAlert("⚠️ Lỗi", "Không nhận diện được mã QR. Format: tourapp://poi/{id}", "OK");
-                return;
-            }
-
-            // Tìm POI trong danh sách đã tải
-            var poi = _pois?.FirstOrDefault(p => p.PoiId == poiId);
-            if (poi == null)
-            {
-                await DisplayAlert("⚠️ Không tìm thấy", $"Không tìm thấy địa điểm ID={poiId} trong danh sách.", "OK");
-                return;
-            }
-
-            // Trigger audio ngay (bypass GPS + cooldown)
-            ShowPoiDetails(poi);
-            MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 18}});");
-            await _geofenceService.TriggerFromQRAsync(poi);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[QR] Error: {ex.Message}");
-        }
-    }
-
-    private static int ParsePoiIdFromQr(string qrText)
-    {
-        // Format: tourapp://poi/3
-        if (qrText.StartsWith("tourapp://poi/", StringComparison.OrdinalIgnoreCase))
-        {
-            var idStr = qrText.Replace("tourapp://poi/", "", StringComparison.OrdinalIgnoreCase).Trim();
-            if (int.TryParse(idStr, out int id)) return id;
-        }
-        // Format: chỉ số: "3"
-        if (int.TryParse(qrText.Trim(), out int directId)) return directId;
-        // Format: URL có ?id=3
-        try
-        {
-            var uri = new Uri(qrText);
-            var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            if (int.TryParse(q["id"], out int qId)) return qId;
-        }
-        catch { }
-        return -1;
+        // Navigate to real QR scanner page
+        await Shell.Current.GoToAsync("QRScannerPage");
     }
 
     private void LoadMap()

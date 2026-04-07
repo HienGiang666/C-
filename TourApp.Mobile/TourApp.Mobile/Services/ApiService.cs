@@ -137,6 +137,30 @@ namespace TourApp.Mobile.Services
                 () => new List<POI>()
             );
 
+        [DebuggerNonUserCode]
+        public Task<List<Tour>> GetAllToursAsync() =>
+            TryFetch(
+                "/api/tour",
+                body => JsonSerializer.Deserialize<List<Tour>>(body, JsonOpts) ?? new(),
+                () => new List<Tour>()
+            );
+
+        [DebuggerNonUserCode]
+        public Task<Tour?> GetTourByIdAsync(int tourId) =>
+            TryFetch(
+                $"/api/tour/{tourId}",
+                body => JsonSerializer.Deserialize<Tour>(body, JsonOpts),
+                () => null
+            );
+
+        [DebuggerNonUserCode]
+        public Task<List<Language>> GetLanguagesAsync() =>
+            TryFetch(
+                "/api/language",
+                body => JsonSerializer.Deserialize<List<Language>>(body, JsonOpts) ?? new(),
+                () => new List<Language>()
+            );
+
         public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
             Task.FromResult<Audio?>(null);
 

@@ -19,7 +19,7 @@
                         <Grid ColumnDefinitions="Auto,*,Auto">
                             <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
                                 <Label Text="🗺️" FontSize="24" />
-                                <Label Text="Tour Quận 4" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                                <Label x:Name="UserNameLabel" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                             
                             <!-- QR Code Scanner button -->
@@ -35,8 +35,11 @@
                         <Frame BackgroundColor="White" CornerRadius="25" HasShadow="False" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" BorderColor="Transparent">
                             <Grid ColumnDefinitions="30,*">
                                 <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
-                                <Entry Grid.Column="1" Placeholder="Tìm món, tìm quán..." TextColor="Black" BackgroundColor="Transparent"/>
+                                <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm món, tìm quán, tìm tour..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
                             </Grid>
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSearchBarTapped"/>
+                            </Frame.GestureRecognizers>
                         </Frame>
                     </VerticalStackLayout>
                 </Grid>
@@ -48,24 +51,36 @@
                 <!-- Category Grid -->
                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
                     <Frame Grid.Column="0" CornerRadius="15" BackgroundColor="#FFF0E5" Padding="5,15" HasShadow="False">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnNuongTapped"/>
+                        </Frame.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🔥" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Nướng" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Frame>
                     <Frame Grid.Column="1" CornerRadius="15" BackgroundColor="#FCE4E4" Padding="5,15" HasShadow="False">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnLauTapped"/>
+                        </Frame.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🍲" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Lẩu" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Frame>
                     <Frame Grid.Column="2" CornerRadius="15" BackgroundColor="#E6F0FF" Padding="5,15" HasShadow="False">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnOcTapped"/>
+                        </Frame.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🐚" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Ốc" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Frame>
                     <Frame Grid.Column="3" CornerRadius="15" BackgroundColor="#E6FCEF" Padding="5,15" HasShadow="False">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnAnVatTapped"/>
+                        </Frame.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🍢" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Ăn vặt" FontSize="12" TextColor="#444"/>
@@ -84,7 +99,7 @@
                         </Label>
                     </Grid>
 
-                    <CollectionView x:Name="TourCollectionView" HeightRequest="250">
+                    <CollectionView x:Name="TourCollectionView" HeightRequest="250" SelectionMode="Single" SelectionChanged="OnTourSelected">
                         <!-- Mock setup for item layout -->
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
@@ -113,7 +128,7 @@
                         </Label>
                     </Grid>
 
-                    <CollectionView x:Name="PoiCollectionView" HeightRequest="200" ItemsLayout="HorizontalList">
+                    <CollectionView x:Name="PoiCollectionView" HeightRequest="200" ItemsLayout="HorizontalList" SelectionMode="Single" SelectionChanged="OnPoiSelected">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Frame WidthRequest="200" CornerRadius="20" Padding="0" IsClippedToBounds="True" HasShadow="True" Margin="0,0,15,5" BorderColor="Transparent" BackgroundColor="White">

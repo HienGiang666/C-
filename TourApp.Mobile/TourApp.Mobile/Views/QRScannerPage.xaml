@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             x:Class="TourApp.Mobile.Views.QRScannerPage"
+             BackgroundColor="Black"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="20,40,20,20" BackgroundColor="#80000000">
+            <Frame Grid.Column="0" WidthRequest="40" HeightRequest="40" CornerRadius="20" 
+                   BackgroundColor="White" Padding="0" HasShadow="False">
+                <Label Text="←" FontSize="20" TextColor="Black" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackTapped"/>
+                </Frame.GestureRecognizers>
+            </Frame>
+            
+            <Label Grid.Column="1" Text="Quét mã QR" FontSize="20" FontAttributes="Bold" 
+                   TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+            
+            <!-- Flash toggle -->
+            <Frame Grid.Column="2" WidthRequest="40" HeightRequest="40" CornerRadius="20" 
+                   BackgroundColor="White" Padding="0" HasShadow="False">
+                <Label Text="⚡" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFlashTapped"/>
+                </Frame.GestureRecognizers>
+            </Frame>
+        </Grid>
+
+        <!-- Camera View -->
+        <Grid Grid.Row="1">
+            <!-- ZXing Camera Barcode Reader -->
+            <zxing:CameraBarcodeReaderView
+                x:Name="cameraBarcodeReader"
+                BarcodesDetected="OnBarcodesDetected"
+                IsDetecting="True"
+                HorizontalOptions="Fill"
+                VerticalOptions="Fill"/>
+            
+            <!-- Scanner overlay frame -->
+            <Frame BackgroundColor="Transparent" BorderColor="#FF3D00" 
+                   CornerRadius="20" Padding="0" HasShadow="False"
+                   WidthRequest="250" HeightRequest="250"
+                   HorizontalOptions="Center" VerticalOptions="Center">
+                <Grid>
+                    <!-- Corner markers -->
+                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                             HorizontalOptions="Start" VerticalOptions="Start" Margin="10"/>
+                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                             HorizontalOptions="Start" VerticalOptions="Start" Margin="10"/>
+                    
+                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                             HorizontalOptions="End" VerticalOptions="Start" Margin="10"/>
+                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                             HorizontalOptions="End" VerticalOptions="Start" Margin="10"/>
+                    
+                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                             HorizontalOptions="Start" VerticalOptions="End" Margin="10"/>
+                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                             HorizontalOptions="Start" VerticalOptions="End" Margin="10"/>
+                    
+                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                             HorizontalOptions="End" VerticalOptions="End" Margin="10"/>
+                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                             HorizontalOptions="End" VerticalOptions="End" Margin="10"/>
+                    
+                    <!-- Scanning line animation -->
+                    <BoxView x:Name="ScanLine" Color="#FF3D00" HeightRequest="2" 
+                             HorizontalOptions="Fill" VerticalOptions="Start" Margin="20,0"/>
+                </Grid>
+            </Frame>
+        </Grid>
+
+        <!-- Bottom instruction -->
+        <VerticalStackLayout Grid.Row="2" Padding="20,30" BackgroundColor="#80000000" Spacing="10">
+            <Label Text="Đưa mã QR vào khung để quét" FontSize="14" TextColor="White" 
+                   HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+            <Label Text="Mã QR thường được dán tại các điểm tham quan" FontSize="12" 
+                   TextColor="#AAAAAA" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

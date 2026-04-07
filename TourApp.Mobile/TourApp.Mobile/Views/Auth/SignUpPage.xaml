@@ -28,7 +28,15 @@
                     <VerticalStackLayout>
                         <Label Text="NAME" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
-                            <Entry Placeholder="John doe" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                            <Entry x:Name="FullNameEntry" Placeholder="John doe" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                        </Frame>
+                    </VerticalStackLayout>
+
+                    <!-- Username -->
+                    <VerticalStackLayout>
+                        <Label Text="USERNAME" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                        <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
+                            <Entry x:Name="UsernameEntry" Placeholder="Enter username" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
                         </Frame>
                     </VerticalStackLayout>
 
@@ -36,7 +44,7 @@
                     <VerticalStackLayout>
                         <Label Text="EMAIL" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
-                            <Entry Placeholder="example@gmail.com" TextColor="Black" PlaceholderColor="#B0B0B0" Keyboard="Email" VerticalOptions="Center"/>
+                            <Entry x:Name="EmailEntry" Placeholder="example@gmail.com" TextColor="Black" PlaceholderColor="#B0B0B0" Keyboard="Email" VerticalOptions="Center"/>
                         </Frame>
                     </VerticalStackLayout>
 
@@ -45,8 +53,12 @@
                         <Label Text="PASSWORD" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
                             <Grid ColumnDefinitions="*,30">
-                                <Entry Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
-                                <Label Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center"/>
+                                <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                                <Label x:Name="ShowPasswordLabel" Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShowPasswordTapped"/>
+                                    </Label.GestureRecognizers>
+                                </Label>
                             </Grid>
                         </Frame>
                     </VerticalStackLayout>
@@ -56,14 +68,18 @@
                         <Label Text="RE-TYPE PASSWORD" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
                             <Grid ColumnDefinitions="*,30">
-                                <Entry Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
-                                <Label Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center"/>
+                                <Entry x:Name="ConfirmPasswordEntry" Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                                <Label x:Name="ShowConfirmPasswordLabel" Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShowConfirmPasswordTapped"/>
+                                    </Label.GestureRecognizers>
+                                </Label>
                             </Grid>
                         </Frame>
                     </VerticalStackLayout>
 
                     <!-- Sign Up Button -->
-                    <Button Text="SIGN UP" BackgroundColor="#FF5B00" TextColor="White" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,10,0,50" Clicked="OnSignUpClicked"/>
+                    <Button x:Name="SignUpButton" Text="SIGN UP" BackgroundColor="#FF5B00" TextColor="White" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,10,0,50" Clicked="OnSignUpClicked"/>
 
                 </VerticalStackLayout>
             </ScrollView>

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 using TourApp.Mobile.Services;
+using ZXing.Net.Maui.Controls;
 
 namespace TourApp.Mobile
 {
@@ -26,6 +27,7 @@ namespace TourApp.Mobile
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
