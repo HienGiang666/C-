@@ -22,9 +22,9 @@ public class HomeController : Controller
         {
             var client = _clientFactory.CreateClient("TourApi");
 
-            var poiTask     = client.GetAsync("api/POI");
-            var tourTask    = client.GetAsync("api/tour");
-            var userTask    = client.GetAsync("api/user");
+            var poiTask = client.GetAsync("api/POI");
+            var tourTask = client.GetAsync("api/tour");
+            var userTask = client.GetAsync("api/user");
             var bookingTask = client.GetAsync("api/booking");
 
             await Task.WhenAll(poiTask, tourTask, userTask, bookingTask);
@@ -52,32 +52,12 @@ public class HomeController : Controller
         }
         catch { }
 
-        ViewBag.POICount     = poiCount;
-        ViewBag.TourCount    = tourCount;
-        ViewBag.UserCount    = userCount;
+        ViewBag.POICount = poiCount;
+        ViewBag.TourCount = tourCount;
+        ViewBag.UserCount = userCount;
         ViewBag.BookingCount = bookingCount;
 
         return View();
-    }
-
-    /// <summary>
-    /// Proxy /api/narrationlog/stats → Dashboard AJAX gọi qua CMS để bypass CORS.
-    /// </summary>
-    [HttpGet("/api/narrationlog/stats")]
-    public async Task<IActionResult> NarrationStats()
-    {
-        try
-        {
-            var client = _clientFactory.CreateClient("TourApi");
-            var r = await client.GetAsync("api/narrationlog/stats");
-            if (r.IsSuccessStatusCode)
-            {
-                var json = await r.Content.ReadAsStringAsync();
-                return Content(json, "application/json");
-            }
-        }
-        catch { }
-        return Ok(new { total = 0, topPoi = Array.Empty<object>(), triggerStats = Array.Empty<object>(), dailyPlays = Array.Empty<object>() });
     }
 
     public IActionResult Privacy()
