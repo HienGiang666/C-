@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace TourApp.API.Models
+namespace TourApp.Mobile.Models
 {
     public class Booking
     {
@@ -18,3 +18,4 @@ namespace TourApp.API.Models
         public string Notes { get; set; } = string.Empty;
     }
 }
+

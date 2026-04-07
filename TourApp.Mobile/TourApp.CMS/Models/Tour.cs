@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TourApp.CMS.Models
 {
     public class Tour
@@ -5,10 +7,18 @@ namespace TourApp.CMS.Models
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        
+        [Range(1, double.MaxValue, ErrorMessage = "Gi· Tour ph?i l?n hon 0")]
         public decimal Price { get; set; }
-        public int Duration { get; set; } // S·ªë ng√†y
+        
+        [Range(1, int.MaxValue, ErrorMessage = "Th?i lu?ng t?i thi?u l‡ 1 ng‡y")]
+        public int Duration { get; set; } // S? ng‡y
+        
         public string Destination { get; set; } = string.Empty;
+        
+        [Range(1, int.MaxValue, ErrorMessage = "S? kh·ch tham gia t?i thi?u l‡ 1")]
         public int MaxParticipants { get; set; }
+        
         public string? ImageUrl { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;

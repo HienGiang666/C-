@@ -17,10 +17,35 @@ public class AuthController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    public async Task<IActionResult> Login()
     {
         if (HttpContext.Session.GetString("UserId") != null)
             return RedirectToAction("Index", "Home");
+
+        var token = Request.Cookies["AuthToken"];
+        if (!string.IsNullOrEmpty(token))
+        {
+            try
+            {
+                var client = _clientFactory.CreateClient("TourApi");
+                var response = await client.GetAsync($"api/user/{token}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var user = await response.Content.ReadFromJsonAsync<AdminUser>();
+                    if (user != null && user.Role == "Admin")
+                    {
+                        HttpContext.Session.SetString("UserId", user.Id.ToString());
+                        HttpContext.Session.SetString("Username", user.Username);
+                        HttpContext.Session.SetString("FullName", user.FullName);
+                        HttpContext.Session.SetString("Role", user.Role);
+                        HttpContext.Session.SetString("Email", user.Email);
+                        return RedirectToAction("Index", "Home");
+                    }
+                }
+            }
+            catch { }
+        }
+
         ViewData["Title"] = "Đăng nhập";
         return View();
     }
@@ -44,12 +69,25 @@ public class AuthController : Controller
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
+                
+                var role = root.GetProperty("role").GetString() ?? "";
+                if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(string.Empty, "Chỉ dành cho Admin. Bạn không có quyền truy cập!");
+                    return View(model);
+                }
 
                 HttpContext.Session.SetString("UserId", root.GetProperty("id").GetInt32().ToString());
                 HttpContext.Session.SetString("Username", root.GetProperty("username").GetString() ?? "");
                 HttpContext.Session.SetString("FullName", root.GetProperty("fullName").GetString() ?? "");
-                HttpContext.Session.SetString("Role", root.GetProperty("role").GetString() ?? "");
+                HttpContext.Session.SetString("Role", role);
                 HttpContext.Session.SetString("Email", root.GetProperty("email").GetString() ?? "");
+
+                if (model.RememberMe)
+                {
+                    var cookieOptions = new CookieOptions { Expires = DateTime.Now.AddDays(30), HttpOnly = true };
+                    Response.Cookies.Append("AuthToken", root.GetProperty("id").GetInt32().ToString(), cookieOptions);
+                }
 
                 _activityLogger.LogActivity(HttpContext, "Login", "Auth", null, model.Username);
                 TempData["success"] = $"Xin chào {HttpContext.Session.GetString("FullName")}!";
@@ -78,16 +116,31 @@ public class AuthController : Controller
         var username = HttpContext.Session.GetString("Username");
         _activityLogger.LogActivity(HttpContext, "Logout", "Auth", username, null);
         HttpContext.Session.Clear();
+        Response.Cookies.Delete("AuthToken");
         TempData["success"] = "Đã đăng xuất thành công!";
         return RedirectToAction(nameof(Login));
     }
 
-    public IActionResult Profile()
+    public async Task<IActionResult> Profile()
     {
         var userId = HttpContext.Session.GetString("UserId");
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction(nameof(Login));
-        ViewData["Title"] = "Hồ sơ cá nhân";
-        return View();
+            
+        try 
+        {
+            var client = _clientFactory.CreateClient("TourApi");
+            var response = await client.GetAsync($"api/user/{userId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var user = await response.Content.ReadFromJsonAsync<AdminUser>();
+                ViewData["Title"] = "Hồ sơ cá nhân";
+                return View(user);
+            }
+        }
+        catch { }
+
+        TempData["error"] = "Không thể tải thông tin hồ sơ từ máy chủ.";
+        return RedirectToAction("Index", "Home");
     }
 }

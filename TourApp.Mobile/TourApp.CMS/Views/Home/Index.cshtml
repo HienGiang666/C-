@@ -97,6 +97,20 @@
     </div>
 </div>
 
+<!-- Chart Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-chart-pie text-primary me-2"></i> Tổng quan Dữ liệu</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="overviewChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Actions -->
 <div class="row g-4 mb-4">
     <div class="col-lg-8">
@@ -172,3 +186,47 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById('overviewChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Địa điểm (POI)', 'Chuyến Tour', 'Thành viên', 'Đặt Vé'],
+                    datasets: [{
+                        label: 'Số lượng Dữ liệu',
+                        data: [@ViewBag.POICount, @ViewBag.TourCount, @ViewBag.UserCount, @ViewBag.BookingCount],
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(239, 68, 68, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(99, 102, 241)',
+                            'rgb(16, 185, 129)',
+                            'rgb(245, 158, 11)',
+                            'rgb(239, 68, 68)'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] }, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+    </script>
+}
