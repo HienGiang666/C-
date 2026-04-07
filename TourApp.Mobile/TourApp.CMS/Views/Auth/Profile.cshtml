@@ -55,8 +55,8 @@
                         <div class="row">
                             <div class="col-sm-4 text-muted">Đăng nhập lần cuối:</div>
                             <div class="col-sm-8">
-                                @if(Model.LastLogin.HasValue) {
-                                    <i class="fa-regular fa-clock me-2 text-success"></i> @Model.LastLogin.Value.ToString("dd/MM/yyyy HH:mm")
+                                @if(Model.LastLoginAt.HasValue) {
+                                    <i class="fa-regular fa-clock me-2 text-success"></i> @Model.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm")
                                 } else {
                                     <span class="text-muted">Chưa ghi nhận</span>
                                 }

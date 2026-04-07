@@ -13,5 +13,6 @@ namespace TourApp.API.Models
         public string Role { get; set; } = "Customer"; // Customer, Admin, Staff
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? LastLoginAt { get; set; }
     }
 }

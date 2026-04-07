@@ -27,13 +27,18 @@ public class UserController : ControllerBase
             .FirstOrDefaultAsync(u => u.Username == req.Username && u.PasswordHash == hash && u.IsActive);
         if (user == null)
             return Unauthorized(new { message = "Sai tên đăng nhập hoặc mật khẩu!" });
+
+        user.LastLoginAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
         return Ok(new
         {
             user.Id,
             user.Username,
             user.FullName,
             user.Email,
-            user.Role
+            user.Role,
+            user.LastLoginAt
         });
     }
 

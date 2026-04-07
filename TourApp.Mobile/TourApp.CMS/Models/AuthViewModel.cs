@@ -26,6 +26,6 @@ namespace TourApp.CMS.Models
         public string Role { get; set; } = "Staff"; // Admin, Staff
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime? LastLogin { get; set; }
+        public DateTime? LastLoginAt { get; set; }
     }
 }

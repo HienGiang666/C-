@@ -17,7 +17,7 @@
 
     <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
-        <div class="bg-dark text-white shadow-sm" id="sidebar-wrapper" style="position: sticky; top: 0; height: 100vh; overflow-y: auto;">
+        <div class="bg-dark text-white shadow-sm" id="sidebar-wrapper">
             <div class="sidebar-heading text-center py-4 fs-4 fw-bold border-bottom border-secondary text-uppercase tracking-wider">
                 <i class="fa-solid fa-earth-americas me-2 text-primary"></i>Tour Admin
             </div>
@@ -67,6 +67,7 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 rounded-3" aria-labelledby="userDropdown">
                                 <li><h6 class="dropdown-header text-uppercase text-muted">@Context.Session.GetString("Role")</h6></li>
                                 <li><a class="dropdown-item py-2" asp-controller="Auth" asp-action="Profile"><i class="fa-regular fa-user me-2"></i> Hồ sơ cá nhân</a></li>
+                                <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="alert('Tính năng đang trong quá trình phát triển!');"><i class="fa-solid fa-gear me-2"></i> Cài đặt</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</a></li>
                             </ul>

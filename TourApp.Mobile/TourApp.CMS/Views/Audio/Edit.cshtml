@@ -14,13 +14,11 @@
                 <form asp-action="Edit" method="post" enctype="multipart/form-data">
                     <input type="hidden" asp-for="Id" />
                     <input type="hidden" asp-for="AudioPath" />
-                    <input type="hidden" asp-for="POIId" />
 
                     <div class="mb-4">
                         <label class="form-label fw-medium">Thuộc địa điểm (POI)</label>
-                        <select class="form-select" asp-items="@ViewBag.PoiList" disabled>
+                        <select asp-for="POIId" class="form-select" asp-items="@ViewBag.PoiList">
                         </select>
-                        <small class="text-muted">Không thể chuyển Audio sang POI khác sau khi tạo.</small>
                     </div>
 
                     <div class="row mb-4">
