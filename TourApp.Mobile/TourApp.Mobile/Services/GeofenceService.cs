@@ -41,20 +41,16 @@ namespace TourApp.Mobile.Services
 
         public async Task InitializeAsync()
         {
-            if (_pois == null)
+            if (_pois != null) return;
+
+            try
             {
-                try
-                {
-                    _pois = await Task.Run(async () =>
-                    {
-                        try { return await _apiService.GetAllPOIsAsync(); }
-                        catch { return new List<POI>(); }
-                    });
-                }
-                catch
-                {
-                    _pois = new List<POI>();
-                }
+                // Tránh Task.Run thừa gây switch thread â€“ thiết bị yếu dễ drop frame
+                _pois = await _apiService.GetAllPOIsAsync();
+            }
+            catch
+            {
+                _pois = new List<POI>();
             }
         }
 
@@ -70,21 +66,28 @@ namespace TourApp.Mobile.Services
         {
             if (_pois == null || !_pois.Any()) return;
 
-            var sortedPois = _pois.Where(p => p.IsActive).OrderBy(p => p.Priority);
+            // Ưu tiên POI gần nhất trước, sau đó tới priority để giảm CPU
+            var sortedPois = _pois
+                .Where(p => p.IsActive)
+                .Select(p => new
+                {
+                    Poi = p,
+                    Distance = Location.CalculateDistance(
+                        userLocation.Latitude, userLocation.Longitude,
+                        p.Latitude, p.Longitude, DistanceUnits.Kilometers) * 1000
+                })
+                .OrderBy(x => x.Distance)
+                .ThenBy(x => x.Poi.Priority);
 
             foreach (var poi in sortedPois)
             {
-                var distance = Location.CalculateDistance(
-                    userLocation.Latitude, userLocation.Longitude,
-                    poi.Latitude, poi.Longitude, DistanceUnits.Kilometers) * 1000;
-
-                if (distance <= poi.Radius)
+                if (poi.Distance <= poi.Poi.Radius)
                 {
                     // Cooldown 2 phút/POI
-                    if (poi.PoiId == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
+                    if (poi.Poi.PoiId == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
                         continue;
 
-                    TriggerNarration(poi);
+                    TriggerNarration(poi.Poi);
                     break; // Chỉ trigger 1 POI/cycle
                 }
             }

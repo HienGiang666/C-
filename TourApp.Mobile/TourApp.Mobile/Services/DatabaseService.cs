@@ -14,7 +14,10 @@ namespace TourApp.Mobile.Services
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
-            _httpClient = new HttpClient(handler);
+            _httpClient = new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(8)
+            };
         }
 
         public async Task<bool> TestConnectionAsync()

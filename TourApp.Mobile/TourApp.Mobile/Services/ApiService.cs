@@ -9,14 +9,31 @@ namespace TourApp.Mobile.Services
         // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
         private const string DefaultUrl = "http://192.168.1.5:5254";
 
+        private static readonly JsonSerializerOptions JsonOpts = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        private static readonly object ClientLock = new();
+        private static HttpClient? _client;
+
         public static string BaseUrl
         {
             get => Preferences.Default.Get("api_base_url", DefaultUrl);
-            set => Preferences.Default.Set("api_base_url", value);
+            set
+            {
+                var normalized = value.TrimEnd('/');
+                Preferences.Default.Set("api_base_url", normalized);
+                // Recreate client with new base address to avoid stale DNS/port
+                lock (ClientLock)
+                {
+                    _client?.Dispose();
+                    _client = CreateClient(normalized);
+                }
+            }
         }
 
-        public static void UpdateBaseUrl(string newUrl) =>
-            BaseUrl = newUrl.TrimEnd('/');
+        public static void UpdateBaseUrl(string newUrl) => BaseUrl = newUrl;
 
         [DebuggerNonUserCode]
         public static async Task AutoDiscoverApiAsync()
@@ -114,103 +131,88 @@ namespace TourApp.Mobile.Services
 
         [DebuggerNonUserCode]
         public Task<List<POI>> GetAllPOIsAsync() =>
-            TryFetch<List<POI>>(
+            TryFetch(
                 "/api/poi",
-                body =>
-                {
-                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    return JsonSerializer.Deserialize<List<POI>>(body, opts) ?? new();
-                },
+                body => JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new(),
                 () => new List<POI>()
             );
 
         public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
             Task.FromResult<Audio?>(null);
 
-        public Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
+        public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
         {
-            return Task.Run(async () =>
+            try
             {
-                try
-                {
-                    string deviceId = "Unknown";
-                    try { deviceId = DeviceInfo.Current.Platform.ToString() + "-" + DeviceInfo.Current.Idiom.ToString(); } catch { }
+                string deviceId = "Unknown";
+                try { deviceId = DeviceInfo.Current.Platform + "-" + DeviceInfo.Current.Idiom; } catch { }
 
-                    using var client = CreateClient();
-                    var payload = new
-                    {
-                        POIId = poiId,
-                        AudioId = audioId,
-                        TriggerType = triggerType,
-                        DeviceId = deviceId
-                    };
-                    var json = JsonSerializer.Serialize(payload);
-                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-                    var postTask = client.PostAsync("/api/NarrationLog", content);
-                    var winner = await Task.WhenAny(postTask, Task.Delay(5000));
-                    
-                    if (winner == postTask && postTask.IsCompletedSuccessfully)
-                    {
-                        var response = postTask.Result;
-                        if (response.IsSuccessStatusCode)
-                        {
-                            Debug.WriteLine($"[ApiService] LogNarration [OK] Type: {triggerType}");
-                        }
-                    }
-                }
-                catch (Exception ex)
+                var payload = new
                 {
-                    Debug.WriteLine($"[ApiService] LogNarration error: {ex.Message}");
+                    POIId = poiId,
+                    AudioId = audioId,
+                    TriggerType = triggerType,
+                    DeviceId = deviceId
+                };
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await GetClient().PostAsync("/api/NarrationLog", content, cts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"[ApiService] LogNarration [OK] Type: {triggerType}");
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] LogNarration error: {ex.Message}");
+            }
         }
 
         [DebuggerNonUserCode]
-        private static Task<T> TryFetch<T>(
+        private static async Task<T> TryFetch<T>(
             string path,
             Func<string, T> parse,
             Func<T> fallback)
         {
-            return Task.Run(async () =>
+            try
             {
-                HttpClient? client = null;
-                try
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync(path, cts.Token).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    client = CreateClient();
-                    var getTask = client.GetAsync(path);
-                    var winner = await Task.WhenAny(getTask, Task.Delay(5000)).ConfigureAwait(false);
-
-                    if (winner != getTask || !getTask.IsCompletedSuccessfully)
-                    {
-                        Debug.WriteLine($"[ApiService] {path}: timeout/error");
-                        return fallback();
-                    }
-
-                    var response = getTask.Result;
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}");
-                        return fallback();
-                    }
-
-                    var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    return parse(body);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
+                    Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}");
                     return fallback();
                 }
-                finally
-                {
-                    client?.Dispose();
-                }
-            });
+
+                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                return parse(body);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine($"[ApiService] {path}: timeout");
+                return fallback();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
+                return fallback();
+            }
         }
 
         [DebuggerNonUserCode]
-        private static HttpClient CreateClient()
+        private static HttpClient GetClient()
+        {
+            lock (ClientLock)
+            {
+                return _client ??= CreateClient(BaseUrl);
+            }
+        }
+
+        private static HttpClient CreateClient(string baseUrl)
         {
             HttpMessageHandler handler;
 #if ANDROID
@@ -228,8 +230,8 @@ namespace TourApp.Mobile.Services
 #endif
             return new HttpClient(handler)
             {
-                BaseAddress = new Uri(BaseUrl),
-                Timeout = Timeout.InfiniteTimeSpan
+                BaseAddress = new Uri(baseUrl),
+                Timeout = TimeSpan.FromSeconds(8) // Oppo A31 dễ treo nếu timeout vô hạn
             };
         }
     }
