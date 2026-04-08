@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Thai -->
+  <data name="TabHome" xml:space="preserve"><value>หน้าหลัก</value></data>
+  <data name="TabFood" xml:space="preserve"><value>ร้านอาหาร</value></data>
+  <data name="TabMap" xml:space="preserve"><value>แผนที่</value></data>
+  <data name="TabTour" xml:space="preserve"><value>ทัวร์</value></data>
+  <data name="TabProfile" xml:space="preserve"><value>โปรไฟล์</value></data>
+  <data name="AppName" xml:space="preserve"><value>ทัวร์เขต 4</value></data>
+  <data name="OK" xml:space="preserve"><value>ตกลง</value></data>
+  <data name="Cancel" xml:space="preserve"><value>ยกเลิก</value></data>
+  <data name="Close" xml:space="preserve"><value>ปิด</value></data>
+  <data name="Save" xml:space="preserve"><value>บันทึก</value></data>
+  <data name="Search" xml:space="preserve"><value>ค้นหา</value></data>
+  <data name="Loading" xml:space="preserve"><value>กำลังโหลด...</value></data>
+  <data name="Error" xml:space="preserve"><value>ข้อผิดพลาด</value></data>
+  <data name="Success" xml:space="preserve"><value>สำเร็จ</value></data>
+  <data name="HomeTitle" xml:space="preserve"><value>สำรวจอาหารเขต 4</value></data>
+  <data name="HomeSubtitle" xml:space="preserve"><value>ค้นหาร้านอาหารอร่อย สัมผัสประสบการณ์ทัวร์ที่เป็นเอกลักษณ์</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>ค้นหาร้านอาหาร สถานที่...</value></data>
+  <data name="Categories" xml:space="preserve"><value>หมวดหมู่</value></data>
+  <data name="CategoryGrill" xml:space="preserve"><value>ย่าง</value></data>
+  <data name="CategoryHotpot" xml:space="preserve"><value>หม้อไฟ</value></data>
+  <data name="CategorySeafood" xml:space="preserve"><value>อาหารทะเล</value></data>
+  <data name="CategorySnacks" xml:space="preserve"><value>ของว่าง</value></data>
+  <data name="PopularPOIs" xml:space="preserve"><value>ร้านอาหารยอดนิยม</value></data>
+  <data name="ViewAll" xml:space="preserve"><value>ดูทั้งหมด</value></data>
+  <data name="Tours" xml:space="preserve"><value>ทัวร์แนะนำ</value></data>
+  <data name="ScanQR" xml:space="preserve"><value>สแกน QR</value></data>
+  <data name="POITitle" xml:space="preserve"><value>ร้านอาหาร</value></data>
+  <data name="POISearchPlaceholder" xml:space="preserve"><value>ค้นหาร้านอาหาร...</value></data>
+  <data name="NoPOIFound" xml:space="preserve"><value>ไม่พบร้านอาหาร</value></data>
+  <data name="Rating" xml:space="preserve"><value>คะแนน</value></data>
+  <data name="MapLoading" xml:space="preserve"><value>กำลังโหลดแผนที่...</value></data>
+  <data name="MapNeedInternet" xml:space="preserve"><value>ต้องการการเชื่อมต่ออินเทอร์เน็ต</value></data>
+  <data name="MapLoadError" xml:space="preserve"><value>ไม่สามารถโหลดแผนที่</value></data>
+  <data name="MapCheckInternet" xml:space="preserve"><value>Goong Maps ต้องการการเชื่อมต่ออินเทอร์เน็ต ตรวจสอบ WiFi และลองใหม่</value></data>
+  <data name="Radius" xml:space="preserve"><value>รัศมี</value></data>
+  <data name="Distance" xml:space="preserve"><value>จากคุณ</value></data>
+  <data name="Meters" xml:space="preserve"><value>เมตร</value></data>
+  <data name="Kilometers" xml:space="preserve"><value>กม.</value></data>
+  <data name="Listen" xml:space="preserve"><value>ฟังคำบรรยายเสียง</value></data>
+  <data name="Directions" xml:space="preserve"><value>เส้นทาง</value></data>
+  <data name="Favorite" xml:space="preserve"><value>รายการโปรด</value></data>
+  <data name="CloseDetail" xml:space="preserve"><value>ปิด</value></data>
+  <data name="SearchLocation" xml:space="preserve"><value>ค้นหาสถานที่...</value></data>
+  <data name="ServerSettings" xml:space="preserve"><value>ตั้งค่าเซิร์ฟเวอร์</value></data>
+  <data name="ServerAddressHint" xml:space="preserve"><value>ป้อนที่อยู่เซิร์ฟเวอร์ API (เช่น: http://192.168.1.7:5254)</value></data>
+  <data name="AddressRequired" xml:space="preserve"><value>ที่อยู่ต้องขึ้นต้นด้วย http:// หรือ https://</value></data>
+  <data name="ConnectedSuccess" xml:space="preserve"><value>เชื่อมต่อสำเร็จ</value></data>
+  <data name="ConnectedLocations" xml:space="preserve"><value>โหลด {0} สถานที่</value></data>
+  <data name="ConnectionFailed" xml:space="preserve"><value>การเชื่อมต่อล้มเหลว</value></data>
+  <data name="ConnectionCheck" xml:space="preserve"><value>ไม่สามารถเชื่อมต่อ ตรวจสอบ: API กำลังทำงาน? WiFi เดียวกัน? IP ถูกต้อง? ไฟร์วอลล์?</value></data>
+  <data name="SearchNotFound" xml:space="preserve"><value>ไม่พบ "{0}" ในรายการสถานที่</value></data>
+  <data name="Recenter" xml:space="preserve"><value>ตำแหน่งปัจจุบัน</value></data>
+  <data name="TourTitle" xml:space="preserve"><value>รายการทัวร์</value></data>
+  <data name="TourSearchPlaceholder" xml:space="preserve"><value>ค้นหาทัวร์...</value></data>
+  <data name="NoTourFound" xml:space="preserve"><value>ไม่พบทัวร์</value></data>
+  <data name="Price" xml:space="preserve"><value>ราคา</value></data>
+  <data name="Duration" xml:space="preserve"><value>ระยะเวลา</value></data>
+  <data name="StartTour" xml:space="preserve"><value>เริ่มทัวร์</value></data>
+  <data name="ProfileTitle" xml:space="preserve"><value>บัญชี</value></data>
+  <data name="NoEmail" xml:space="preserve"><value>ไม่มีอีเมล</value></data>
+  <data name="Language" xml:space="preserve"><value>ภาษา</value></data>
+  <data name="SelectLanguage" xml:space="preserve"><value>เลือกภาษา</value></data>
+  <data name="LanguageCancel" xml:space="preserve"><value>ยกเลิก</value></data>
+  <data name="LanguageChanged" xml:space="preserve"><value>เปลี่ยนภาษาแล้ว</value></data>
+  <data name="LanguageChangedMessage" xml:space="preserve"><value>เปลี่ยนเป็น: {0}
+
+✓ UI ทั้งหมดจะอัปเดตเมื่อเปลี่ยนหน้า
+✓ คำบรรยายเสียง/TTS จะใช้ {1}</value></data>
+  <data name="TourHistory" xml:space="preserve"><value>ประวัติทัวร์</value></data>
+  <data name="TourHistoryDesc" xml:space="preserve"><value>ฟีเจอร์นี้จะแสดงทัวร์ที่คุณจองและเสร็จสิ้น
+
+ไม่มีข้อมูล กรุณาจองทัวร์และสัมผัสประสบการณ์เพื่ออัปเดตประวัติ</value></data>
+  <data name="Favorites" xml:space="preserve"><value>รายการโปรด</value></data>
+  <data name="FavoritePOIs" xml:space="preserve"><value>ร้านอาหารโปรด</value></data>
+  <data name="FavoriteTours" xml:space="preserve"><value>ทัวร์โปรด</value></data>
+  <data name="FavoritesDesc" xml:space="preserve"><value>ฟีเจอร์นี้จะบันทึกสถานที่และทัวร์ที่คุณชอบเพื่อดูภายหลัง
+
+ไม่มีข้อมูล กรุณาเพิ่มรายการโปรดเมื่อดูรายละเอียด POI หรือทัวร์</value></data>
+  <data name="ChangeServerIP" xml:space="preserve"><value>เปลี่ยน IP เซิร์ฟเวอร์</value></data>
+  <data name="ServerIPHint" xml:space="preserve"><value>ป้อนที่อยู่เซิร์ฟเวอร์ (เช่น: http://192.168.1.5:5254)</value></data>
+  <data name="ServerIPUpdated" xml:space="preserve"><value>อัปเดตที่อยู่เซิร์ฟเวอร์แล้ว</value></data>
+  <data name="Settings" xml:space="preserve"><value>ตั้งค่า</value></data>
+  <data name="ClearCacheConfirm" xml:space="preserve"><value>คุณต้องการล้างแคชแอปหรือไม่?</value></data>
+  <data name="CacheCleared" xml:space="preserve"><value>ล้างแคชแล้ว</value></data>
+  <data name="Logout" xml:space="preserve"><value>ออกจากระบบ</value></data>
+  <data name="LogoutConfirm" xml:space="preserve"><value>คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?</value></data>
+  <data name="Version" xml:space="preserve"><value>เวอร์ชัน</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>เข้าสู่ระบบ</value></data>
+  <data name="Username" xml:space="preserve"><value>ชื่อผู้ใช้</value></data>
+  <data name="UsernamePlaceholder" xml:space="preserve"><value>ป้อนชื่อผู้ใช้</value></data>
+  <data name="Password" xml:space="preserve"><value>รหัสผ่าน</value></data>
+  <data name="PasswordPlaceholder" xml:space="preserve"><value>ป้อนรหัสผ่าน</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>แสดงรหัสผ่าน</value></data>
+  <data name="HidePassword" xml:space="preserve"><value>ซ่อนรหัสผ่าน</value></data>
+  <data name="LoginButton" xml:space="preserve"><value>เข้าสู่ระบบ</value></data>
+  <data name="NoAccount" xml:space="preserve"><value>ยังไม่มีบัญชี?</value></data>
+  <data name="RegisterNow" xml:space="preserve"><value>สมัครตอนนี้</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>ลืมรหัสผ่าน?</value></data>
+  <data name="LoginSuccess" xml:space="preserve"><value>เข้าสู่ระบบสำเร็จ!</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!</value></data>
+  <data name="ServerError" xml:space="preserve"><value>ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์</value></data>
+  <data name="RegisterTitle" xml:space="preserve"><value>สมัครสมาชิก</value></data>
+  <data name="FullName" xml:space="preserve"><value>ชื่อ-นามสกุล</value></data>
+  <data name="FullNamePlaceholder" xml:space="preserve"><value>ป้อนชื่อ-นามสกุล</value></data>
+  <data name="Email" xml:space="preserve"><value>อีเมล</value></data>
+  <data name="EmailPlaceholder" xml:space="preserve"><value>ป้อนอีเมล</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>ยืนยันรหัสผ่าน</value></data>
+  <data name="ConfirmPasswordPlaceholder" xml:space="preserve"><value>ป้อนรหัสผ่านอีกครั้ง</value></data>
+  <data name="RegisterButton" xml:space="preserve"><value>สมัครสมาชิก</value></data>
+  <data name="HasAccount" xml:space="preserve"><value>มีบัญชีแล้ว?</value></data>
+  <data name="LoginNow" xml:space="preserve"><value>เข้าสู่ระบบตอนนี้</value></data>
+  <data name="RegisterSuccess" xml:space="preserve"><value>สมัครสมาชิกสำเร็จ!</value></data>
+  <data name="RegisterFailed" xml:space="preserve"><value>สมัครสมาชิกล้มเหลว</value></data>
+  <data name="PasswordMismatch" xml:space="preserve"><value>รหัสผ่านไม่ตรงกัน</value></data>
+  <data name="PasswordTooShort" xml:space="preserve"><value>รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร</value></data>
+  <data name="FullNameRequired" xml:space="preserve"><value>กรุณาป้อนชื่อ-นามสกุล</value></data>
+  <data name="EmailRequired" xml:space="preserve"><value>กรุณาป้อนอีเมล</value></data>
+  <data name="QRScannerTitle" xml:space="preserve"><value>สแกน QR Code</value></data>
+  <data name="QRInstruction" xml:space="preserve"><value>กล้องไปที่ QR Code เพื่อสแกน</value></data>
+  <data name="QRScanning" xml:space="preserve"><value>กำลังสแกน...</value></data>
+  <data name="QRSuccess" xml:space="preserve"><value>สแกนสำเร็จ</value></data>
+  <data name="QRInvalid" xml:space="preserve"><value>QR Code ไม่ถูกต้อง</value></data>
+  <data name="SearchResults" xml:space="preserve"><value>ผลการค้นหา</value></data>
+  <data name="ViewRestaurants" xml:space="preserve"><value>ดูร้านอาหาร</value></data>
+  <data name="ViewTours" xml:space="preserve"><value>ดูทัวร์</value></data>
+  <data name="NoResults" xml:space="preserve"><value>ไม่พบผลลัพธ์สำหรับ "{0}"</value></data>
+  <data name="RestaurantsFound" xml:space="preserve"><value>พบ {0} ร้านอาหาร {1}</value></data>
+  <data name="ViewAllRestaurants" xml:space="preserve"><value>ดูทั้งหมด</value></data>
+</root>

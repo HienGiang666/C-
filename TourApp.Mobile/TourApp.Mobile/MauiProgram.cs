@@ -49,6 +49,9 @@ namespace TourApp.Mobile
             builder.Services.AddTransient<Views.Auth.ForgotPasswordPage>();
             builder.Services.AddTransient<Views.Auth.VerificationPage>();
 
+            // Initialize LanguageService for localization
+            LanguageService.Initialize();
+
 #if DEBUG
             builder.Logging.AddDebug();
 #endif

@@ -4,6 +4,8 @@ using System.Text.Json;
 
 namespace TourApp.Mobile.Views;
 
+[QueryProperty(nameof(PoiIdQuery), "poiId")]
+[QueryProperty(nameof(TourIdQuery), "tourId")]
 public partial class MapPage : ContentPage
 {
     private readonly LocationService _locationService;
@@ -17,8 +19,33 @@ public partial class MapPage : ContentPage
     private Location? _lastCheckedLocation;
     private bool _isJsMapReady = false;
     private string? _pendingMapPoisJson;
-    private int? _pendingPoiId = null; // Store POI ID from navigation for processing when ready
-    private int? _pendingTourId = null; // Store Tour ID from navigation for processing when ready
+    private int? _pendingPoiId = null;
+    private int? _pendingTourId = null;
+
+    // Query properties for navigation
+    public string PoiIdQuery
+    {
+        set
+        {
+            if (int.TryParse(value, out int id))
+            {
+                _pendingPoiId = id;
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Received poiId from query: {id}");
+            }
+        }
+    }
+    
+    public string TourIdQuery
+    {
+        set
+        {
+            if (int.TryParse(value, out int id))
+            {
+                _pendingTourId = id;
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Received tourId from query: {id}");
+            }
+        }
+    }
 
     // ----------------------------------------------------------------
     //  GOONG KEYS
@@ -39,27 +66,14 @@ public partial class MapPage : ContentPage
         {
             InitializeComponent();
             
-            // Check for poiId or tourId query parameter
-            var queryParams = Shell.Current?.CurrentState?.Location?.Query;
-            if (!string.IsNullOrEmpty(queryParams))
-            {
-                var query = System.Web.HttpUtility.ParseQueryString(queryParams);
-                if (int.TryParse(query["poiId"], out int poiId))
-                {
-                    _pendingPoiId = poiId;
-                    System.Diagnostics.Debug.WriteLine($"[MapPage] Received poiId: {poiId}");
-                }
-                if (int.TryParse(query["tourId"], out int tourId))
-                {
-                    _pendingTourId = tourId;
-                    System.Diagnostics.Debug.WriteLine($"[MapPage] Received tourId: {tourId}");
-                }
-            }
-            
             var services = IPlatformApplication.Current?.Services;
             _locationService = services?.GetService<LocationService>() ?? new LocationService();
             _apiService = services?.GetService<ApiService>() ?? new ApiService();
             _geofenceService = services?.GetService<GeofenceService>() ?? new GeofenceService(_apiService);
+
+            // Đồng bộ ngôn ngữ từ LanguageService để TTS đúng ngôn ngữ user đã chọn
+            _geofenceService.CurrentLanguage = LanguageService.CurrentLanguage;
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Initialized with language: {_geofenceService.CurrentLanguage}");
 
             _locationService.LocationChanged += OnLocationChanged;
             _geofenceService.PoiTriggered += OnPoiTriggered;
@@ -72,7 +86,7 @@ public partial class MapPage : ContentPage
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[MapPage] CONSTRUCTOR ERROR: {ex}");
-            // Fallback — tạo service mặc định để app không crash
+            // Fallback
             _locationService ??= new LocationService();
             _apiService ??= new ApiService();
             _geofenceService ??= new GeofenceService(_apiService);
@@ -112,7 +126,7 @@ public partial class MapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"[MapPage.OnAppearing] ERROR: {ex}");
 #if DEBUG
-            try { await DisplayAlert("⚠️ Lỗi khởi động", ex.Message, "OK"); }
+            try { await DisplayAlert($"⚠️ {LanguageService.GetString("Error")}", ex.Message, LanguageService.GetString("OK")); }
             catch { }
 #endif
         }
@@ -191,8 +205,14 @@ public partial class MapPage : ContentPage
             else
             {
                 System.Diagnostics.Debug.WriteLine($"[MapPage] Pending POI ID {_pendingPoiId.Value} not found");
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await DisplayAlert(LanguageService.GetString("Error"), 
+                        LanguageService.GetString("SearchNotFound", _pendingPoiId.Value.ToString()), 
+                        LanguageService.GetString("OK"));
+                });
             }
-            _pendingPoiId = null; // Clear sau khi xử lý
+            _pendingPoiId = null;
         }
     }
 
@@ -362,7 +382,7 @@ public partial class MapPage : ContentPage
         if (_currentPoi == null) return;
         var url = $"https://www.google.com/maps/dir/?api=1&destination={_currentPoi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{_currentPoi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&travelmode=walking";
         try { await Launcher.Default.OpenAsync(new Uri(url)); }
-        catch { await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
+        catch { await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("Error"), LanguageService.GetString("OK")); }
     }
 
     private void OnFavoriteClicked(object? sender, EventArgs e)
@@ -404,7 +424,7 @@ public partial class MapPage : ContentPage
         result = result.TrimEnd('/');
         if (!result.StartsWith("http"))
         {
-            await DisplayAlert("Lỗi", "Địa chỉ phải bắt đầu bằng http:// hoặc https://", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("AddressRequired"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -420,14 +440,15 @@ public partial class MapPage : ContentPage
             _pois = await new ApiService().GetAllPOIsAsync();
             LoadMap();
             _isMapLoaded = true;
-            await DisplayAlert("✅ Thành công", $"Đã kết nối: {result}\nTải được {_pois.Count} địa điểm.", "OK");
+            await DisplayAlert($"✅ {LanguageService.GetString("ConnectedSuccess")}", 
+                LanguageService.GetString("ConnectedLocations", _pois?.Count ?? 0), 
+                LanguageService.GetString("OK"));
         }
         else
         {
-            await DisplayAlert("❌ Không kết nối được",
-                $"Không thể kết nối tới:\n{result}\n\n" +
-                "Kiểm tra:\n• API đang chạy?\n• Cùng mạng WiFi?\n• IP đúng chưa?\n• Firewall cho phép chưa?",
-                "OK");
+            await DisplayAlert($"❌ {LanguageService.GetString("ConnectionFailed")}",
+                LanguageService.GetString("ConnectionCheck"),
+                LanguageService.GetString("OK"));
         }
     }
 
@@ -448,7 +469,9 @@ public partial class MapPage : ContentPage
         // 2. Goong Places API (chỉ gọi nếu có REST API key)
         if (string.IsNullOrEmpty(GoongRestApiKey))
         {
-            await DisplayAlert("Tìm kiếm", $"Không tìm thấy '{query}' trong danh sách địa điểm.", "OK");
+            await DisplayAlert(LanguageService.GetString("Search"), 
+                LanguageService.GetString("SearchNotFound", query), 
+                LanguageService.GetString("OK"));
             return;
         }
 

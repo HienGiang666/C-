@@ -46,9 +46,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseSwaggerUI(c =>
 // --- 2. KÍCH HOẠT CỔNG CORS (Bắt buộc phải đặt trước Authorization) ---
-app.UseCors("AllowAll");
+app.UseCors("AllowAll"));
 // ----------------------------------------------------------------------
 
 // [DISABLED] Phone kết nối qua HTTP → nếu redirect sang HTTPS sẽ fail

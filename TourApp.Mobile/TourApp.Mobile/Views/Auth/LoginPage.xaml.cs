@@ -25,19 +25,19 @@ public partial class LoginPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập tên đăng nhập", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("UsernamePlaceholder"), LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập mật khẩu", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordPlaceholder"), LanguageService.GetString("OK"));
             return;
         }
 
         // Show loading
         LoginButton.IsEnabled = false;
-        LoginButton.Text = "Đang đăng nhập...";
+        LoginButton.Text = LanguageService.GetString("Loading");
 
         try
         {
@@ -51,17 +51,21 @@ public partial class LoginPage : ContentPage
             }
             else
             {
-                await DisplayAlert("Đăng nhập thất bại", result.Message, "OK");
+                // Phân biệt rõ lỗi mạng vs lỗi sai tài khoản
+                var title = result.IsNetworkError 
+                    ? LanguageService.GetString("ServerError") 
+                    : LanguageService.GetString("LoginFailed");
+                await DisplayAlert(title, result.Message, LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Lỗi", $"Có lỗi xảy ra: {ex.Message}", "OK");
+            await DisplayAlert(LanguageService.GetString("ServerError"), $"Lỗi kết nối: {ex.Message}", LanguageService.GetString("OK"));
         }
         finally
         {
             LoginButton.IsEnabled = true;
-            LoginButton.Text = "LOG IN";
+            LoginButton.Text = LanguageService.GetString("LoginButton").ToUpper();
         }
     }
 

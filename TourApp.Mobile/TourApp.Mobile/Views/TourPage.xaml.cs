@@ -6,9 +6,20 @@ namespace TourApp.Mobile.Views;
 
 public partial class TourPage : ContentPage
 {
+    // Sử dụng OnPropertyChanged có sẵn của BindableObject (không cần khai báo lại)
+    
     public ObservableCollection<Tour> Tours { get; set; } = new();
     private List<Tour>? _allTours;
     private readonly ApiService _apiService;
+    
+    // Localized properties
+    private string _pageTitle = "";
+    private string _searchPlaceholder = "";
+    private string _startTourText = "";
+    
+    public string PageTitle { get => _pageTitle; set { _pageTitle = value; OnPropertyChanged(nameof(PageTitle)); } }
+    public string SearchPlaceholder { get => _searchPlaceholder; set { _searchPlaceholder = value; OnPropertyChanged(nameof(SearchPlaceholder)); } }
+    public string StartTourText { get => _startTourText; set { _startTourText = value; OnPropertyChanged(nameof(StartTourText)); } }
 
     public TourPage()
     {
@@ -17,8 +28,42 @@ public partial class TourPage : ContentPage
         _apiService = new ApiService();
         TourCollectionView.ItemsSource = Tours;
         
+        // Subscribe to language changes
+        LanguageService.LanguageChanged += OnLanguageChanged;
+        
+        // Initialize localized text
+        UpdateLocalizedText();
+        
+        BindingContext = this;
+        
         // Load tours from API
         _ = LoadToursAsync();
+    }
+    
+    ~TourPage()
+    {
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+    
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateLocalizedText();
+        });
+    }
+    
+    private void UpdateLocalizedText()
+    {
+        PageTitle = LanguageService.GetString("TourTitle");
+        SearchPlaceholder = LanguageService.GetString("TourSearchPlaceholder");
+        StartTourText = LanguageService.GetString("StartTour");
+    }
+    
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        UpdateLocalizedText();
     }
     
     private async Task LoadToursAsync()

@@ -42,43 +42,43 @@ public partial class SignUpPage : ContentPage
         // Validation
         if (string.IsNullOrWhiteSpace(fullName))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập họ tên", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("FullNameRequired"), LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập tên đăng nhập", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("UsernamePlaceholder"), LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập email", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("EmailRequired"), LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập mật khẩu", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordPlaceholder"), LanguageService.GetString("OK"));
             return;
         }
 
         if (password.Length < 6)
         {
-            await DisplayAlert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordTooShort"), LanguageService.GetString("OK"));
             return;
         }
 
         if (password != confirmPassword)
         {
-            await DisplayAlert("Lỗi", "Mật khẩu xác nhận không khớp", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordMismatch"), LanguageService.GetString("OK"));
             return;
         }
 
         // Show loading
         SignUpButton.IsEnabled = false;
-        SignUpButton.Text = "Đang đăng ký...";
+        SignUpButton.Text = LanguageService.GetString("Loading");
 
         try
         {
@@ -87,23 +87,23 @@ public partial class SignUpPage : ContentPage
 
             if (result.Success && result.User != null)
             {
-                await DisplayAlert("Thành công", "Đăng ký tài khoản thành công!", "OK");
+                await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("RegisterSuccess"), LanguageService.GetString("OK"));
                 // Navigate to main app
                 Application.Current!.MainPage = new AppShell();
             }
             else
             {
-                await DisplayAlert("Đăng ký thất bại", result.Message, "OK");
+                await DisplayAlert(LanguageService.GetString("RegisterFailed"), result.Message, LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Lỗi", $"Có lỗi xảy ra: {ex.Message}", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), $"{LanguageService.GetString("Error")}: {ex.Message}", LanguageService.GetString("OK"));
         }
         finally
         {
             SignUpButton.IsEnabled = true;
-            SignUpButton.Text = "SIGN UP";
+            SignUpButton.Text = LanguageService.GetString("RegisterButton").ToUpper();
         }
     }
 }

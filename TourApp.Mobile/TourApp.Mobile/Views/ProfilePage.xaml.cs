@@ -6,7 +6,7 @@ namespace TourApp.Mobile.Views;
 
 public partial class ProfilePage : ContentPage
 {
-    private List<Language>? _languages;
+    private List<LanguageInfo>? _languages;
     private readonly ApiService _apiService;
 
     public ProfilePage()
@@ -14,8 +14,31 @@ public partial class ProfilePage : ContentPage
         InitializeComponent();
         _apiService = new ApiService();
         
-        // Load languages
+        // Load languages từ API hoặc fallback
         _ = LoadLanguagesAsync();
+        
+        // Subscribe to language changes để update UI
+        LanguageService.LanguageChanged += OnLanguageChanged;
+    }
+    
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+    
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            // Update language label display
+            var langName = _languages?.FirstOrDefault(l => l.Code == newLang)?.NativeName 
+                           ?? LanguageService.GetLanguageName(newLang);
+            LanguageLabel.Text = langName;
+            
+            // Notify user about language change
+            System.Diagnostics.Debug.WriteLine($"[ProfilePage] UI updated to language: {newLang}");
+        });
     }
 
     protected override void OnAppearing()
@@ -26,38 +49,52 @@ public partial class ProfilePage : ContentPage
         if (AuthService.CurrentUser != null)
         {
             UserNameLabel.Text = AuthService.CurrentUser.DisplayName;
-            UserEmailLabel.Text = AuthService.CurrentUser.Email ?? "Chưa cập nhật email";
+            UserEmailLabel.Text = AuthService.CurrentUser.Email ?? LanguageService.GetString("NoEmail");
         }
         
-        // Update language display
-        var currentLang = Preferences.Default.Get("app_lang", "vi");
-        var langName = _languages?.FirstOrDefault(l => l.Code == currentLang)?.NativeName ?? "Tiếng Việt";
+        // Update language display theo ngôn ngữ hiện tại
+        var currentLang = LanguageService.CurrentLanguage;
+        var langName = _languages?.FirstOrDefault(l => l.Code == currentLang)?.NativeName 
+                       ?? LanguageService.GetLanguageName(currentLang);
         LanguageLabel.Text = langName;
+        
+        // Update all localized text on this page
+        UpdateLocalizedText();
+    }
+    
+    private void UpdateLocalizedText()
+    {
+        // Cập nhật các text đã localize
+        // Chỉ cập nhật các label có thể thay đổi, không cập nhật static XAML
     }
     
     private async Task LoadLanguagesAsync()
     {
         try
         {
-            _languages = await _apiService.GetLanguagesAsync();
+            var apiLanguages = await _apiService.GetLanguagesAsync();
+            if (apiLanguages?.Any() == true)
+            {
+                // Chuyển đổi từ API model sang LanguageInfo
+                _languages = apiLanguages.Select(l => new LanguageInfo 
+                { 
+                    Code = l.Code ?? "vi", 
+                    Name = l.Name ?? "Vietnamese", 
+                    NativeName = l.NativeName ?? l.Name ?? "Tiếng Việt",
+                    IsActive = l.IsActive 
+                }).ToList();
+            }
+            else
+            {
+                // Fallback: dùng danh sách từ LanguageService
+                _languages = LanguageService.GetActiveLanguages();
+            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[ProfilePage] LoadLanguages error: {ex.Message}");
-            // Fallback languages
-            _languages = new List<Language>
-            {
-                new Language { Id = 1, Code = "vi", Name = "Vietnamese", NativeName = "Tiếng Việt" },
-                new Language { Id = 2, Code = "en", Name = "English", NativeName = "English" },
-                new Language { Id = 3, Code = "zh", Name = "Chinese", NativeName = "中文" },
-                new Language { Id = 4, Code = "ja", Name = "Japanese", NativeName = "日本語" },
-                new Language { Id = 5, Code = "ko", Name = "Korean", NativeName = "한국어" },
-                new Language { Id = 6, Code = "fr", Name = "French", NativeName = "Français" },
-                new Language { Id = 7, Code = "de", Name = "German", NativeName = "Deutsch" },
-                new Language { Id = 8, Code = "es", Name = "Spanish", NativeName = "Español" },
-                new Language { Id = 9, Code = "th", Name = "Thai", NativeName = "ไทย" },
-                new Language { Id = 10, Code = "ru", Name = "Russian", NativeName = "Русский" }
-            };
+            // Fallback languages từ LanguageService
+            _languages = LanguageService.GetActiveLanguages();
         }
     }
 
@@ -65,71 +102,87 @@ public partial class ProfilePage : ContentPage
     {
         if (_languages == null || !_languages.Any())
         {
-            await DisplayAlert("Lỗi", "Không thể tải danh sách ngôn ngữ", "OK");
-            return;
+            // Fallback nếu chưa load được
+            _languages = LanguageService.GetActiveLanguages();
         }
         
         var activeLangs = _languages.Where(l => l.IsActive).ToList();
         var options = activeLangs.Select(l => $"{l.NativeName} ({l.Code})").ToArray();
         
-        var action = await DisplayActionSheet("Chọn Ngôn Ngữ", "Huỷ", null, options);
-        if (!string.IsNullOrEmpty(action) && action != "Huỷ")
+        var action = await DisplayActionSheet(LanguageService.GetString("SelectLanguage"), LanguageService.GetString("Cancel"), null, options);
+        if (!string.IsNullOrEmpty(action) && action != LanguageService.GetString("Cancel"))
         {
             var selectedCode = action.Split('(')[1].TrimEnd(')');
             var selectedLang = activeLangs.FirstOrDefault(l => l.Code == selectedCode);
             
             if (selectedLang != null)
             {
-                Preferences.Default.Set("app_lang", selectedCode);
+                // Set language - tự động sync với GeofenceService và broadcast event
+                LanguageService.CurrentLanguage = selectedCode;
+                
+                // Update UI ngay lập tức
                 LanguageLabel.Text = selectedLang.NativeName;
                 
-                // Update geofence service language
-                var geofence = IPlatformApplication.Current?.Services.GetService<GeofenceService>();
-                if (geofence != null) geofence.CurrentLanguage = selectedCode;
-                
-                await DisplayAlert("Ngôn ngữ", $"Đã thay đổi sang: {selectedLang.NativeName}", "OK");
+                // Thông báo cho user biết ngôn ngữ đã đổi và TTS cũng sẽ đổi theo
+                await DisplayAlert(LanguageService.GetString("LanguageChanged"), 
+                    LanguageService.GetString("LanguageChangedMessage", selectedLang.NativeName, selectedLang.NativeName), 
+                    LanguageService.GetString("OK"));
             }
         }
     }
 
     private async void OnHistoryTapped(object sender, EventArgs e)
     {
-        // Navigate to tour history page
-        await DisplayAlert("Lịch sử", "Tính năng đang được phát triển", "OK");
+        await DisplayAlert(LanguageService.GetString("TourHistory"), 
+            LanguageService.GetString("TourHistoryDesc"), 
+            LanguageService.GetString("OK"));
     }
 
     private async void OnFavoritesTapped(object sender, EventArgs e)
     {
-        // Navigate to favorites page
-        await DisplayAlert("Yêu thích", "Tính năng đang được phát triển", "OK");
+        var action = await DisplayActionSheet(LanguageService.GetString("Favorites"), LanguageService.GetString("Close"), null, 
+            LanguageService.GetString("FavoritePOIs"), 
+            LanguageService.GetString("FavoriteTours"));
+        
+        if (action == LanguageService.GetString("FavoritePOIs") || action == LanguageService.GetString("FavoriteTours"))
+        {
+            await DisplayAlert(LanguageService.GetString("Favorites"), 
+                LanguageService.GetString("FavoritesDesc"), 
+                LanguageService.GetString("OK"));
+        }
     }
 
     private async void OnChangeIpTapped(object sender, EventArgs e)
     {
         var currentIp = ApiService.BaseUrl;
-        var result = await DisplayPromptAsync("Chỉnh IP", "Nhập địa chỉ máy chủ (VD: http://192.168.1.5:5254):", 
-            "Lưu", "Huỷ", currentIp);
+        var result = await DisplayPromptAsync(LanguageService.GetString("ChangeServerIP"), 
+            LanguageService.GetString("ServerIPHint"), 
+            LanguageService.GetString("Save"), LanguageService.GetString("Cancel"), currentIp);
         
         if (!string.IsNullOrWhiteSpace(result))
         {
             ApiService.BaseUrl = result.Trim();
-            await DisplayAlert("Thành công", "Đã cập nhật địa chỉ máy chủ", "OK");
+            await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("ServerIPUpdated"), LanguageService.GetString("OK"));
         }
     }
 
     private async void OnSettingsTapped(object sender, EventArgs e)
     {
-        bool confirm = await DisplayAlert("Cài đặt", "Bạn muốn xoá dữ liệu tạm lưu (Cache) của ứng dụng?", "Xoá", "Huỷ");
+        bool confirm = await DisplayAlert(LanguageService.GetString("Settings"), 
+            LanguageService.GetString("ClearCacheConfirm"), 
+            LanguageService.GetString("OK"), LanguageService.GetString("Cancel"));
         if (confirm)
         {
             Preferences.Default.Clear();
-            await DisplayAlert("Thành công", "Đã xoá dữ liệu tạm.", "OK");
+            await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("CacheCleared"), LanguageService.GetString("OK"));
         }
     }
 
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
-        bool confirm = await DisplayAlert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", "Đăng xuất", "Huỷ");
+        bool confirm = await DisplayAlert(LanguageService.GetString("Logout"), 
+            LanguageService.GetString("LogoutConfirm"), 
+            LanguageService.GetString("Logout"), LanguageService.GetString("Cancel"));
         if (confirm)
         {
             AuthService.Logout();

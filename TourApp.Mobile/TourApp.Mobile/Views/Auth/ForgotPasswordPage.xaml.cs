@@ -1,3 +1,5 @@
+using TourApp.Mobile.Services;
+
 namespace TourApp.Mobile.Views.Auth;
 
 public partial class ForgotPasswordPage : ContentPage
@@ -14,6 +16,64 @@ public partial class ForgotPasswordPage : ContentPage
 
     private async void OnSendCodeClicked(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("VerificationPage");
+        var email = EmailEntry.Text?.Trim();
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            await DisplayAlert(
+                LanguageService.GetString("Error"), 
+                LanguageService.GetString("EmailRequired"), 
+                LanguageService.GetString("OK"));
+            return;
+        }
+
+        // Show loading
+        var sendButton = (Button)sender;
+        sendButton.IsEnabled = false;
+        sendButton.Text = LanguageService.GetString("Loading");
+
+        try
+        {
+            var authService = new AuthService();
+            var result = await authService.ForgotPasswordAsync(email);
+
+            if (result.Success)
+            {
+                // Demo: Show the reset code in alert (instead of sending email)
+                var message = result.DemoCode != null 
+                    ? $"{LanguageService.GetString("ResetCodeDemo")}\n\n{LanguageService.GetString("DemoCode")}: {result.DemoCode}"
+                    : result.Message;
+
+                await DisplayAlert(
+                    LanguageService.GetString("Success"), 
+                    message, 
+                    LanguageService.GetString("OK"));
+
+                // Navigate to reset password page with email and code
+                if (result.DemoCode != null)
+                {
+                    await Navigation.PushAsync(new ResetPasswordPage(email, result.DemoCode));
+                }
+            }
+            else
+            {
+                var title = result.IsNetworkError 
+                    ? LanguageService.GetString("ServerError") 
+                    : LanguageService.GetString("Error");
+                await DisplayAlert(title, result.Message, LanguageService.GetString("OK"));
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                LanguageService.GetString("ServerError"), 
+                $"Lỗi kết nối: {ex.Message}", 
+                LanguageService.GetString("OK"));
+        }
+        finally
+        {
+            sendButton.IsEnabled = true;
+            sendButton.Text = LanguageService.GetString("SendCode");
+        }
     }
 }

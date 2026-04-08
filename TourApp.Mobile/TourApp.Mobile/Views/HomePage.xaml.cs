@@ -6,17 +6,44 @@ namespace TourApp.Mobile.Views;
 
 public partial class HomePage : ContentPage
 {
+    // Sử dụng OnPropertyChanged có sẵn của BindableObject (không cần khai báo lại)
+    
     public ObservableCollection<MockItem> MockTours { get; set; } = new();
     public ObservableCollection<MockItem> MockPois { get; set; } = new();
     
     private List<POI>? _allPois;
     private readonly ApiService _apiService;
+    
+    // Localized properties for XAML binding
+    private string _homeTitle = "";
+    private string _homeSubtitle = "";
+    private string _searchPlaceholder = "";
+    private string _categoriesTitle = "";
+    private string _popularPOIsTitle = "";
+    private string _toursTitle = "";
+    private string _viewAllText = "";
+    private string _scanQRText = "";
+    
+    public string HomeTitle { get => _homeTitle; set { _homeTitle = value; OnPropertyChanged(nameof(HomeTitle)); } }
+    public string HomeSubtitle { get => _homeSubtitle; set { _homeSubtitle = value; OnPropertyChanged(nameof(HomeSubtitle)); } }
+    public string SearchPlaceholder { get => _searchPlaceholder; set { _searchPlaceholder = value; OnPropertyChanged(nameof(SearchPlaceholder)); } }
+    public string CategoriesTitle { get => _categoriesTitle; set { _categoriesTitle = value; OnPropertyChanged(nameof(CategoriesTitle)); } }
+    public string PopularPOIsTitle { get => _popularPOIsTitle; set { _popularPOIsTitle = value; OnPropertyChanged(nameof(PopularPOIsTitle)); } }
+    public string ToursTitle { get => _toursTitle; set { _toursTitle = value; OnPropertyChanged(nameof(ToursTitle)); } }
+    public string ViewAllText { get => _viewAllText; set { _viewAllText = value; OnPropertyChanged(nameof(ViewAllText)); } }
+    public string ScanQRText { get => _scanQRText; set { _scanQRText = value; OnPropertyChanged(nameof(ScanQRText)); } }
 
     public HomePage()
     {
         InitializeComponent();
         
         _apiService = new ApiService();
+        
+        // Initialize localized text
+        UpdateLocalizedText();
+        
+        // Subscribe to language changes
+        LanguageService.LanguageChanged += OnLanguageChanged;
         
         MockTours.Add(new MockItem { Name = "Tour Ốc Vĩnh Khánh", Summary = "5 điểm • 3.2km" });
         MockTours.Add(new MockItem { Name = "Tour Nướng Quận 1", Summary = "4 điểm • 2.8km" });
@@ -30,6 +57,33 @@ public partial class HomePage : ContentPage
         
         // Load POIs from API
         _ = LoadPoisAsync();
+        
+        BindingContext = this;
+    }
+    
+    ~HomePage()
+    {
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+    
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateLocalizedText();
+        });
+    }
+    
+    private void UpdateLocalizedText()
+    {
+        HomeTitle = LanguageService.GetString("HomeTitle");
+        HomeSubtitle = LanguageService.GetString("HomeSubtitle");
+        SearchPlaceholder = LanguageService.GetString("SearchPlaceholder");
+        CategoriesTitle = LanguageService.GetString("Categories");
+        PopularPOIsTitle = LanguageService.GetString("PopularPOIs");
+        ToursTitle = LanguageService.GetString("Tours");
+        ViewAllText = LanguageService.GetString("ViewAll");
+        ScanQRText = LanguageService.GetString("ScanQR");
     }
     
     protected override void OnAppearing()
@@ -43,8 +97,11 @@ public partial class HomePage : ContentPage
         }
         else
         {
-            UserNameLabel.Text = "Tour Quận 4";
+            UserNameLabel.Text = LanguageService.GetString("AppName");
         }
+        
+        // Refresh localized text
+        UpdateLocalizedText();
     }
     
     private async Task LoadPoisAsync()
@@ -109,7 +166,9 @@ public partial class HomePage : ContentPage
         
         if ((matchingPois?.Any() != true) && !matchingTours.Any())
         {
-            await DisplayAlert("Kết quả tìm kiếm", $"Không tìm thấy quán ăn hoặc tour nào cho '{query}'", "OK");
+            await DisplayAlert(LanguageService.GetString("SearchResults"), 
+                LanguageService.GetString("NoResults", query), 
+                LanguageService.GetString("OK"));
             return;
         }
         
@@ -117,7 +176,7 @@ public partial class HomePage : ContentPage
         var resultMessage = "";
         if (matchingPois?.Any() == true)
         {
-            resultMessage += $"🍽️ Tìm thấy {matchingPois.Count} quán ăn:\n";
+            resultMessage += $"🍽️ {LanguageService.GetString("RestaurantsFound", matchingPois.Count, "")}:\n";
             foreach (var poi in matchingPois.Take(5))
             {
                 resultMessage += $"• {poi.PoiName}\n";
@@ -127,23 +186,24 @@ public partial class HomePage : ContentPage
         if (matchingTours.Any())
         {
             if (!string.IsNullOrEmpty(resultMessage)) resultMessage += "\n";
-            resultMessage += $"🚩 Tìm thấy {matchingTours.Count} tour:\n";
+            resultMessage += $"🚩 {LanguageService.GetString("Tours")}:\n";
             foreach (var tour in matchingTours)
             {
                 resultMessage += $"• {tour.Name}\n";
             }
         }
         
-        var action = await DisplayActionSheet($"Kết quả cho '{query}'", "Huỷ", null, 
-            matchingPois?.Any() == true ? "Xem quán ăn" : null,
-            matchingTours.Any() ? "Xem tour" : null);
+        var action = await DisplayActionSheet(LanguageService.GetString("SearchResults"), 
+            LanguageService.GetString("Cancel"), null, 
+            matchingPois?.Any() == true ? LanguageService.GetString("ViewRestaurants") : null,
+            matchingTours.Any() ? LanguageService.GetString("ViewTours") : null);
             
-        if (action == "Xem quán ăn" && matchingPois?.Any() == true)
+        if (action == LanguageService.GetString("ViewRestaurants") && matchingPois?.Any() == true)
         {
             // Navigate to POI page with search filter
             await Shell.Current.GoToAsync("///POIPage");
         }
-        else if (action == "Xem tour" && matchingTours.Any())
+        else if (action == LanguageService.GetString("ViewTours") && matchingTours.Any())
         {
             // Navigate to Tour page
             await Shell.Current.GoToAsync("///TourPage");
@@ -152,22 +212,22 @@ public partial class HomePage : ContentPage
 
     private async void OnNuongTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("nướng", "Nướng");
+        await FilterPoisByCategory("nướng", LanguageService.GetString("CategoryGrill"));
     }
 
     private async void OnLauTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("lẩu", "Lẩu");
+        await FilterPoisByCategory("lẩu", LanguageService.GetString("CategoryHotpot"));
     }
 
     private async void OnOcTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("ốc", "Ốc");
+        await FilterPoisByCategory("ốc", LanguageService.GetString("CategorySeafood"));
     }
 
     private async void OnAnVatTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("ăn vặt", "Ăn vặt");
+        await FilterPoisByCategory("ăn vặt", LanguageService.GetString("CategorySnacks"));
     }
     
     private async Task FilterPoisByCategory(string keyword, string categoryName)
@@ -187,21 +247,25 @@ public partial class HomePage : ContentPage
                 
             if (mockFiltered.Any())
             {
-                await DisplayAlert(categoryName, $"Tìm thấy {mockFiltered.Count} quán {categoryName}:\n" + 
-                    string.Join("\n", mockFiltered.Select(p => $"• {p.Name}")), "Xem tất cả", "Đóng");
+                await DisplayAlert(categoryName, 
+                    LanguageService.GetString("RestaurantsFound", mockFiltered.Count, categoryName), 
+                    LanguageService.GetString("ViewAllRestaurants"), 
+                    LanguageService.GetString("Close"));
             }
             else
             {
-                await DisplayAlert(categoryName, $"Không tìm thấy quán {categoryName} nào.", "OK");
+                await DisplayAlert(categoryName, 
+                    LanguageService.GetString("NoPOIFound"), 
+                    LanguageService.GetString("OK"));
                 return;
             }
         }
         else
         {
             var result = await DisplayAlert(categoryName, 
-                $"Tìm thấy {filteredPois.Count} quán {categoryName}\n" +
-                string.Join("\n", filteredPois.Take(5).Select(p => $"• {p.PoiName}")),
-                "Xem tất cả", "Đóng");
+                LanguageService.GetString("RestaurantsFound", filteredPois.Count, categoryName),
+                LanguageService.GetString("ViewAllRestaurants"), 
+                LanguageService.GetString("Close"));
                 
             if (result)
             {

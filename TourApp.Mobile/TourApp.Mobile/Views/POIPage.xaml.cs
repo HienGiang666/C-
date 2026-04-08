@@ -6,9 +6,18 @@ namespace TourApp.Mobile.Views;
 
 public partial class POIPage : ContentPage
 {
+    // Sử dụng OnPropertyChanged có sẵn của BindableObject (không cần khai báo lại)
+    
     public ObservableCollection<POI> POIs { get; set; } = new();
     private List<POI>? _allPois;
     private readonly ApiService _apiService;
+    
+    // Localized properties
+    private string _pageTitle = "";
+    private string _searchPlaceholder = "";
+    
+    public string PageTitle { get => _pageTitle; set { _pageTitle = value; OnPropertyChanged(nameof(PageTitle)); } }
+    public string SearchPlaceholder { get => _searchPlaceholder; set { _searchPlaceholder = value; OnPropertyChanged(nameof(SearchPlaceholder)); } }
 
     public POIPage()
     {
@@ -17,8 +26,41 @@ public partial class POIPage : ContentPage
         _apiService = new ApiService();
         PoiCollectionView.ItemsSource = POIs;
         
+        // Subscribe to language changes
+        LanguageService.LanguageChanged += OnLanguageChanged;
+        
+        // Initialize localized text
+        UpdateLocalizedText();
+        
+        BindingContext = this;
+        
         // Load POIs from API
         _ = LoadPoisAsync();
+    }
+    
+    ~POIPage()
+    {
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+    
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateLocalizedText();
+        });
+    }
+    
+    private void UpdateLocalizedText()
+    {
+        PageTitle = LanguageService.GetString("POITitle");
+        SearchPlaceholder = LanguageService.GetString("POISearchPlaceholder");
+    }
+    
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        UpdateLocalizedText();
     }
     
     private async Task LoadPoisAsync()
@@ -94,7 +136,9 @@ public partial class POIPage : ContentPage
             }
             else
             {
-                await DisplayAlert("Kết quả", $"Không tìm thấy quán ăn nào cho '{query}'", "OK");
+                await DisplayAlert(LanguageService.GetString("SearchResults"), 
+                    LanguageService.GetString("NoResults", query), 
+                    LanguageService.GetString("OK"));
             }
         }
     }

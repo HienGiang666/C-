@@ -38,54 +38,87 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public static async Task AutoDiscoverApiAsync()
         {
+            // Timeout 5s cho toàn bộ discovery để tránh treo login
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             try
             {
-                // Nếu URL hiện tại còn sống thì không cần quét
-                if (await new ApiService().TestConnectionAsync()) return;
-
-                Debug.WriteLine("[ApiService] Start Auto Discovery...");
-                var subnet = GetLocalSubnet();
-                var ipsToTest = new List<string>();
-                
-                // 1. Emulator
-                if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
-                {
-                    ipsToTest.Add("http://10.0.2.2:5254");
-                    ipsToTest.Add("http://10.0.2.2:7244");
-                }
-
-                // 2. Local network common IPs (1-20 instead of 254 to prevent ANR freeze) 
-                for (int i = 1; i <= 20; i++)
-                {
-                    ipsToTest.Add($"http://{subnet}.{i}:5254");
-                }
-                
-                // Also add default fallback
-                ipsToTest.Add(DefaultUrl);
-
-                // Batch testing (5 at a time max) to avoid socket exhaustion
-                for (int i = 0; i < ipsToTest.Count; i += 5)
-                {
-                    var batch = ipsToTest.Skip(i).Take(5).Select(url => TestUrlAsync(url)).ToList();
-                    
-                    while (batch.Count > 0)
-                    {
-                        var finished = await Task.WhenAny(batch);
-                        batch.Remove(finished);
-                        var res = await finished;
-                        if (res != null)
-                        {
-                            BaseUrl = res;
-                            Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
-                            return;
-                        }
-                    }
-                }
+                await AutoDiscoverInternalAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("[ApiService] Auto-Discovery timeout (5s), using default URL");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ApiService] Auto-Discovery FAIL: {ex.Message}");
+                Debug.WriteLine($"[ApiService] Auto-Discovery error: {ex.Message}");
             }
+        }
+
+        [DebuggerNonUserCode]
+        private static async Task AutoDiscoverInternalAsync(CancellationToken ct)
+        {
+            // Ưu tiên thử DefaultUrl trước (nhanh nhất)
+            if (await TestUrlAsync(DefaultUrl) != null)
+            {
+                BaseUrl = DefaultUrl;
+                Debug.WriteLine($"[ApiService] Using default URL: {DefaultUrl}");
+                return;
+            }
+
+            // Nếu URL hiện tại khác default và còn sống thì giữ nguyên
+            if (BaseUrl != DefaultUrl && await new ApiService().TestConnectionAsync())
+                return;
+
+            Debug.WriteLine("[ApiService] Start Auto Discovery...");
+            var subnet = GetLocalSubnet();
+            var ipsToTest = new List<string>();
+            
+            // 1. Emulator
+            if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
+            {
+                ipsToTest.Add("http://10.0.2.2:5254");
+                ipsToTest.Add("http://10.0.2.2:7244");
+            }
+
+            // 2. Local network (giảm xuống 10 IP để nhanh hơn) 
+            for (int i = 1; i <= 10; i++)
+            {
+                ipsToTest.Add($"http://{subnet}.{i}:5254");
+            }
+
+            // Batch testing (5 at a time) với timeout ngắn hơn (1.5s)
+            for (int i = 0; i < ipsToTest.Count; i += 5)
+            {
+                ct.ThrowIfCancellationRequested();
+                
+                var batch = ipsToTest.Skip(i).Take(5).Select(url => TestUrlQuickAsync(url, ct)).ToList();
+                
+                while (batch.Count > 0)
+                {
+                    var finished = await Task.WhenAny(batch);
+                    batch.Remove(finished);
+                    var res = await finished;
+                    if (res != null)
+                    {
+                        BaseUrl = res;
+                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
+                        return;
+                    }
+                }
+            }
+        }
+
+        [DebuggerNonUserCode]
+        private static async Task<string?> TestUrlQuickAsync(string url, CancellationToken ct)
+        {
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(1.5) };
+                var r = await client.GetAsync($"{url}/api/poi", ct);
+                if (r.IsSuccessStatusCode) return url;
+            }
+            catch { }
+            return null;
         }
 
         [DebuggerNonUserCode]

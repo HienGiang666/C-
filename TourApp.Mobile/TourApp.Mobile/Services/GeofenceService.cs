@@ -3,6 +3,19 @@ using Microsoft.Maui.Media;
 
 namespace TourApp.Mobile.Services
 {
+    /// <summary>
+    /// GeofenceService - Quản lý trigger địa lý và phát audio TTS
+    /// 
+    /// ĐỒNG BỘ NGÔN NGỮ:
+    /// - LanguageService.CurrentLanguage được sync tự động vào GeofenceService.CurrentLanguage
+    /// - Khi user đổi ngôn ngữ, LanguageService sẽ gọi SyncWithGeofenceService()
+    /// 
+    /// DỮ LIỆU AUDIO ĐA NGÔN NGỮ TỪ CMS/API:
+    /// - CMS lưu Audio với: POIId, Language (vi/en/zh...), ScriptText, AudioPath
+    /// - API trả về: POI.Audios[] chứa các bản audio cho từng ngôn ngữ
+    /// - Mobile dùng: poi.GetScript(lang) để lấy ScriptText đúng ngôn ngữ
+    /// - Fallback: lang đã chọn → vi → Description
+    /// </summary>
     public class GeofenceService
     {
         private readonly ApiService _apiService;
