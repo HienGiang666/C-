@@ -1,6 +1,4 @@
 using TourApp.Mobile.Services;
-using TourApp.Mobile.Views;
-using TourApp.Mobile.Views.Auth;
 
 namespace TourApp.Mobile
 {
@@ -10,11 +8,7 @@ namespace TourApp.Mobile
         {
             InitializeComponent();
 
-            // Register routes for pages that aren't in the Shell visual hierarchy (Auth)
-            Routing.RegisterRoute("LoginPage", typeof(Views.Auth.LoginPage));
-            Routing.RegisterRoute("SignUpPage", typeof(Views.Auth.SignUpPage));
-            Routing.RegisterRoute("ForgotPasswordPage", typeof(Views.Auth.ForgotPasswordPage));
-            Routing.RegisterRoute("VerificationPage", typeof(Views.Auth.VerificationPage));
+            // Non-tab page still reached from the authenticated shell.
             Routing.RegisterRoute("QRScannerPage", typeof(Views.QRScannerPage));
             
             // Subscribe to language changes để update tab labels

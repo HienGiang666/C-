@@ -6,7 +6,7 @@
     xmlns:views="clr-namespace:TourApp.Mobile.Views"
     Title="Tour Quận 4">
 
-    <!-- Auth flows will be registered in code behind -->
+    <!-- Shell hosts the authenticated app tabs only -->
 
     <TabBar>
         <!-- Home Tab -->

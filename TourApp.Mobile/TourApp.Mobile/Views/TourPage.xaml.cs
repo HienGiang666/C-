@@ -153,7 +153,7 @@ public partial class TourPage : ContentPage
         }
     }
     
-    private void OnTourSelected(object sender, SelectionChangedEventArgs e)
+    private async void OnTourSelected(object sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection?.FirstOrDefault() is Tour selectedTour)
         {
@@ -161,7 +161,7 @@ public partial class TourPage : ContentPage
             TourCollectionView.SelectedItem = null;
             
             // Navigate to MapPage with tour ID
-            Shell.Current.GoToAsync($"///MapPage?tourId={selectedTour.Id}");
+            await Shell.Current.GoToAsync($"///MapPage?tourId={selectedTour.Id}");
         }
     }
 }

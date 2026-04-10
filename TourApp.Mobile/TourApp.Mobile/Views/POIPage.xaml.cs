@@ -143,7 +143,7 @@ public partial class POIPage : ContentPage
         }
     }
     
-    private void OnPoiSelected(object sender, SelectionChangedEventArgs e)
+    private async void OnPoiSelected(object sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection?.FirstOrDefault() is POI selectedPoi)
         {
@@ -151,7 +151,7 @@ public partial class POIPage : ContentPage
             PoiCollectionView.SelectedItem = null;
             
             // Navigate to MapPage with POI ID
-            Shell.Current.GoToAsync($"///MapPage?poiId={selectedPoi.PoiId}");
+            await Shell.Current.GoToAsync($"///MapPage?poiId={selectedPoi.PoiId}");
         }
     }
 }

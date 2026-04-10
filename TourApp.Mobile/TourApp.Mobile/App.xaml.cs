@@ -41,20 +41,14 @@ namespace TourApp.Mobile
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            // Check saved login session
             AuthService.LoadSavedSession();
-            
-            System.Diagnostics.Debug.WriteLine($"[App] IsLoggedIn: {AuthService.IsLoggedIn}, User: {AuthService.CurrentUser?.Username}");
-            
-            // Force login page if not logged in or username is empty
-            if (!AuthService.IsLoggedIn || string.IsNullOrEmpty(AuthService.CurrentUser?.Username))
-            {
-                System.Diagnostics.Debug.WriteLine("[App] Showing LoginPage");
-                return new Window(new NavigationPage(new Views.Auth.LoginPage()));
-            }
 
-            System.Diagnostics.Debug.WriteLine("[App] Showing AppShell");
-            return new Window(new AppShell());
+            var startPage =
+                AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username)
+                    ? new AppShell()
+                    : new NavigationPage(new Views.Auth.LoginPage());
+
+            return new Window(startPage);
         }
     }
 }

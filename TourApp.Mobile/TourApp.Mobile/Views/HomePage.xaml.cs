@@ -280,9 +280,14 @@ public partial class HomePage : ContentPage
         {
             // Clear selection
             TourCollectionView.SelectedItem = null;
-            
-            // Navigate to Tour page
-            await Shell.Current.GoToAsync("///TourPage");
+
+            if (selectedTour.TourId > 0)
+            {
+                await Shell.Current.GoToAsync($"///MapPage?tourId={selectedTour.TourId}");
+                return;
+            }
+
+            await Shell.Current.GoToAsync("///MapPage");
         }
     }
 
@@ -328,6 +333,7 @@ public class MockItem
     public string? Name { get; set; }
     public string? Summary { get; set; }
     public int PoiId { get; set; }
+    public int TourId { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
 }

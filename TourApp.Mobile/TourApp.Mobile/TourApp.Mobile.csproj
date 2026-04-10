@@ -42,6 +42,15 @@
 
 
 	<ItemGroup>
+		<Compile Remove="MainPage.xaml.cs" />
+		<Compile Remove="Views\LoginPage.xaml.cs" />
+		<Compile Remove="Views\RegisterPage.xaml.cs" />
+		<MauiXaml Remove="MainPage.xaml" />
+		<MauiXaml Remove="Views\LoginPage.xaml" />
+		<MauiXaml Remove="Views\RegisterPage.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 
