@@ -4,6 +4,11 @@
     ViewData["Title"] = "Quản lý Thuyết minh (Audio)";
     var poisDict = ViewBag.POIs as Dictionary<int, string> ?? new Dictionary<int, string>();
     var currentPoiId = ViewBag.CurrentPoiId as int?;
+    var languageColumns = ViewBag.LanguageColumns as List<TourApp.CMS.Models.LanguageOption> ?? new List<TourApp.CMS.Models.LanguageOption>();
+    var grouped = (Model ?? Enumerable.Empty<TourApp.CMS.Models.Audio>())
+        .GroupBy(x => x.POIId)
+        .OrderBy(g => g.Key)
+        .ToList();
 }
 
 <div class="card border-0 mb-4">
@@ -34,35 +39,51 @@
                     <tr>
                         <th>ID</th>
                         <th>Địa điểm (POI)</th>
-                        <th>Ngôn ngữ</th>
-                        <th>Phát thử</th>
-                        <th>Trạng thái</th>
+                        @foreach (var lang in languageColumns)
+                        {
+                            <th>@lang.Name (@lang.Code)</th>
+                        }
                         <th class="text-end">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model != null && Model.Any())
+                    @if (grouped.Any())
                     {
-                        foreach (var item in Model)
+                        foreach (var poiGroup in grouped)
                         {
+                            var poiAudios = poiGroup.ToList();
                             <tr>
-                                <td><span class="badge bg-secondary">#@item.Id</span></td>
+                                <td><span class="badge bg-secondary">#@poiGroup.Key</span></td>
                                 <td class="fw-medium">
-                                    @(poisDict.ContainsKey(item.POIId) ? poisDict[item.POIId] : $"POI ID: {item.POIId}")
+                                    @(poisDict.ContainsKey(poiGroup.Key) ? poisDict[poiGroup.Key] : $"POI ID: {poiGroup.Key}")
                                 </td>
-                                <td><span class="badge bg-light text-dark border">@item.Language.ToUpper()</span></td>
-                                <td>
-                                    <audio controls class="form-control-sm" style="max-height: 40px; max-width: 200px;">
-                                        <source src="@item.AudioPath" type="audio/mpeg">
-                                        Trình duyệt không hỗ trợ.
-                                    </audio>
-                                </td>
-                                <td>
-                                    @if(item.IsActive) { <span class="badge bg-success">Hoạt động</span> } else { <span class="badge bg-warning">Chờ xử lý</span> }
-                                </td>
+                                @foreach (var lang in languageColumns)
+                                {
+                                    var audio = poiAudios.FirstOrDefault(a => a.Language.Equals(lang.Code, StringComparison.OrdinalIgnoreCase));
+                                    <td>
+                                        @if (audio != null)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-info mb-2"
+                                                    data-text="@audio.ScriptText"
+                                                    data-locale="@lang.Locale"
+                                                    onclick="speakScriptFromButton(this)">
+                                                🔊 Nghe thử
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">--</span>
+                                        }
+                                    </td>
+                                }
                                 <td class="text-end">
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa file MP3 này vĩnh viễn không? File vật lý sẽ bị xóa.');">
-                                        <i class="fa-solid fa-trash"></i>
+                                    <a asp-action="EditByPoi" asp-route-poiId="@poiGroup.Key" class="btn btn-sm btn-outline-primary">
+                                        <i class="fa-solid fa-pen"></i> Sửa
+                                    </a>
+                                    <a asp-action="DeleteByPoi" asp-route-poiId="@poiGroup.Key" class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Xóa toàn bộ thuyết minh của địa điểm này?');">
+                                        <i class="fa-solid fa-trash"></i> Xóa
                                     </a>
                                 </td>
                             </tr>
@@ -71,9 +92,9 @@
                     else
                     {
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="@(3 + languageColumns.Count)" class="text-center py-5 text-muted">
                                 <i class="fa-solid fa-music fs-1 mb-3 text-light"></i><br />
-                                Chưa có tệp âm thanh nào được nạp lên
+                                Chưa có dữ liệu thuyết minh
                             </td>
                         </tr>
                     }
@@ -82,3 +103,31 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+const synth = window.speechSynthesis;
+
+function pickFemaleVoice(lang) {
+    const voices = synth.getVoices();
+    if (!voices || voices.length === 0) return null;
+    const femaleHints = ['female', 'woman', 'zira', 'hanh', 'linh', 'mai', 'nu'];
+    return voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()) && femaleHints.some(k => v.name.toLowerCase().includes(k)))
+        || voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()))
+        || null;
+}
+
+function speakScriptFromButton(btn) {
+    const text = btn.getAttribute('data-text') || '';
+    const locale = btn.getAttribute('data-locale') || 'en-US';
+    if (!text) return;
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = locale;
+    utter.pitch = 1.08;
+    utter.rate = 0.95;
+    utter.voice = pickFemaleVoice(utter.lang);
+    synth.speak(utter);
+}
+</script>
+}

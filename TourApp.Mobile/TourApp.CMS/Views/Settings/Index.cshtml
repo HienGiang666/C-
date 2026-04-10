@@ -1,0 +1,100 @@
+@model TourApp.CMS.Models.SettingsViewModel
+@{
+    ViewData["Title"] = "Cài đặt";
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-plus me-2 text-success"></i>Thêm ngôn ngữ tùy chọn</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="AddLanguage" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Chọn ngôn ngữ (danh sách mở rộng)</label>
+                        <select id="languagePicker" class="form-select" onchange="applyLanguage(this.value)">
+                            <option value="">-- Chọn ngôn ngữ --</option>
+                            @foreach (var item in Model.AvailableLanguages)
+                            {
+                                <option value="@item.Code" data-name="@item.Name" data-locale="@item.Locale">
+                                    @item.Name (@item.Code)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mã ngôn ngữ</label>
+                        <input asp-for="NewLanguageCode" id="newLanguageCode" class="form-control" placeholder="Ví dụ: fr, ko, de..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tên hiển thị</label>
+                        <input asp-for="NewLanguageName" id="newLanguageName" class="form-control" placeholder="Ví dụ: Tiếng Pháp" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Locale giọng đọc</label>
+                        <input asp-for="NewLanguageLocale" id="newLanguageLocale" class="form-control" placeholder="Ví dụ: fr-FR (không bắt buộc)" required />
+                    </div>
+                    <button type="submit" class="btn btn-success">Thêm ngôn ngữ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-language me-2 text-primary"></i>Danh sách ngôn ngữ đang dùng</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên</th>
+                            <th>Locale</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var lang in Model.Languages)
+                    {
+                        var isDefault = lang.Code == "vi" || lang.Code == "en" || lang.Code == "zh" || lang.Code == "ja";
+                        <tr>
+                            <td><span class="badge bg-secondary">@lang.Code</span></td>
+                            <td>@lang.Name @if (isDefault) { <span class="text-success small">(mặc định)</span> }</td>
+                            <td>@lang.Locale</td>
+                            <td class="text-end">
+                                <form asp-action="RemoveLanguage" method="post" class="d-inline">
+                                    <input type="hidden" name="code" value="@lang.Code" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            @(isDefault ? "disabled" : "")
+                                            onclick="return confirm('Xóa ngôn ngữ @lang.Name (@lang.Code)? Toàn bộ audio ngôn ngữ này sẽ bị xóa khỏi database.')">
+                                        Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function applyLanguage(code) {
+    if (!code) {
+        return;
+    }
+
+    const picker = document.getElementById('languagePicker');
+    const selected = picker.options[picker.selectedIndex];
+    document.getElementById('newLanguageCode').value = code;
+    document.getElementById('newLanguageName').value = selected.getAttribute('data-name') || '';
+    document.getElementById('newLanguageLocale').value = selected.getAttribute('data-locale') || '';
+}
+</script>
+}

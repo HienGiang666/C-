@@ -9,19 +9,24 @@ public class AudioController : Controller
 {
     private readonly IHttpClientFactory _clientFactory;
     private readonly IActivityLogger _activityLogger;
-    private readonly IFileUploadService _fileUploadService;
+    private readonly ILanguageSettingsService _languageSettingsService;
 
-    public AudioController(IHttpClientFactory clientFactory, IActivityLogger activityLogger, IFileUploadService fileUploadService)
+    public AudioController(
+        IHttpClientFactory clientFactory,
+        IActivityLogger activityLogger,
+        ILanguageSettingsService languageSettingsService)
     {
         _clientFactory = clientFactory;
         _activityLogger = activityLogger;
-        _fileUploadService = fileUploadService;
+        _languageSettingsService = languageSettingsService;
     }
 
     public async Task<IActionResult> Index(int? poiId)
     {
         ViewData["Title"] = "Quản lý Thuyết minh (Audio)";
         var client = _clientFactory.CreateClient("TourApi");
+        ViewBag.LanguageColumns = await _languageSettingsService.GetAllAsync();
+        ViewBag.POIs = new Dictionary<int, string>();
         
         string url = "api/Audio";
         if (poiId.HasValue)
@@ -34,7 +39,6 @@ public class AudioController : Controller
         if (response.IsSuccessStatusCode)
         {
             var audios = await response.Content.ReadFromJsonAsync<List<Audio>>();
-            
             // Lấy thêm danh sách POI để hiển thị tên POI cho đẹp thay vì Id
             var poiResponse = await client.GetAsync("api/POI");
             if (poiResponse.IsSuccessStatusCode)
@@ -43,9 +47,89 @@ public class AudioController : Controller
                 ViewBag.POIs = pois?.ToDictionary(p => p.Id, p => p.Name);
             }
 
-            return View(audios);
+            return View(audios ?? new List<Audio>());
         }
         return View(new List<Audio>());
+    }
+
+    public async Task<IActionResult> EditByPoi(int poiId)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var response = await client.GetAsync($"api/Audio?poiId={poiId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["error"] = "Không tải được dữ liệu thuyết minh của địa điểm.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var audios = await response.Content.ReadFromJsonAsync<List<Audio>>() ?? new List<Audio>();
+        var languages = await _languageSettingsService.GetAllAsync();
+        var scripts = languages.ToDictionary(
+            l => l.Code,
+            l => audios.FirstOrDefault(x => x.Language.Equals(l.Code, StringComparison.OrdinalIgnoreCase))?.ScriptText ?? string.Empty);
+
+        var model = new AudioBulkCreateViewModel
+        {
+            POIId = poiId,
+            SourceText = scripts.TryGetValue("vi", out var viText) ? viText : string.Empty,
+            Scripts = scripts
+        };
+
+        ViewBag.Languages = languages;
+        ViewData["Title"] = "Sửa thuyết minh theo địa điểm";
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EditByPoi(AudioBulkCreateViewModel model)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var existingResponse = await client.GetAsync($"api/Audio?poiId={model.POIId}");
+        var existing = existingResponse.IsSuccessStatusCode
+            ? await existingResponse.Content.ReadFromJsonAsync<List<Audio>>() ?? new List<Audio>()
+            : new List<Audio>();
+
+        var languageSet = await _languageSettingsService.GetAllAsync();
+        var validCodes = languageSet.Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var pair in (model.Scripts ?? new Dictionary<string, string>()).Where(x => validCodes.Contains(x.Key)))
+        {
+            var script = (pair.Value ?? string.Empty).Trim();
+            var old = existing.FirstOrDefault(x => x.Language.Equals(pair.Key, StringComparison.OrdinalIgnoreCase));
+
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                if (old != null)
+                {
+                    await client.DeleteAsync($"api/Audio/{old.Id}");
+                }
+                continue;
+            }
+
+            if (old == null)
+            {
+                var create = new Audio
+                {
+                    POIId = model.POIId,
+                    Language = pair.Key.ToLowerInvariant(),
+                    ScriptText = script,
+                    Duration = EstimateDuration(script),
+                    IsActive = true,
+                    AudioPath = "TTS_ONLY"
+                };
+                await client.PostAsJsonAsync("api/Audio", create);
+            }
+            else
+            {
+                old.ScriptText = script;
+                old.Duration = EstimateDuration(script);
+                old.IsActive = true;
+                await client.PutAsJsonAsync($"api/Audio/{old.Id}", old);
+            }
+        }
+
+        TempData["success"] = "Đã cập nhật toàn bộ thuyết minh của POI.";
+        return RedirectToAction(nameof(Index), new { poiId = model.POIId });
     }
 
     public async Task<IActionResult> Create(int? poiId)
@@ -61,47 +145,59 @@ public class AudioController : Controller
         }
         
         ViewBag.PoiList = new SelectList(pois, "Id", "Name", poiId);
-        return View(new Audio { POIId = poiId ?? 0 });
+        ViewBag.Languages = await _languageSettingsService.GetAllAsync();
+        return View(new AudioBulkCreateViewModel { POIId = poiId ?? 0 });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Audio audio, IFormFile? uploadAudio)
+    public async Task<IActionResult> Create(AudioBulkCreateViewModel model)
     {
-        if (uploadAudio == null || uploadAudio.Length == 0)
+        if (model.POIId <= 0)
         {
-            ModelState.AddModelError("uploadAudio", "Vui lòng chọn file âm thanh (.mp3, .wav)");
+            ModelState.AddModelError(nameof(model.POIId), "Vui lòng chọn địa điểm.");
         }
 
-        if (ModelState.IsValid)
+        var scripts = (model.Scripts ?? new Dictionary<string, string>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+            .Select(x => new Audio
+            {
+                POIId = model.POIId,
+                Language = x.Key.Trim().ToLowerInvariant(),
+                ScriptText = x.Value.Trim(),
+                Duration = EstimateDuration(x.Value),
+                IsActive = true,
+                AudioPath = "TTS_ONLY"
+            })
+            .ToList();
+
+        if (scripts.Count == 0)
         {
-            try
-            {
-                audio.AudioPath = await _fileUploadService.UploadAudioAsync(uploadAudio!, "audios");
+            ModelState.AddModelError(string.Empty, "Vui lòng nhập nội dung ở ít nhất 1 ngôn ngữ.");
+        }
 
-                var client = _clientFactory.CreateClient("TourApi");
-                var response = await client.PostAsJsonAsync("api/Audio", audio);
+        if (ModelState.IsValid && scripts.Count > 0)
+        {
+            var client = _clientFactory.CreateClient("TourApi");
+            var response = await client.PostAsJsonAsync("api/Audio/bulk", scripts);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    _activityLogger.LogActivity(HttpContext, "Create", "Audio", null, $"Audio for POI {audio.POIId} ({audio.Language})");
-                    TempData["success"] = "Tải lên file âm thanh thành công!";
-                    return RedirectToAction(nameof(Index), new { poiId = audio.POIId });
-                }
-                TempData["error"] = "Lỗi khi lưu vào cơ sở dữ liệu!";
-            }
-            catch (Exception ex)
+            if (response.IsSuccessStatusCode)
             {
-                TempData["error"] = ex.Message;
+                _activityLogger.LogActivity(HttpContext, "Create", "Audio", null, $"Bulk audio for POI {model.POIId}, total {scripts.Count}");
+                TempData["success"] = "Đã lưu thuyết minh theo các ngôn ngữ đã cấu hình.";
+                return RedirectToAction(nameof(Index), new { poiId = model.POIId });
             }
+
+            TempData["error"] = "Lỗi khi lưu dữ liệu thuyết minh!";
         }
 
         // Reload POI List on failure
         var poiclient = _clientFactory.CreateClient("TourApi");
         var poiResponse = await poiclient.GetAsync("api/POI");
         var pois = poiResponse.IsSuccessStatusCode ? await poiResponse.Content.ReadFromJsonAsync<List<POI>>() : new List<POI>();
-        ViewBag.PoiList = new SelectList(pois, "Id", "Name", audio.POIId);
+        ViewBag.PoiList = new SelectList(pois, "Id", "Name", model.POIId);
+        ViewBag.Languages = await _languageSettingsService.GetAllAsync();
 
-        return View(audio);
+        return View(model);
     }
     
     public async Task<IActionResult> Edit(int id)
@@ -118,6 +214,7 @@ public class AudioController : Controller
             var poiResponse = await client.GetAsync("api/POI");
             var pois = poiResponse.IsSuccessStatusCode ? await poiResponse.Content.ReadFromJsonAsync<List<POI>>() : new List<POI>();
             ViewBag.PoiList = new SelectList(pois, "Id", "Name", audio?.POIId);
+            ViewBag.Languages = await _languageSettingsService.GetAllAsync();
             
             return View(audio);
         }
@@ -125,31 +222,22 @@ public class AudioController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, Audio audio, IFormFile? uploadAudio)
+    public async Task<IActionResult> Edit(int id, Audio audio)
     {
         var client = _clientFactory.CreateClient("TourApi");
-        
-        if (uploadAudio != null && uploadAudio.Length > 0)
+
+        // Keep existing AudioPath vì không còn upload MP3.
+        var existingResponse = await client.GetAsync($"api/Audio/{id}");
+        if (existingResponse.IsSuccessStatusCode)
         {
-            try
+            var existingAudio = await existingResponse.Content.ReadFromJsonAsync<Audio>();
+            if (existingAudio != null)
             {
-                audio.AudioPath = await _fileUploadService.UploadAudioAsync(uploadAudio, "audios");
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("uploadAudio", ex.Message);
+                audio.AudioPath = existingAudio.AudioPath;
             }
         }
-        else
-        {
-            // Keep existing audio path
-            var existingResponse = await client.GetAsync($"api/Audio/{id}");
-            if (existingResponse.IsSuccessStatusCode)
-            {
-                var existingAudio = await existingResponse.Content.ReadFromJsonAsync<Audio>();
-                if (existingAudio != null) audio.AudioPath = existingAudio.AudioPath;
-            }
-        }
+        audio.Duration = EstimateDuration(audio.ScriptText);
+        audio.IsActive = true;
 
         if (ModelState.IsValid)
         {
@@ -167,6 +255,7 @@ public class AudioController : Controller
         var poiResponse = await client.GetAsync("api/POI");
         var pois = poiResponse.IsSuccessStatusCode ? await poiResponse.Content.ReadFromJsonAsync<List<POI>>() : new List<POI>();
         ViewBag.PoiList = new SelectList(pois, "Id", "Name", audio.POIId);
+        ViewBag.Languages = await _languageSettingsService.GetAllAsync();
         
         return View(audio);
     }
@@ -181,17 +270,43 @@ public class AudioController : Controller
         {
             var audio = await getResponse.Content.ReadFromJsonAsync<Audio>();
             poiId = audio?.POIId;
-            
-            // Xóa file vật lý
-            if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
-            {
-                _fileUploadService.DeleteImage(audio.AudioPath);
-            }
         }
 
         await client.DeleteAsync($"api/Audio/{id}");
         _activityLogger.LogActivity(HttpContext, "Delete", "Audio", $"Audio {id}", null);
         TempData["success"] = "Xóa audio thành công!";
         return RedirectToAction(nameof(Index), new { poiId = poiId });
+    }
+
+    public async Task<IActionResult> DeleteByPoi(int poiId)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var response = await client.GetAsync($"api/Audio?poiId={poiId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["error"] = "Không thể tải danh sách audio để xóa.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var audios = await response.Content.ReadFromJsonAsync<List<Audio>>() ?? new List<Audio>();
+        foreach (var audio in audios)
+        {
+            await client.DeleteAsync($"api/Audio/{audio.Id}");
+        }
+
+        _activityLogger.LogActivity(HttpContext, "Delete", "Audio", $"POI {poiId}", null);
+        TempData["success"] = "Đã xóa toàn bộ thuyết minh của địa điểm.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    private static int EstimateDuration(string script)
+    {
+        if (string.IsNullOrWhiteSpace(script))
+        {
+            return 1;
+        }
+
+        var words = script.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        return Math.Max(1, (int)Math.Ceiling(words / 2.5));
     }
 }

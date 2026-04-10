@@ -27,6 +27,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IActivityLogger, ActivityLogger>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddSingleton<ILanguageSettingsService, LanguageSettingsService>();
 
 var app = builder.Build();
 
