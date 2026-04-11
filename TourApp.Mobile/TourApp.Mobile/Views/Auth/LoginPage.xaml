@@ -13,20 +13,23 @@
         </VerticalStackLayout>
 
         <!-- White card form -->
-        <Frame Grid.Row="1" BackgroundColor="White" CornerRadius="30" HasShadow="True" Margin="0" Padding="30,40,30,20">
+        <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="White" Padding="30,40,30,20" Margin="0" StrokeShape="RoundRectangle 30">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.2"/>
+            </Border.Shadow>
             <VerticalStackLayout Spacing="20">
                 <!-- Username -->
                 <VerticalStackLayout>
                     <Label Text="USERNAME" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
-                    <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
+                    <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
                         <Entry x:Name="UsernameEntry" Placeholder="Enter username" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
-                    </Frame>
+                    </Border>
                 </VerticalStackLayout>
 
                 <!-- Password -->
                 <VerticalStackLayout>
                     <Label Text="PASSWORD" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
-                    <Frame BorderColor="#E0E0E0" CornerRadius="10" Padding="15,0" HasShadow="False" BackgroundColor="#F9F9F9" HeightRequest="50">
+                    <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
                         <Grid ColumnDefinitions="*,30">
                             <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
                             <Label x:Name="ShowPasswordLabel" Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center">
@@ -35,7 +38,7 @@
                                 </Label.GestureRecognizers>
                             </Label>
                         </Grid>
-                    </Frame>
+                    </Border>
                 </VerticalStackLayout>
 
                 <!-- Remember / Forgot -->
@@ -71,6 +74,6 @@
                 </HorizontalStackLayout>
 
             </VerticalStackLayout>
-        </Frame>
+        </Border>
     </Grid>
 </ContentPage>

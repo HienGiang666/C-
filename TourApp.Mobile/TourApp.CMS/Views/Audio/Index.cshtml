@@ -128,30 +128,10 @@
 </div>
 
 @section Scripts {
+<script src="~/js/cms-tts.js" asp-append-version="true"></script>
 <script>
 const synth = window.speechSynthesis;
-
-function pickVoiceForLocale(locale, langCode) {
-    const voices = synth.getVoices();
-    if (!voices || voices.length === 0) return null;
-    const loc = (locale || 'en-US').toLowerCase();
-    const shortLang = (langCode || loc.slice(0, 2)).toLowerCase();
-    const sameLang = voices.filter(v => (v.lang || '').toLowerCase().startsWith(shortLang));
-    if (shortLang === 'vi') {
-        const preferFemale = (v) => {
-            const n = (v.name || '').toLowerCase();
-            return /female|nữ|hoai|my|lan|mai|linh|minh|google.*vi|microsoft.*vi/i.test(n) && !/^microsoft.*nam\b/i.test(n);
-        };
-        return sameLang.find(preferFemale)
-            || sameLang.find(v => !/(male|nam nghiêm|nam minh)\b/i.test(v.name))
-            || sameLang[0]
-            || null;
-    }
-    const femaleHints = ['female', 'woman', 'zira'];
-    return sameLang.find(v => femaleHints.some(k => v.name.toLowerCase().includes(k)))
-        || sameLang[0]
-        || null;
-}
+cmsWarmUpSpeechVoices();
 
 function speakScriptFromButton(btn) {
     const text = btn.getAttribute('data-text') || '';
@@ -164,13 +144,9 @@ function speakScriptFromButton(btn) {
     utter.lang = locale;
     utter.pitch = langCode === 'vi' ? 1.05 : 1.08;
     utter.rate = langCode === 'vi' ? 0.92 : 0.95;
-    const v = pickVoiceForLocale(locale, langCode);
+    const v = cmsPickTtsVoiceForLocale(locale, langCode || locale.substring(0, 2));
     if (v) utter.voice = v;
     synth.speak(utter);
-}
-
-if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = function () { /* warm-up voice list */ speechSynthesis.getVoices(); };
 }
 </script>
 }

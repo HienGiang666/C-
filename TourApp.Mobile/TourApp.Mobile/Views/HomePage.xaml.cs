@@ -161,7 +161,7 @@ public partial class HomePage : ContentPage
             
         // Search in Tours (mock data for now)
         var matchingTours = MockTours.Where(t =>
-            t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            !string.IsNullOrEmpty(t.Name) && t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .ToList();
         
         if ((matchingPois?.Any() != true) && !matchingTours.Any())
@@ -242,7 +242,7 @@ public partial class HomePage : ContentPage
         if (filteredPois?.Any() != true)
         {
             var mockFiltered = MockPois.Where(p =>
-                p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                !string.IsNullOrEmpty(p.Name) && p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                 .ToList();
                 
             if (mockFiltered.Any())

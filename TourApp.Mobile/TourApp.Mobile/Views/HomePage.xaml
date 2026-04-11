@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:TourApp.Mobile.Views"
              x:Class="TourApp.Mobile.Views.HomePage"
+             x:DataType="views:HomePage"
              BackgroundColor="#F5F6F8"
              Shell.NavBarIsVisible="False">
 
@@ -23,24 +25,24 @@
                             </HorizontalStackLayout>
                             
                             <!-- QR Code Scanner button -->
-                            <Frame Grid.Column="2" WidthRequest="40" HeightRequest="40" CornerRadius="20" BackgroundColor="White" Padding="0" HasShadow="False">
+                            <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
                                 <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                                <Frame.GestureRecognizers>
+                                <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnQRScanClicked"/>
-                                </Frame.GestureRecognizers>
-                            </Frame>
+                                </Border.GestureRecognizers>
+                            </Border>
                         </Grid>
 
                         <!-- Search Bar -->
-                        <Frame BackgroundColor="White" CornerRadius="25" HasShadow="False" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" BorderColor="Transparent">
+                        <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
                             <Grid ColumnDefinitions="30,*">
                                 <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
                                 <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm món, tìm quán, tìm tour..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
                             </Grid>
-                            <Frame.GestureRecognizers>
+                            <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnSearchBarTapped"/>
-                            </Frame.GestureRecognizers>
-                        </Frame>
+                            </Border.GestureRecognizers>
+                        </Border>
                     </VerticalStackLayout>
                 </Grid>
             </VerticalStackLayout>
@@ -50,42 +52,42 @@
                 
                 <!-- Category Grid -->
                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
-                    <Frame Grid.Column="0" CornerRadius="15" BackgroundColor="#FFF0E5" Padding="5,15" HasShadow="False">
-                        <Frame.GestureRecognizers>
+                    <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="#FFF0E5" Padding="5,15" StrokeShape="RoundRectangle 15">
+                        <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnNuongTapped"/>
-                        </Frame.GestureRecognizers>
+                        </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🔥" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Nướng" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
-                    </Frame>
-                    <Frame Grid.Column="1" CornerRadius="15" BackgroundColor="#FCE4E4" Padding="5,15" HasShadow="False">
-                        <Frame.GestureRecognizers>
+                    </Border>
+                    <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="#FCE4E4" Padding="5,15" StrokeShape="RoundRectangle 15">
+                        <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnLauTapped"/>
-                        </Frame.GestureRecognizers>
+                        </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🍲" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Lẩu" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
-                    </Frame>
-                    <Frame Grid.Column="2" CornerRadius="15" BackgroundColor="#E6F0FF" Padding="5,15" HasShadow="False">
-                        <Frame.GestureRecognizers>
+                    </Border>
+                    <Border Grid.Column="2" StrokeThickness="0" BackgroundColor="#E6F0FF" Padding="5,15" StrokeShape="RoundRectangle 15">
+                        <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnOcTapped"/>
-                        </Frame.GestureRecognizers>
+                        </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🐚" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Ốc" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
-                    </Frame>
-                    <Frame Grid.Column="3" CornerRadius="15" BackgroundColor="#E6FCEF" Padding="5,15" HasShadow="False">
-                        <Frame.GestureRecognizers>
+                    </Border>
+                    <Border Grid.Column="3" StrokeThickness="0" BackgroundColor="#E6FCEF" Padding="5,15" StrokeShape="RoundRectangle 15">
+                        <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnAnVatTapped"/>
-                        </Frame.GestureRecognizers>
+                        </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🍢" FontSize="24" HorizontalOptions="Center"/>
                             <Label Text="Ăn vặt" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
-                    </Frame>
+                    </Border>
                 </Grid>
 
                 <!-- Lộ Trình Gợi Ý -->
@@ -102,8 +104,11 @@
                     <CollectionView x:Name="TourCollectionView" HeightRequest="250" SelectionMode="Single" SelectionChanged="OnTourSelected">
                         <!-- Mock setup for item layout -->
                         <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame CornerRadius="20" Padding="0" IsClippedToBounds="True" HasShadow="True" Margin="0,0,0,15" BorderColor="Transparent" BackgroundColor="White">
+                            <DataTemplate x:DataType="views:MockItem">
+                                <Border StrokeThickness="0" Padding="0" Margin="0,0,0,15" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                    <Border.Shadow>
+                                        <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                    </Border.Shadow>
                                     <Grid RowDefinitions="120,Auto">
                                         <Image Grid.Row="0" Source="media__1775454533773.jpg" Aspect="AspectFill"/>
                                         <VerticalStackLayout Grid.Row="1" Padding="15">
@@ -111,7 +116,7 @@
                                             <Label Text="{Binding Summary}" FontSize="12" TextColor="#888" Margin="0,5,0,0"/>
                                         </VerticalStackLayout>
                                     </Grid>
-                                </Frame>
+                                </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
@@ -130,8 +135,11 @@
 
                     <CollectionView x:Name="PoiCollectionView" HeightRequest="200" ItemsLayout="HorizontalList" SelectionMode="Single" SelectionChanged="OnPoiSelected">
                         <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame WidthRequest="200" CornerRadius="20" Padding="0" IsClippedToBounds="True" HasShadow="True" Margin="0,0,15,5" BorderColor="Transparent" BackgroundColor="White">
+                            <DataTemplate x:DataType="views:MockItem">
+                                <Border WidthRequest="200" StrokeThickness="0" Padding="0" Margin="0,0,15,5" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                    <Border.Shadow>
+                                        <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                    </Border.Shadow>
                                     <Grid RowDefinitions="120,Auto">
                                         <Image Grid.Row="0" Source="media__1775454545663.jpg" Aspect="AspectFill"/>
                                         <VerticalStackLayout Grid.Row="1" Padding="15">
@@ -139,7 +147,7 @@
                                             <Label Text="{Binding Summary}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>
                                         </VerticalStackLayout>
                                     </Grid>
-                                </Frame>
+                                </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>

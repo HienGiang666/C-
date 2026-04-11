@@ -43,7 +43,7 @@ namespace TourApp.Mobile
         {
             AuthService.LoadSavedSession();
 
-            var startPage =
+            Page startPage =
                 AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username)
                     ? new AppShell()
                     : new NavigationPage(new Views.Auth.LoginPage());

@@ -47,7 +47,7 @@ public partial class LoginPage : ContentPage
             if (result.Success && result.User != null)
             {
                 // Navigate to main app
-                Application.Current!.MainPage = new AppShell();
+                AppNavigation.SetRootPage(new AppShell());
             }
             else
             {

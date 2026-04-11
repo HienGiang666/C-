@@ -112,6 +112,7 @@
 </div>
 
 @section Scripts {
+<script src="~/js/cms-tts.js" asp-append-version="true"></script>
 <script>
 let synth = window.speechSynthesis;
 let currentUtterance = null;
@@ -206,23 +207,15 @@ function stopSpeech() {
 }
 
 function pickFemaleVoice(lang) {
-    const voices = synth.getVoices();
-    if (!voices || voices.length === 0) return null;
-
-    const femaleHints = ['female', 'woman', 'zira', 'hoai', 'my', 'hanh', 'linh', 'mai', 'nu'];
-    if (lang.toLowerCase().startsWith('vi')) {
-        return voices.find(v => v.lang?.toLowerCase().startsWith('vi') && /hoai|my|female|woman/.test(v.name.toLowerCase()))
-            || voices.find(v => v.lang?.toLowerCase().startsWith('vi') && femaleHints.some(k => v.name.toLowerCase().includes(k)))
-            || voices.find(v => v.lang?.toLowerCase().startsWith('vi') && !/male|nam/.test(v.name.toLowerCase()))
-            || null;
+    const l = (lang || '').toLowerCase();
+    if (l.startsWith('vi')) {
+        const vn = typeof cmsPickVietnameseFemaleVoice === 'function' ? cmsPickVietnameseFemaleVoice() : null;
+        if (vn) return vn;
     }
-
-    return voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()) && femaleHints.some(k => v.name.toLowerCase().includes(k)))
-        || voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()))
-        || null;
+    return typeof cmsPickTtsVoiceForLocale === 'function' ? cmsPickTtsVoiceForLocale(lang, lang.substring(0, 2)) : null;
 }
 
-synth.onvoiceschanged = () => {};
+cmsWarmUpSpeechVoices();
 
 const poiIdsWithAudio = @Html.Raw(ViewBag.PoiIdsWithAudioJson ?? "[]");
 document.getElementById('audioForm').addEventListener('submit', function (e) {

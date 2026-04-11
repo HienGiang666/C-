@@ -186,7 +186,7 @@ public partial class ProfilePage : ContentPage
         if (confirm)
         {
             AuthService.Logout();
-            Application.Current!.MainPage = new NavigationPage(new Views.Auth.LoginPage());
+            AppNavigation.SetRootPage(new NavigationPage(new Views.Auth.LoginPage()));
         }
     }
 }

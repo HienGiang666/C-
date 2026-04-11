@@ -113,7 +113,7 @@ public partial class MapPage : ContentPage
             await Task.Delay(1000); 
 
             // Load POI từ API trong background — an toàn, không crash app
-            LoadPoisInBackgroundAsync().ContinueWith(t =>
+            _ = LoadPoisInBackgroundAsync().ContinueWith(t =>
             {
                 if (t.IsFaulted)
                     System.Diagnostics.Debug.WriteLine($"[MapPage] POI load faulted: {t.Exception}");

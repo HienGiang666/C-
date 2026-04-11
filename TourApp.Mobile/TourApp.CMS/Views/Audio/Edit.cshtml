@@ -62,9 +62,11 @@
 </div>
 
 @section Scripts {
+<script src="~/js/cms-tts.js" asp-append-version="true"></script>
 <script>
 const synth = window.speechSynthesis;
 const languages = @Html.Raw(JsonSerializer.Serialize(languages));
+cmsWarmUpSpeechVoices();
 
 function getCurrentLocale() {
     const selected = document.getElementById('Language').value || 'en';
@@ -72,23 +74,15 @@ function getCurrentLocale() {
     return found?.Locale || 'en-US';
 }
 
-function pickFemaleVoice(lang) {
-    const voices = synth.getVoices();
-    if (!voices || voices.length === 0) return null;
-    const femaleHints = ['female', 'woman', 'zira', 'hanh', 'linh', 'mai', 'nu'];
-    return voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()) && femaleHints.some(k => v.name.toLowerCase().includes(k)))
-        || voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()))
-        || null;
-}
-
 function speakText() {
     const text = document.getElementById('scriptText').value.trim();
     if (!text) return;
+    const code = document.getElementById('Language').value || 'en';
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = getCurrentLocale();
     utter.pitch = 1.08;
     utter.rate = 0.95;
-    utter.voice = pickFemaleVoice(utter.lang);
+    utter.voice = cmsPickTtsVoiceForLocale(utter.lang, code);
     stopSpeech();
     synth.speak(utter);
 }

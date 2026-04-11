@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:TourApp.Mobile.Models"
              x:Class="TourApp.Mobile.Views.TourPage"
              BackgroundColor="#F5F6F8"
              Shell.NavBarIsVisible="False">
@@ -20,21 +21,21 @@
                         </HorizontalStackLayout>
 
                         <!-- QR Scanner button -->
-                        <Frame Grid.Column="2" WidthRequest="40" HeightRequest="40" CornerRadius="20" BackgroundColor="White" Padding="0" HasShadow="False">
+                        <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
                             <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                            <Frame.GestureRecognizers>
+                            <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnQRScanClicked"/>
-                            </Frame.GestureRecognizers>
-                        </Frame>
+                            </Border.GestureRecognizers>
+                        </Border>
                     </Grid>
 
                     <!-- Search Bar -->
-                    <Frame BackgroundColor="White" CornerRadius="25" HasShadow="False" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" BorderColor="Transparent">
+                    <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
                         <Grid ColumnDefinitions="30,*">
                             <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
                             <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm tour..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
                         </Grid>
-                    </Frame>
+                    </Border>
                 </VerticalStackLayout>
             </Grid>
         </VerticalStackLayout>
@@ -44,8 +45,11 @@
             <VerticalStackLayout Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
                 <CollectionView x:Name="TourCollectionView" SelectionMode="Single" SelectionChanged="OnTourSelected">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Frame CornerRadius="20" Padding="0" IsClippedToBounds="True" HasShadow="True" Margin="0,0,0,20" BorderColor="Transparent" BackgroundColor="White">
+                        <DataTemplate x:DataType="models:Tour">
+                            <Border StrokeThickness="0" Padding="0" Margin="0,0,0,20" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                <Border.Shadow>
+                                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                </Border.Shadow>
                                 <VerticalStackLayout>
                                     <Image Source="media__1775454533773.jpg" HeightRequest="150" Aspect="AspectFill"/>
                                     <VerticalStackLayout Padding="20" Spacing="10">
@@ -68,7 +72,7 @@
                                         <Button Text="Bắt đầu Tour" BackgroundColor="#FF3D00" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="45" Clicked="OnStartTourClicked" CommandParameter="{Binding .}"/>
                                     </VerticalStackLayout>
                                 </VerticalStackLayout>
-                            </Frame>
+                            </Border>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>

@@ -89,7 +89,7 @@ public partial class SignUpPage : ContentPage
             {
                 await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("RegisterSuccess"), LanguageService.GetString("OK"));
                 // Navigate to main app
-                Application.Current!.MainPage = new AppShell();
+                AppNavigation.SetRootPage(new AppShell());
             }
             else
             {

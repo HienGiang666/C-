@@ -9,25 +9,25 @@
     <Grid RowDefinitions="Auto,*,Auto">
         <!-- Header -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="20,40,20,20" BackgroundColor="#80000000">
-            <Frame Grid.Column="0" WidthRequest="40" HeightRequest="40" CornerRadius="20" 
-                   BackgroundColor="White" Padding="0" HasShadow="False">
+            <Border Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeThickness="0"
+                   BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
                 <Label Text="←" FontSize="20" TextColor="Black" HorizontalOptions="Center" VerticalOptions="Center"/>
-                <Frame.GestureRecognizers>
+                <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnBackTapped"/>
-                </Frame.GestureRecognizers>
-            </Frame>
+                </Border.GestureRecognizers>
+            </Border>
             
             <Label Grid.Column="1" Text="Quét mã QR" FontSize="20" FontAttributes="Bold" 
                    TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
             
             <!-- Flash toggle -->
-            <Frame Grid.Column="2" WidthRequest="40" HeightRequest="40" CornerRadius="20" 
-                   BackgroundColor="White" Padding="0" HasShadow="False">
+            <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0"
+                   BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
                 <Label Text="⚡" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                <Frame.GestureRecognizers>
+                <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnFlashTapped"/>
-                </Frame.GestureRecognizers>
-            </Frame>
+                </Border.GestureRecognizers>
+            </Border>
         </Grid>
 
         <!-- Camera View -->
@@ -41,8 +41,8 @@
                 VerticalOptions="Fill"/>
             
             <!-- Scanner overlay frame -->
-            <Frame BackgroundColor="Transparent" BorderColor="#FF3D00" 
-                   CornerRadius="20" Padding="0" HasShadow="False"
+            <Border BackgroundColor="Transparent" Stroke="#FF3D00" StrokeThickness="3"
+                   StrokeShape="RoundRectangle 20" Padding="0"
                    WidthRequest="250" HeightRequest="250"
                    HorizontalOptions="Center" VerticalOptions="Center">
                 <Grid>
@@ -71,7 +71,7 @@
                     <BoxView x:Name="ScanLine" Color="#FF3D00" HeightRequest="2" 
                              HorizontalOptions="Fill" VerticalOptions="Start" Margin="20,0"/>
                 </Grid>
-            </Frame>
+            </Border>
         </Grid>
 
         <!-- Bottom instruction -->

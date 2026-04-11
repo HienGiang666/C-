@@ -272,6 +272,58 @@ namespace TourApp.API.Data
             context.SaveChanges();
         }
 
+        /// <summary>
+        /// Gán chủ quán: POI #P1–#P5 → user Cuong/Cường, #P6–#P10 → Hien/Hiền (Role RestaurantOwner hoặc Staff).
+        /// Chạy mỗi lần khởi động API; cần đủ 2 tài khoản trong bảng Users.
+        /// </summary>
+        public static void AssignPoiOwnersCuongHien(AppDbContext context)
+        {
+            try
+            {
+                if (!context.POIs.Any() || !context.Users.Any())
+                    return;
+
+                var ownerUsers = context.Users
+                    .Where(u => new[] { "restaurantowner", "staff" }.Contains(u.Role.ToLower()))
+                    .ToList();
+
+                static bool MatchesOwner(User u, string ascii, string unicode)
+                {
+                    if (u.Username.Equals(ascii, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    var fn = u.FullName ?? string.Empty;
+                    if (fn.Contains(ascii, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    return fn.Contains(unicode, StringComparison.Ordinal);
+                }
+
+                var cuong = ownerUsers.FirstOrDefault(u => MatchesOwner(u, "Cuong", "Cường"));
+                var hien = ownerUsers.FirstOrDefault(u =>
+                    u.Id != cuong?.Id && MatchesOwner(u, "Hien", "Hiền"));
+
+                if (cuong == null || hien == null)
+                {
+                    Console.WriteLine(
+                        $"[AssignPoiOwners] Thiếu chủ quán trong DB (Role RestaurantOwner): Cuong/Cường={cuong != null}, Hien/Hiền={hien != null}.");
+                    return;
+                }
+
+                foreach (var p in context.POIs.ToList())
+                {
+                    if (p.PublicCatalogNumber >= 1 && p.PublicCatalogNumber <= 5)
+                        p.OwnerUserId = cuong.Id;
+                    else if (p.PublicCatalogNumber >= 6 && p.PublicCatalogNumber <= 10)
+                        p.OwnerUserId = hien.Id;
+                }
+
+                context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AssignPoiOwners] {ex.Message}");
+            }
+        }
+
         private static string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();

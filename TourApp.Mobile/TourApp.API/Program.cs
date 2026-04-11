@@ -50,6 +50,7 @@ try
     DbSeeder.ApplySchemaPatches(context);
     DbSeeder.EnsurePublicCatalogNumbers(context);
     DbSeeder.Seed(context);
+    DbSeeder.AssignPoiOwnersCuongHien(context);
 }
 catch (Exception ex)
 {
