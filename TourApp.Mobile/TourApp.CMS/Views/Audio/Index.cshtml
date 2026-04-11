@@ -13,6 +13,8 @@
     var currentPage = (int)(ViewBag.CurrentPage ?? 1);
     var totalPages = (int)(ViewBag.TotalPages ?? 1);
     var rowNo = (currentPage - 1) * 10;
+    var cmsRole = Context.Session.GetString("Role") ?? "";
+    var isAudioAdmin = cmsRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="card border-0 mb-4">
@@ -31,9 +33,12 @@
                     <i class="fa-solid fa-arrow-left"></i> Về danh sách POI
                 </a>
             }
+            @if (!isAudioAdmin)
+            {
             <a asp-action="Create" asp-route-poiId="@currentPoiId" class="btn btn-info text-white d-inline-flex align-items-center">
                 <i class="fa-solid fa-cloud-arrow-up me-2"></i> Thêm Audio mới
             </a>
+            }
         </div>
     </div>
     <div class="card-body p-0">
@@ -61,7 +66,7 @@
                             var aNum = catalogMap.TryGetValue(poiGroup.Key, out var cn) ? cn : poiGroup.Key;
                             <tr>
                                 <td class="text-center text-muted">@rowNo</td>
-                                <td><span class="badge bg-secondary">#A@aNum</span></td>
+                                <td><span class="badge bg-secondary">#A@(aNum)</span></td>
                                 <td class="fw-medium">
                                     @(poisDict.ContainsKey(poiGroup.Key) ? poisDict[poiGroup.Key] : $"POI ID: {poiGroup.Key}")
                                 </td>

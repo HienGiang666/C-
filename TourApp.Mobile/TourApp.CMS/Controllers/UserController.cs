@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using TourApp.CMS.Models;
 using TourApp.CMS.Services;
@@ -83,10 +84,28 @@ public class UserController : Controller
             ModelState.AddModelError(nameof(user.Role), "Khách hàng chỉ đăng ký qua app mobile, không tạo từ CMS.");
         }
 
+        if (string.IsNullOrWhiteSpace(user.FullName))
+            ModelState.AddModelError(nameof(user.FullName), "Vui lòng nhập họ và tên.");
         if (string.IsNullOrWhiteSpace(user.Username))
             ModelState.AddModelError(nameof(user.Username), "Vui lòng nhập tên đăng nhập.");
         if (string.IsNullOrWhiteSpace(user.PasswordHash))
             ModelState.AddModelError(nameof(user.PasswordHash), "Vui lòng nhập mật khẩu.");
+        if (string.IsNullOrWhiteSpace(user.Email))
+            ModelState.AddModelError(nameof(user.Email), "Vui lòng nhập email.");
+        else if (!user.Email.Contains('@', StringComparison.Ordinal) || user.Email.Length < 5)
+            ModelState.AddModelError(nameof(user.Email), "Email không hợp lệ.");
+
+        var phone = (user.PhoneNumber ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(phone))
+            ModelState.AddModelError(nameof(user.PhoneNumber), "Vui lòng nhập số điện thoại.");
+        else if (!Regex.IsMatch(phone, @"^\d{10}$"))
+            ModelState.AddModelError(nameof(user.PhoneNumber), "Số điện thoại phải đúng 10 chữ số.");
+
+        if (string.IsNullOrWhiteSpace(user.Address))
+            ModelState.AddModelError(nameof(user.Address), "Vui lòng nhập địa chỉ liên hệ.");
+
+        if (user.DateOfBirth == default || user.DateOfBirth.Year < 1900 || user.DateOfBirth.Date > DateTime.Today)
+            ModelState.AddModelError(nameof(user.DateOfBirth), "Vui lòng chọn ngày sinh hợp lệ.");
 
         if (!ModelState.IsValid)
             return View(user);

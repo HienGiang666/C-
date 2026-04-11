@@ -223,5 +223,19 @@ function pickFemaleVoice(lang) {
 }
 
 synth.onvoiceschanged = () => {};
+
+const poiIdsWithAudio = @Html.Raw(ViewBag.PoiIdsWithAudioJson ?? "[]");
+document.getElementById('audioForm').addEventListener('submit', function (e) {
+    const sel = document.querySelector('select[name="POIId"]');
+    if (!sel) return true;
+    const id = parseInt(sel.value, 10);
+    if (!id || !Array.isArray(poiIdsWithAudio) || poiIdsWithAudio.length === 0) return true;
+    if (!poiIdsWithAudio.includes(id)) return true;
+    if (!confirm('Địa điểm này đã có thuyết minh (nhiều ngôn ngữ). Lưu sẽ ghi đè toàn bộ. Bạn có muốn tiếp tục?')) {
+        e.preventDefault();
+        return false;
+    }
+    return true;
+});
 </script>
 }

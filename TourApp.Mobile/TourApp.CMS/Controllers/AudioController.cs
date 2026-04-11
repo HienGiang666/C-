@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TourApp.CMS.Models;
@@ -165,24 +166,29 @@ public class AudioController : Controller
 
     public async Task<IActionResult> Create(int? poiId)
     {
-        ViewData["Title"] = "Thêm Thuyết minh";
-        var client = _clientFactory.CreateClient("TourApi");
-        var poiResponse = await client.GetAsync("api/POI");
-        
-        var pois = new List<POI>();
-        if (poiResponse.IsSuccessStatusCode)
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
-            pois = await poiResponse.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
+            TempData["error"] = "Chỉ chủ quán ăn được thêm thuyết minh mới.";
+            return RedirectToAction(nameof(Index));
         }
-        
-        ViewBag.PoiList = new SelectList(pois, "Id", "Name", poiId);
-        ViewBag.Languages = await _languageSettingsService.GetAllAsync();
-        return View(new AudioBulkCreateViewModel { POIId = poiId ?? 0 });
+
+        ViewData["Title"] = "Thêm Thuyết minh";
+        var vm = new AudioBulkCreateViewModel { POIId = poiId ?? 0 };
+        await PrepareAudioCreateViewAsync(vm);
+        return View(vm);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(AudioBulkCreateViewModel model)
     {
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["error"] = "Chỉ chủ quán ăn được thêm thuyết minh mới.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (model.POIId <= 0)
         {
             ModelState.AddModelError(nameof(model.POIId), "Vui lòng chọn địa điểm.");
@@ -221,14 +227,41 @@ public class AudioController : Controller
             TempData["error"] = "Lỗi khi lưu dữ liệu thuyết minh!";
         }
 
-        // Reload POI List on failure
-        var poiclient = _clientFactory.CreateClient("TourApi");
-        var poiResponse = await poiclient.GetAsync("api/POI");
-        var pois = poiResponse.IsSuccessStatusCode ? await poiResponse.Content.ReadFromJsonAsync<List<POI>>() : new List<POI>();
-        ViewBag.PoiList = new SelectList(pois, "Id", "Name", model.POIId);
-        ViewBag.Languages = await _languageSettingsService.GetAllAsync();
-
+        await PrepareAudioCreateViewAsync(model);
         return View(model);
+    }
+
+    /// <summary>Chỉ POI của chủ quán; JSON danh sách POI đã có audio (để confirm ghi đè).</summary>
+    private async Task PrepareAudioCreateViewAsync(AudioBulkCreateViewModel model)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        var userIdStr = HttpContext.Session.GetString("UserId");
+        var poiUrl = "api/POI";
+        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) && int.TryParse(userIdStr, out var oid))
+            poiUrl += $"?ownerUserId={oid}";
+
+        var poiResponse = await client.GetAsync(poiUrl);
+        var pois = poiResponse.IsSuccessStatusCode
+            ? await poiResponse.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>()
+            : new List<POI>();
+
+        var allowedIds = pois.Select(p => p.Id).ToHashSet();
+        var audioPoiIds = new HashSet<int>();
+        var audioResp = await client.GetAsync("api/Audio");
+        if (audioResp.IsSuccessStatusCode)
+        {
+            var audios = await audioResp.Content.ReadFromJsonAsync<List<Audio>>() ?? new List<Audio>();
+            foreach (var a in audios)
+            {
+                if (allowedIds.Contains(a.POIId))
+                    audioPoiIds.Add(a.POIId);
+            }
+        }
+
+        ViewBag.PoiList = new SelectList(pois, "Id", "Name", model.POIId > 0 ? model.POIId : null);
+        ViewBag.Languages = await _languageSettingsService.GetAllAsync();
+        ViewBag.PoiIdsWithAudioJson = JsonSerializer.Serialize(audioPoiIds.OrderBy(x => x).ToList());
     }
     
     public async Task<IActionResult> Edit(int id)
