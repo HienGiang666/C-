@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Quản lý Chuyến Đi (Tours)";
+    var stt = 0;
 }
 
 <div class="card border-0 mb-4">
@@ -16,7 +17,8 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Mã</th>
+                        <th class="text-center text-muted" style="width:48px">#</th>
+                        <th>ID</th>
                         <th>Tên Tour</th>
                         <th>Thời lượng</th>
                         <th>Khách tối đa</th>
@@ -30,7 +32,9 @@
                     {
                         foreach (var tour in Model)
                         {
+                            stt++;
                             <tr>
+                                <td class="text-center text-muted align-middle"><small>@stt</small></td>
                                 <td><span class="badge bg-secondary">#@tour.Id</span></td>
                                 <td class="fw-medium">@tour.Name</td>
                                 <td>@tour.Duration ngày</td>
@@ -57,7 +61,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">Không có dữ liệu</td>
+                            <td colspan="8" class="text-center py-4 text-muted">Không có dữ liệu</td>
                         </tr>
                     }
                 </tbody>

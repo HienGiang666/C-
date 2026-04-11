@@ -30,6 +30,42 @@ public class TourController : ControllerBase
         return tour;
     }
 
+    /// <summary>Danh sách điểm ghé theo thứ tự (OrderIndex) — dùng cho mobile/CMS.</summary>
+    [HttpGet("{id}/stops")]
+    public async Task<ActionResult<IEnumerable<TourPOI>>> GetTourStops(int id)
+    {
+        if (!await _context.Tours.AnyAsync(t => t.Id == id))
+            return NotFound();
+        return await _context.TourPOIs
+            .Include(x => x.POI)
+            .Where(x => x.TourId == id)
+            .OrderBy(x => x.OrderIndex)
+            .ToListAsync();
+    }
+
+    /// <summary>Thay toàn bộ điểm dừng của tour theo thứ tự mảng POI Id.</summary>
+    [HttpPut("{id}/stops")]
+    public async Task<IActionResult> ReplaceTourStops(int id, [FromBody] int[]? poiIdsInOrder)
+    {
+        if (!await _context.Tours.AnyAsync(t => t.Id == id))
+            return NotFound();
+        var existing = _context.TourPOIs.Where(x => x.TourId == id);
+        _context.TourPOIs.RemoveRange(existing);
+        if (poiIdsInOrder != null && poiIdsInOrder.Length > 0)
+        {
+            var order = 1;
+            foreach (var poiId in poiIdsInOrder)
+            {
+                if (!await _context.POIs.AnyAsync(p => p.Id == poiId))
+                    continue;
+                _context.TourPOIs.Add(new TourPOI { TourId = id, POIId = poiId, OrderIndex = order++ });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpPost]
     public async Task<ActionResult<Tour>> CreateTour(Tour tour)
     {
@@ -64,6 +100,10 @@ public class TourController : ControllerBase
         var tour = await _context.Tours.FindAsync(id);
         if (tour == null) return NotFound();
 
+        var bookings = _context.Bookings.Where(b => b.TourId == id);
+        _context.Bookings.RemoveRange(bookings);
+        var stops = _context.TourPOIs.Where(x => x.TourId == id);
+        _context.TourPOIs.RemoveRange(stops);
         _context.Tours.Remove(tour);
         await _context.SaveChangesAsync();
         return NoContent();

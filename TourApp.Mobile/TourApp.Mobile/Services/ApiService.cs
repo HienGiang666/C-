@@ -165,7 +165,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public Task<List<POI>> GetAllPOIsAsync() =>
             TryFetch(
-                "/api/poi",
+                "/api/poi?approvedOnly=true",
                 body => JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new(),
                 () => new List<POI>()
             );

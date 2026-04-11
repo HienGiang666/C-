@@ -17,10 +17,25 @@ public class POIController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<POI>>> GetPOIs()
+    public async Task<ActionResult<IEnumerable<POI>>> GetPOIs([FromQuery] int? ownerUserId, [FromQuery] bool approvedOnly = false)
     {
-        return await _context.POIs.Include(p => p.Audios).ToListAsync();
+        var q = _context.POIs.Include(p => p.Audios).AsQueryable();
+        if (approvedOnly)
+            q = q.Where(p => p.ApprovalStatus == "Approved" && p.IsActive);
+        if (ownerUserId.HasValue)
+            q = q.Where(p => p.OwnerUserId == ownerUserId.Value);
+        return await q.OrderBy(p => p.Priority).ToListAsync();
     }
+
+    [HttpGet("pending")]
+    public async Task<ActionResult<IEnumerable<POI>>> GetPendingPOIs()
+    {
+        return await _context.POIs.Include(p => p.Audios)
+            .Where(p => p.ApprovalStatus == "Pending")
+            .OrderByDescending(p => p.Id)
+            .ToListAsync();
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<POI>> GetPOI(int id)
     {
@@ -32,6 +47,28 @@ public class POIController : ControllerBase
         }
 
         return poi;
+    }
+
+    [HttpPost("{id}/approve")]
+    public async Task<IActionResult> ApprovePoi(int id)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+        if (poi == null) return NotFound();
+        poi.ApprovalStatus = "Approved";
+        poi.IsActive = true;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPost("{id}/reject")]
+    public async Task<IActionResult> RejectPoi(int id)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+        if (poi == null) return NotFound();
+        poi.ApprovalStatus = "Rejected";
+        poi.IsActive = false;
+        await _context.SaveChangesAsync();
+        return NoContent();
     }
 
     [HttpPost]
@@ -75,6 +112,15 @@ public class POIController : ControllerBase
         {
             return NotFound("Không tìm thấy địa điểm để xóa!");
         }
+
+        var tourLinks = _context.TourPOIs.Where(t => t.POIId == id);
+        _context.TourPOIs.RemoveRange(tourLinks);
+        var audios = _context.Audios.Where(a => a.POIId == id);
+        _context.Audios.RemoveRange(audios);
+        var favs = _context.FavoritePOIs.Where(f => f.POIId == id);
+        _context.FavoritePOIs.RemoveRange(favs);
+        var narr = _context.NarrationLogs.Where(n => n.POIId == id);
+        _context.NarrationLogs.RemoveRange(narr);
 
         _context.POIs.Remove(poi);
         await _context.SaveChangesAsync();

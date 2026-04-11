@@ -17,6 +17,9 @@ public class SettingsController : Controller
 
     public async Task<IActionResult> Index()
     {
+        if (!IsAdmin())
+            return RedirectToAction("Index", "Home");
+
         ViewData["Title"] = "Cài đặt";
         var vm = new SettingsViewModel
         {
@@ -29,6 +32,9 @@ public class SettingsController : Controller
     [HttpPost]
     public async Task<IActionResult> AddLanguage(SettingsViewModel vm)
     {
+        if (!IsAdmin())
+            return RedirectToAction("Index", "Home");
+
         var ok = await _languageSettingsService.AddCustomLanguageAsync(new LanguageOption
         {
             Code = vm.NewLanguageCode,
@@ -55,6 +61,9 @@ public class SettingsController : Controller
     [HttpPost]
     public async Task<IActionResult> RemoveLanguage(string code)
     {
+        if (!IsAdmin())
+            return RedirectToAction("Index", "Home");
+
         if (_languageSettingsService.IsDefaultLanguage(code))
         {
             TempData["error"] = "Không thể xóa ngôn ngữ mặc định.";
@@ -160,5 +169,10 @@ public class SettingsController : Controller
 
         var words = script.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
         return Math.Max(1, (int)Math.Ceiling(words / 2.5));
+    }
+
+    private bool IsAdmin()
+    {
+        return string.Equals(HttpContext.Session.GetString("Role"), "Admin", StringComparison.OrdinalIgnoreCase);
     }
 }

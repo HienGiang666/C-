@@ -32,12 +32,12 @@ public class AuthController : Controller
                 if (response.IsSuccessStatusCode)
                 {
                     var user = await response.Content.ReadFromJsonAsync<AdminUser>();
-                    if (user != null && user.Role == "Admin")
+                    if (user != null && IsCmsAllowedRole(user.Role))
                     {
                         HttpContext.Session.SetString("UserId", user.Id.ToString());
                         HttpContext.Session.SetString("Username", user.Username);
                         HttpContext.Session.SetString("FullName", user.FullName);
-                        HttpContext.Session.SetString("Role", user.Role);
+                        HttpContext.Session.SetString("Role", NormalizeCmsRole(user.Role));
                         HttpContext.Session.SetString("Email", user.Email);
                         return RedirectToAction("Index", "Home");
                     }
@@ -71,16 +71,16 @@ public class AuthController : Controller
                 var root = doc.RootElement;
                 
                 var role = root.GetProperty("role").GetString() ?? "";
-                if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                if (!IsCmsAllowedRole(role))
                 {
-                    ModelState.AddModelError(string.Empty, "Chỉ dành cho Admin. Bạn không có quyền truy cập!");
+                    ModelState.AddModelError(string.Empty, "Chỉ dành cho Quản trị viên hoặc Chủ quán ăn. Khách hàng không đăng nhập CMS được.");
                     return View(model);
                 }
 
                 HttpContext.Session.SetString("UserId", root.GetProperty("id").GetInt32().ToString());
                 HttpContext.Session.SetString("Username", root.GetProperty("username").GetString() ?? "");
                 HttpContext.Session.SetString("FullName", root.GetProperty("fullName").GetString() ?? "");
-                HttpContext.Session.SetString("Role", role);
+                HttpContext.Session.SetString("Role", NormalizeCmsRole(role));
                 HttpContext.Session.SetString("Email", root.GetProperty("email").GetString() ?? "");
 
                 if (model.RememberMe)
@@ -142,5 +142,27 @@ public class AuthController : Controller
 
         TempData["error"] = "Không thể tải thông tin hồ sơ từ máy chủ.";
         return RedirectToAction("Index", "Home");
+    }
+
+    private static bool IsCmsAllowedRole(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            return false;
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private static string NormalizeCmsRole(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            return "Customer";
+        if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+            return "RestaurantOwner";
+        return role;
     }
 }

@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Dashboard";
+    var cmsRole = Context.Session.GetString("Role") ?? "";
+    var isAdmin = cmsRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }
 
 <!-- Stats Cards Row -->
@@ -26,7 +28,8 @@
             </div>
         </div>
     </div>
-
+    @if (isAdmin)
+    {
     <div class="col-xl-3 col-md-6">
         <div class="card border-0 overflow-hidden h-100">
             <div class="card-body position-relative">
@@ -95,9 +98,12 @@
             </div>
         </div>
     </div>
+    }
 </div>
 
 <!-- Chart Row -->
+@if (isAdmin)
+{
 <div class="row mb-4">
     <div class="col-12">
         <div class="card border-0">
@@ -110,6 +116,7 @@
         </div>
     </div>
 </div>
+}
 
 <!-- Quick Actions -->
 <div class="row g-4 mb-4">
@@ -120,7 +127,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="@(isAdmin ? "col-md-4" : "col-md-6")">
                         <a asp-controller="POI" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start d-flex align-items-center">
                             <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
                                 <i class="fa-solid fa-map-pin text-primary"></i>
@@ -131,6 +138,22 @@
                             </div>
                         </a>
                     </div>
+                    @if (!isAdmin)
+                    {
+                    <div class="col-md-6">
+                        <a asp-controller="Audio" asp-action="Index" class="btn btn-outline-info w-100 py-3 text-start d-flex align-items-center">
+                            <div class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
+                                <i class="fa-solid fa-headphones text-info"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Thuyết minh (Audio)</div>
+                                <small class="text-muted">Quản lý file theo địa điểm</small>
+                            </div>
+                        </a>
+                    </div>
+                    }
+                    @if (isAdmin)
+                    {
                     <div class="col-md-4">
                         <a asp-controller="Tour" asp-action="Create" class="btn btn-outline-success w-100 py-3 text-start d-flex align-items-center">
                             <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
@@ -153,6 +176,7 @@
                             </div>
                         </a>
                     </div>
+                    }
                 </div>
             </div>
         </div>
@@ -191,7 +215,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const ctx = document.getElementById('overviewChart').getContext('2d');
+            const canvas = document.getElementById('overviewChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {

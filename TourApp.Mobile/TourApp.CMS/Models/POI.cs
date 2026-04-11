@@ -16,5 +16,7 @@ namespace TourApp.CMS.Models
         public string OpenTime { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
         public double Rating { get; set; } = 4.5;
+        public string ApprovalStatus { get; set; } = "Approved";
+        public int? OwnerUserId { get; set; }
     }
 }

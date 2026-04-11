@@ -16,7 +16,8 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Mã Đơn</th>
+                        <th class="text-center" style="width:48px">#</th>
+                        <th>ID</th>
                         <th>User ID</th>
                         <th>Tour ID</th>
                         <th>Ngày khởi hành</th>
@@ -29,10 +30,13 @@
                 <tbody>
                     @if (Model != null && Model.Any())
                     {
+                        var stt = 0;
                         foreach (var booking in Model)
                         {
+                            stt++;
                             <tr>
-                                <td><span class="badge bg-dark">#BK-@booking.Id</span><br/><small class="text-muted">@booking.BookingDate.ToString("dd/MM")</small></td>
+                                <td class="text-center text-muted">@stt</td>
+                                <td><span class="badge bg-secondary">#@booking.Id</span><br/><small class="text-muted">@booking.BookingDate.ToString("dd/MM/yyyy")</small></td>
                                 <td><a asp-controller="User" asp-action="Details" asp-route-id="@booking.UserId" class="fw-medium text-decoration-none">USR-@booking.UserId</a></td>
                                 <td><a asp-controller="Tour" asp-action="Edit" asp-route-id="@booking.TourId" class="fw-medium text-decoration-none text-info">TR-@booking.TourId</a></td>
                                 <td><i class="fa-regular fa-calendar text-primary me-1"></i> @booking.TourDate.ToString("dd/MM/yyyy")</td>
@@ -61,7 +65,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fa-solid fa-ticket fs-1 mb-3 bg-light p-4 rounded-circle"></i>
                                 <h5>Chưa có dữ liệu đặt vé</h5>
                             </td>

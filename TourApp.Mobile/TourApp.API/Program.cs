@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using TourApp.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,9 +22,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Cấu hình Database của bạn
+// Cấu hình Database — bỏ qua PendingModelChangesWarning khi model đã có cột (ApplySchemaPatches)
+// nhưng chưa có file migration tương ứng, tránh crash tại Migrate().
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.ConfigureWarnings(w =>
+        w.Ignore(RelationalEventId.PendingModelChangesWarning));
+});
 
 var app = builder.Build();
 
@@ -32,6 +38,16 @@ try
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Migrate] {ex.Message}");
+    }
+
+    DbSeeder.ApplySchemaPatches(context);
     DbSeeder.Seed(context);
 }
 catch (Exception ex)

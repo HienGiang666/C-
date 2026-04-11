@@ -66,6 +66,19 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(User user)
     {
+        if (user.Role.Equals("Customer", StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.AddModelError(nameof(user.Role), "Khách hàng chỉ đăng ký qua app mobile, không tạo từ CMS.");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Username))
+            ModelState.AddModelError(nameof(user.Username), "Vui lòng nhập tên đăng nhập.");
+        if (string.IsNullOrWhiteSpace(user.PasswordHash))
+            ModelState.AddModelError(nameof(user.PasswordHash), "Vui lòng nhập mật khẩu.");
+
+        if (!ModelState.IsValid)
+            return View(user);
+
         try
         {
             var client = _clientFactory.CreateClient("TourApi");
@@ -93,6 +106,8 @@ public class UserController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var user = await response.Content.ReadFromJsonAsync<User>();
+                if (user != null && user.Role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+                    user.Role = "RestaurantOwner";
                 return View(user);
             }
         }
@@ -103,6 +118,9 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(int id, User user)
     {
+        if (user.Role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+            user.Role = "RestaurantOwner";
+
         try
         {
             var client = _clientFactory.CreateClient("TourApi");

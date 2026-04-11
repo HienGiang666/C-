@@ -16,6 +16,7 @@ namespace TourApp.CMS.Services
     {
         void LogActivity(HttpContext context, string action, string entity, string? oldValue = null, string? newValue = null);
         List<ActivityLog> GetLogs(int limit = 100);
+        List<ActivityLog> GetLogsForUser(string username, int limit = 200);
     }
 
     public class ActivityLogger : IActivityLogger
@@ -64,6 +65,16 @@ namespace TourApp.CMS.Services
         public List<ActivityLog> GetLogs(int limit = 100)
         {
             return _logs.Take(limit).ToList();
+        }
+
+        public List<ActivityLog> GetLogsForUser(string username, int limit = 200)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                return new List<ActivityLog>();
+            return _logs
+                .Where(l => l.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
+                .Take(limit)
+                .ToList();
         }
     }
 }

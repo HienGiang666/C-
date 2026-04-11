@@ -21,14 +21,24 @@ public class POIController : Controller
     {
         ViewData["Title"] = "Quản lý Địa điểm";
         var client = _clientFactory.CreateClient("TourApi");
-        var response = await client.GetAsync("api/POI");
+        var url = BuildPoiListUrl();
+        var response = await client.GetAsync(url);
 
         if (response.IsSuccessStatusCode)
         {
             var pois = await response.Content.ReadFromJsonAsync<List<POI>>();
-            return View(pois);
+            return View(pois ?? new List<POI>());
         }
         return View(new List<POI>());
+    }
+
+    private string BuildPoiListUrl()
+    {
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        var userId = HttpContext.Session.GetString("UserId");
+        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) && int.TryParse(userId, out var oid))
+            return $"api/POI?ownerUserId={oid}";
+        return "api/POI";
     }
 
     public IActionResult Create()
@@ -40,10 +50,11 @@ public class POIController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(POI poi, IFormFile? uploadImage)
     {
+        SanitizePoi(poi);
         if (uploadImage != null)
-        {
             poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
-        }
+
+        ApplyOwnershipForSave(poi, isNew: true);
 
         var client = _clientFactory.CreateClient("TourApi");
         var response = await client.PostAsJsonAsync("api/POI", poi);
@@ -51,7 +62,9 @@ public class POIController : Controller
         if (response.IsSuccessStatusCode)
         {
             _activityLogger.LogActivity(HttpContext, "Create", "POI", null, poi.Name);
-            TempData["success"] = "Thêm địa điểm thành công!";
+            TempData["success"] = HttpContext.Session.GetString("Role") == "RestaurantOwner"
+                ? "Đã gửi yêu cầu thêm địa điểm. Chờ Admin phê duyệt."
+                : "Thêm địa điểm thành công!";
             return RedirectToAction(nameof(Index));
         }
         TempData["error"] = "Lỗi khi thêm địa điểm!";
@@ -61,15 +74,18 @@ public class POIController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var client = _clientFactory.CreateClient("TourApi");
-        // Get name before deleting for the log
         var getResponse = await client.GetAsync($"api/POI/{id}");
-        string? name = null;
-        if (getResponse.IsSuccessStatusCode)
+        if (!getResponse.IsSuccessStatusCode)
+            return RedirectToAction(nameof(Index));
+
+        var poi = await getResponse.Content.ReadFromJsonAsync<POI>();
+        if (!CanModifyPoi(poi))
         {
-            var poi = await getResponse.Content.ReadFromJsonAsync<POI>();
-            name = poi?.Name;
+            TempData["error"] = "Bạn không có quyền xóa địa điểm này.";
+            return RedirectToAction(nameof(Index));
         }
 
+        string? name = poi?.Name;
         await client.DeleteAsync($"api/POI/{id}");
         _activityLogger.LogActivity(HttpContext, "Delete", "POI", name, null);
         TempData["success"] = "Xóa địa điểm thành công!";
@@ -82,33 +98,41 @@ public class POIController : Controller
         var client = _clientFactory.CreateClient("TourApi");
         var response = await client.GetAsync($"api/POI/{id}");
 
-        if (response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
+            return RedirectToAction(nameof(Index));
+
+        var poi = await response.Content.ReadFromJsonAsync<POI>();
+        if (!CanModifyPoi(poi))
         {
-            var poi = await response.Content.ReadFromJsonAsync<POI>();
-            return View(poi);
+            TempData["error"] = "Bạn không có quyền sửa địa điểm này.";
+            return RedirectToAction(nameof(Index));
         }
-        return RedirectToAction(nameof(Index));
+
+        return View(poi);
     }
 
     [HttpPost]
     public async Task<IActionResult> Edit(int id, POI poi, IFormFile? uploadImage)
     {
         var client = _clientFactory.CreateClient("TourApi");
-        
-        // Preserve old image url if new image is not uploaded
+        var existingResponse = await client.GetAsync($"api/POI/{id}");
+        if (!existingResponse.IsSuccessStatusCode)
+            return RedirectToAction(nameof(Index));
+        var existing = await existingResponse.Content.ReadFromJsonAsync<POI>();
+        if (!CanModifyPoi(existing))
+        {
+            TempData["error"] = "Bạn không có quyền sửa địa điểm này.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (uploadImage != null)
-        {
             poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
-        }
-        else
-        {
-            var existingResponse = await client.GetAsync($"api/POI/{id}");
-            if (existingResponse.IsSuccessStatusCode)
-            {
-                var existingPoi = await existingResponse.Content.ReadFromJsonAsync<POI>();
-                if (existingPoi != null) poi.ImageUrl = existingPoi.ImageUrl;
-            }
-        }
+        else if (existing != null)
+            poi.ImageUrl = existing.ImageUrl;
+
+        poi.Id = id;
+        SanitizePoi(poi);
+        ApplyOwnershipForSave(poi, isNew: false, existing);
 
         var response = await client.PutAsJsonAsync($"api/POI/{id}", poi);
 
@@ -120,5 +144,53 @@ public class POIController : Controller
         }
         TempData["error"] = "Lỗi khi cập nhật!";
         return View(poi);
+    }
+
+    private bool CanModifyPoi(POI? poi)
+    {
+        if (poi == null) return false;
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (!role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (!int.TryParse(HttpContext.Session.GetString("UserId"), out var uid))
+            return false;
+        return poi.OwnerUserId == uid;
+    }
+
+    private void ApplyOwnershipForSave(POI poi, bool isNew, POI? existing = null)
+    {
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (isNew)
+            {
+                poi.ApprovalStatus = "Approved";
+                poi.OwnerUserId ??= null;
+            }
+            return;
+        }
+
+        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(HttpContext.Session.GetString("UserId"), out var uid))
+        {
+            poi.OwnerUserId = uid;
+            if (isNew)
+                poi.ApprovalStatus = "Pending";
+            else
+            {
+                poi.ApprovalStatus = existing?.ApprovalStatus ?? "Pending";
+                if (existing?.ApprovalStatus == "Approved")
+                    poi.ApprovalStatus = "Pending";
+            }
+        }
+    }
+
+    private static void SanitizePoi(POI poi)
+    {
+        if (poi.Radius < 0) poi.Radius = 0;
+        if (poi.Priority < 0) poi.Priority = 0;
+        if (poi.Rating < 0) poi.Rating = 0;
     }
 }

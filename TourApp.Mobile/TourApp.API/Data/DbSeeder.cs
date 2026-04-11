@@ -7,10 +7,33 @@ namespace TourApp.API.Data
 {
     public static class DbSeeder
     {
+        public static void ApplySchemaPatches(AppDbContext context)
+        {
+            try
+            {
+                if (!context.Database.IsSqlServer())
+                    return;
+
+                context.Database.ExecuteSqlRaw("""
+                    IF COL_LENGTH(OBJECT_ID(N'dbo.POIs', N'U'), N'ApprovalStatus') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.POIs ADD ApprovalStatus nvarchar(40) NOT NULL
+                            CONSTRAINT DF_POIs_ApprovalStatus DEFAULT N'Approved';
+                    END
+                    IF COL_LENGTH(OBJECT_ID(N'dbo.POIs', N'U'), N'OwnerUserId') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.POIs ADD OwnerUserId int NULL;
+                    END
+                    """);
+            }
+            catch
+            {
+                /* bảng chưa tồn tại hoặc DB khác SQL Server */
+            }
+        }
+
         public static void Seed(AppDbContext context)
         {
-            context.Database.EnsureCreated();
-
             // ============================================================
             //  CHỈ SEED KHI TABLE TRỐNG — không xóa data cũ mỗi lần start
             //  Lý do trước đây crash: xóa cả bảng (RemoveRange) khi đang có

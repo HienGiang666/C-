@@ -14,6 +14,11 @@ public class POI
     public string OpenTime { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public double Rating { get; set; } = 4.5;
-    
+
+    /// <summary>Approved | Pending | Rejected — POI mới của chủ quán chờ Admin duyệt.</summary>
+    public string ApprovalStatus { get; set; } = "Approved";
+
+    public int? OwnerUserId { get; set; }
+
     public ICollection<Audio> Audios { get; set; } = new List<Audio>();
 }

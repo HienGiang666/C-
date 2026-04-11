@@ -38,16 +38,26 @@ public class AudioController : Controller
         var response = await client.GetAsync(url);
         if (response.IsSuccessStatusCode)
         {
-            var audios = await response.Content.ReadFromJsonAsync<List<Audio>>();
-            // Lấy thêm danh sách POI để hiển thị tên POI cho đẹp thay vì Id
-            var poiResponse = await client.GetAsync("api/POI");
+            var audios = await response.Content.ReadFromJsonAsync<List<Audio>>() ?? new List<Audio>();
+            var role = HttpContext.Session.GetString("Role") ?? "";
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            string poiUrl = "api/POI";
+            if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) && int.TryParse(userIdStr, out var oid))
+                poiUrl += $"?ownerUserId={oid}";
+
+            var poiResponse = await client.GetAsync(poiUrl);
             if (poiResponse.IsSuccessStatusCode)
             {
-                var pois = await poiResponse.Content.ReadFromJsonAsync<List<POI>>();
-                ViewBag.POIs = pois?.ToDictionary(p => p.Id, p => p.Name);
+                var pois = await poiResponse.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
+                ViewBag.POIs = pois.ToDictionary(p => p.Id, p => p.Name);
+                if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase))
+                {
+                    var allowed = pois.Select(p => p.Id).ToHashSet();
+                    audios = audios.Where(a => allowed.Contains(a.POIId)).ToList();
+                }
             }
 
-            return View(audios ?? new List<Audio>());
+            return View(audios);
         }
         return View(new List<Audio>());
     }

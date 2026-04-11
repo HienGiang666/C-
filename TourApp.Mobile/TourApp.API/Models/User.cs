@@ -10,7 +10,7 @@ namespace TourApp.API.Models
         public string PhoneNumber { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
-        public string Role { get; set; } = "Customer"; // Customer, Admin, Staff
+        public string Role { get; set; } = "Customer"; // Customer, Admin, RestaurantOwner
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]

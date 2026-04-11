@@ -14,6 +14,8 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th class="text-center" style="width:48px">#</th>
+                        <th style="width:88px">ID</th>
                         <th style="width:180px">Thời gian</th>
                         <th>Người thực hiện</th>
                         <th>Hành động</th>
@@ -26,9 +28,13 @@
                 <tbody>
                     @if (Model.Any())
                     {
+                        var stt = 0;
                         @foreach (var log in Model)
                         {
+                            stt++;
                             <tr>
+                                <td class="text-center text-muted">@stt</td>
+                                <td><span class="badge bg-secondary">#@log.Id</span></td>
                                 <td>
                                     <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> @log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</small>
                                 </td>
@@ -92,7 +98,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <div class="mb-3">
                                     <i class="fa-solid fa-ghost fs-1 text-muted"></i>
                                 </div>

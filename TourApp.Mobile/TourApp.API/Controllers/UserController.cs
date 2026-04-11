@@ -59,6 +59,7 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
+        user.Role = NormalizeRole(user.Role);
         // Hash nếu plain text được truyền lên
         if (!string.IsNullOrEmpty(user.PasswordHash) && user.PasswordHash.Length < 60)
             user.PasswordHash = HashPassword(user.PasswordHash);
@@ -71,6 +72,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> UpdateUser(int id, User user)
     {
         if (id != user.Id) return BadRequest();
+        user.Role = NormalizeRole(user.Role);
         _context.Entry(user).State = EntityState.Modified;
         try
         {
@@ -150,6 +152,15 @@ public class UserController : ControllerBase
     {
         using var sha256 = SHA256.Create();
         return Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(password)));
+    }
+
+    private static string NormalizeRole(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            return "Customer";
+        if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+            return "RestaurantOwner";
+        return role;
     }
 }
 

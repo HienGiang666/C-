@@ -9,6 +9,7 @@
         .GroupBy(x => x.POIId)
         .OrderBy(g => g.Key)
         .ToList();
+    var rowNo = 0;
 }
 
 <div class="card border-0 mb-4">
@@ -37,11 +38,12 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th class="text-center" style="width:48px">#</th>
                         <th>ID</th>
                         <th>Địa điểm (POI)</th>
                         @foreach (var lang in languageColumns)
                         {
-                            <th>@lang.Name (@lang.Code)</th>
+                            <th>@lang.Name</th>
                         }
                         <th class="text-end">Thao tác</th>
                     </tr>
@@ -51,8 +53,10 @@
                     {
                         foreach (var poiGroup in grouped)
                         {
+                            rowNo++;
                             var poiAudios = poiGroup.ToList();
                             <tr>
+                                <td class="text-center text-muted">@rowNo</td>
                                 <td><span class="badge bg-secondary">#@poiGroup.Key</span></td>
                                 <td class="fw-medium">
                                     @(poisDict.ContainsKey(poiGroup.Key) ? poisDict[poiGroup.Key] : $"POI ID: {poiGroup.Key}")
@@ -92,7 +96,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="@(3 + languageColumns.Count)" class="text-center py-5 text-muted">
+                            <td colspan="@(4 + languageColumns.Count)" class="text-center py-5 text-muted">
                                 <i class="fa-solid fa-music fs-1 mb-3 text-light"></i><br />
                                 Chưa có dữ liệu thuyết minh
                             </td>

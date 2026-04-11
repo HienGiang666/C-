@@ -15,7 +15,11 @@ public class ActivityController : Controller
     public IActionResult Index()
     {
         ViewData["Title"] = "Lịch sử hoạt động";
-        var logs = _activityLogger.GetLogs(200);
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        var username = HttpContext.Session.GetString("Username") ?? "";
+        var logs = role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase)
+            ? _activityLogger.GetLogsForUser(username, 200)
+            : _activityLogger.GetLogs(200);
         return View(logs);
     }
 }

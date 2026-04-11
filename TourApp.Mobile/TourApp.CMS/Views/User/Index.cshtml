@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Quản lý Người Dùng";
+    var stt = 0;
 }
 
 <div class="card border-0 mb-4">
@@ -12,7 +13,6 @@
         </a>
     </div>
     <div class="card-body p-0">
-        <!-- Search Bar -->
         <div class="p-3 border-bottom bg-light">
             <form method="get" asp-action="Index" class="d-flex">
                 <div class="input-group">
@@ -31,11 +31,12 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th class="text-center text-muted" style="width:48px">#</th>
                         <th>ID</th>
                         <th>Khách hàng</th>
                         <th>Liên hệ</th>
                         <th>Vai trò</th>
-                        <th>Hoạt động</th>
+                        <th>Trạng thái</th>
                         <th class="text-end">Hành động</th>
                     </tr>
                 </thead>
@@ -44,7 +45,9 @@
                     {
                         foreach (var user in Model)
                         {
+                            stt++;
                             <tr>
+                                <td class="text-center text-muted align-middle"><small>@stt</small></td>
                                 <td><span class="badge bg-secondary">#@user.Id</span></td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -60,19 +63,27 @@
                                     <div><i class="fa-solid fa-phone me-1 text-muted"></i> @user.PhoneNumber</div>
                                 </td>
                                 <td>
-                                    @if(user.Role == "Admin") {
-                                        <span class="badge bg-danger">Quản trị viên</span>
-                                    } else if(user.Role == "Staff") {
-                                        <span class="badge bg-info text-dark">Nhân viên</span>
-                                    } else {
+                                    @if (user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="badge bg-danger">Quản trị viên (admin)</span>
+                                    }
+                                    else if (user.Role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) || user.Role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="badge bg-info text-dark">Chủ quán ăn</span>
+                                    }
+                                    else
+                                    {
                                         <span class="badge bg-primary">Khách hàng</span>
                                     }
                                 </td>
                                 <td>
-                                    @if(user.IsActive) {
-                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-check-circle me-1"></i> OK</span>
-                                    } else {
-                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-ban me-1"></i> Khóa</span>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">đã khóa</span>
                                     }
                                 </td>
                                 <td class="text-end">
@@ -82,7 +93,8 @@
                                     <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    @if(user.Role != "Admin") {
+                                    @if (!user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                                    {
                                         <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Chắc chắn xóa user này?');">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
@@ -94,7 +106,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy tài khoản nào.</td>
+                            <td colspan="7" class="text-center py-4 text-muted">Không tìm thấy tài khoản nào.</td>
                         </tr>
                     }
                 </tbody>
