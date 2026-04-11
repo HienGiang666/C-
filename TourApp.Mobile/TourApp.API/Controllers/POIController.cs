@@ -24,7 +24,7 @@ public class POIController : ControllerBase
             q = q.Where(p => p.ApprovalStatus == "Approved" && p.IsActive);
         if (ownerUserId.HasValue)
             q = q.Where(p => p.OwnerUserId == ownerUserId.Value);
-        return await q.OrderBy(p => p.Priority).ToListAsync();
+        return await q.OrderBy(p => p.PublicCatalogNumber).ThenBy(p => p.Id).ToListAsync();
     }
 
     [HttpGet("pending")]
@@ -74,6 +74,12 @@ public class POIController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<POI>> CreatePOI(POI poi)
     {
+        if (poi.PublicCatalogNumber <= 0)
+        {
+            var max = await _context.POIs.MaxAsync(p => (int?)p.PublicCatalogNumber) ?? 0;
+            poi.PublicCatalogNumber = max + 1;
+        }
+
         _context.POIs.Add(poi);
         await _context.SaveChangesAsync();
 
@@ -87,6 +93,10 @@ public class POIController : ControllerBase
         {
             return BadRequest("ID không khớp!");
         }
+
+        var existing = await _context.POIs.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+        if (existing != null)
+            poi.PublicCatalogNumber = existing.PublicCatalogNumber;
 
         _context.Entry(poi).State = EntityState.Modified;
 

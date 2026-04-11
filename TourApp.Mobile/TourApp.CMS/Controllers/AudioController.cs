@@ -21,13 +21,15 @@ public class AudioController : Controller
         _languageSettingsService = languageSettingsService;
     }
 
-    public async Task<IActionResult> Index(int? poiId)
+    public async Task<IActionResult> Index(int? poiId, int page = 1)
     {
+        const int pageSize = 10;
         ViewData["Title"] = "Quản lý Thuyết minh (Audio)";
         var client = _clientFactory.CreateClient("TourApi");
         ViewBag.LanguageColumns = await _languageSettingsService.GetAllAsync();
         ViewBag.POIs = new Dictionary<int, string>();
-        
+        ViewBag.PoiCatalogMap = new Dictionary<int, int>();
+
         string url = "api/Audio";
         if (poiId.HasValue)
         {
@@ -50,6 +52,9 @@ public class AudioController : Controller
             {
                 var pois = await poiResponse.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
                 ViewBag.POIs = pois.ToDictionary(p => p.Id, p => p.Name);
+                ViewBag.PoiCatalogMap = pois.ToDictionary(
+                    p => p.Id,
+                    p => p.PublicCatalogNumber > 0 ? p.PublicCatalogNumber : p.Id);
                 if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase))
                 {
                     var allowed = pois.Select(p => p.Id).ToHashSet();
@@ -57,8 +62,24 @@ public class AudioController : Controller
                 }
             }
 
+            var catalogMap = ViewBag.PoiCatalogMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+            var groupedKeys = audios.GroupBy(a => a.POIId).Select(g => g.Key).OrderBy(pid =>
+                catalogMap.TryGetValue(pid, out var n) ? n : pid).ToList();
+            page = Math.Max(1, page);
+            var totalGroups = groupedKeys.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalGroups / (double)pageSize));
+            if (page > totalPages) page = totalPages;
+            var allowedIds = groupedKeys.Skip((page - 1) * pageSize).Take(pageSize).ToHashSet();
+            audios = audios.Where(a => allowedIds.Contains(a.POIId)).ToList();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalGroupCount = totalGroups;
             return View(audios);
         }
+        ViewBag.CurrentPage = 1;
+        ViewBag.TotalPages = 1;
+        ViewBag.TotalGroupCount = 0;
         return View(new List<Audio>());
     }
 

@@ -8,8 +8,8 @@ namespace TourApp.CMS.Models
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
 
-        [Range(0, double.MaxValue, ErrorMessage = "Gia tour khong duoc am")]
-        public decimal Price { get; set; }
+        [Range(0.0000001, double.MaxValue, ErrorMessage = "Giá vé phải lớn hơn 0")]
+        public double Price { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Thoi luong khong duoc am")]
         public int Duration { get; set; }

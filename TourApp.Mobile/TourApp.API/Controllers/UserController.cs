@@ -45,7 +45,7 @@ public class UserController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users.OrderBy(u => u.PublicCatalogNumber).ThenBy(u => u.Id).ToListAsync();
     }
 
     [HttpGet("{id}")]
@@ -63,6 +63,12 @@ public class UserController : ControllerBase
         // Hash nếu plain text được truyền lên
         if (!string.IsNullOrEmpty(user.PasswordHash) && user.PasswordHash.Length < 60)
             user.PasswordHash = HashPassword(user.PasswordHash);
+        if (user.PublicCatalogNumber <= 0)
+        {
+            var max = await _context.Users.MaxAsync(u => (int?)u.PublicCatalogNumber) ?? 0;
+            user.PublicCatalogNumber = max + 1;
+        }
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
@@ -73,6 +79,9 @@ public class UserController : ControllerBase
     {
         if (id != user.Id) return BadRequest();
         user.Role = NormalizeRole(user.Role);
+        var existing = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+        if (existing != null)
+            user.PublicCatalogNumber = existing.PublicCatalogNumber;
         _context.Entry(user).State = EntityState.Modified;
         try
         {

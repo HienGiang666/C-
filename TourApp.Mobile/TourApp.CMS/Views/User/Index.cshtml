@@ -2,7 +2,9 @@
 
 @{
     ViewData["Title"] = "Quản lý Người Dùng";
-    var stt = 0;
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
+    var stt = (currentPage - 1) * 10;
 }
 
 <div class="card border-0 mb-4">
@@ -48,7 +50,7 @@
                             stt++;
                             <tr>
                                 <td class="text-center text-muted align-middle"><small>@stt</small></td>
-                                <td><span class="badge bg-secondary">#@user.Id</span></td>
+                                <td><span class="badge bg-secondary">#U@(user.PublicCatalogNumber > 0 ? user.PublicCatalogNumber : user.Id)</span></td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <img src="https://ui-avatars.com/api/?name=@user.FullName&background=random" width="35" class="rounded-circle me-3" />
@@ -113,4 +115,13 @@
             </table>
         </div>
     </div>
+    @if (totalPages > 1)
+    {
+        <div class="card-footer bg-white d-flex justify-content-center flex-wrap gap-1">
+            @for (var p = 1; p <= totalPages; p++)
+            {
+                <a class="btn btn-sm @(p == currentPage ? "btn-primary" : "btn-outline-secondary")" asp-action="Index" asp-route-page="@p" asp-route-search="@ViewBag.SearchTerm">@p</a>
+            }
+        </div>
+    }
 </div>

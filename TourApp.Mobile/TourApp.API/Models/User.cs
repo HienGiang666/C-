@@ -13,6 +13,10 @@ namespace TourApp.API.Models
         public string Role { get; set; } = "Customer"; // Customer, Admin, RestaurantOwner
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>Mã hiển thị cố định #U1, #U2...</summary>
+        public int PublicCatalogNumber { get; set; }
+
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public DateTime? LastLoginAt { get; set; }
     }

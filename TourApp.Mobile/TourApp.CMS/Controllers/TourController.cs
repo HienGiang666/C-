@@ -39,15 +39,25 @@ public class TourController : Controller
     {
         ViewData["Title"] = "Thêm Tour mới";
         await LoadPoiSelectListAsync();
-        return View(new TourFormViewModel { Tour = new Tour { IsActive = true } });
+        return View(new TourFormViewModel
+        {
+            Tour = new Tour { IsActive = true, Duration = 1, Destination = string.Empty },
+            RestaurantCount = 1
+        });
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(TourFormViewModel vm)
     {
         await LoadPoiSelectListAsync();
+        vm.Tour.Destination = string.Empty;
         SanitizeTourNumbers(vm.Tour);
         NormalizeStops(vm);
+        if (!ValidateTourCreateForm(vm, out var tourErr))
+        {
+            TempData["error"] = tourErr;
+            return View(vm);
+        }
 
         if (!ModelState.IsValid)
             return View(vm);
@@ -210,7 +220,7 @@ public class TourController : Controller
     private static void SanitizeTourNumbers(Tour tour)
     {
         if (tour.Price < 0) tour.Price = 0;
-        if (tour.Duration < 0) tour.Duration = 0;
+        if (tour.Duration < 1) tour.Duration = 1;
         if (tour.MaxParticipants < 0) tour.MaxParticipants = 0;
     }
 
@@ -222,5 +232,21 @@ public class TourController : Controller
             .ToList();
         if (vm.RestaurantCount > 0 && vm.StopPoiIds.Count > vm.RestaurantCount)
             vm.StopPoiIds = vm.StopPoiIds.Take(vm.RestaurantCount).ToList();
+    }
+
+    private static bool ValidateTourCreateForm(TourFormViewModel vm, out string error)
+    {
+        error = "";
+        var t = vm.Tour;
+        if (string.IsNullOrWhiteSpace(t.Name)) { error = "Tên tour không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(t.Description)) { error = "Mô tả tour không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(t.ImageUrl)) { error = "URL ảnh cover không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(t.SearchKeywords)) { error = "Từ khóa tìm kiếm không được để trống."; return false; }
+        if (t.Price <= 0) { error = "Giá vé phải lớn hơn 0."; return false; }
+        if (t.Duration < 1 || t.Duration > 3) { error = "Thời lượng phải từ 1 đến 3 ngày."; return false; }
+        if (t.MaxParticipants < 1) { error = "Số khách tối đa phải là số nguyên lớn hơn 0."; return false; }
+        if (vm.RestaurantCount < 1) { error = "Số quán / điểm dừng phải lớn hơn 0."; return false; }
+        if (vm.StopPoiIds.Count != vm.RestaurantCount) { error = "Vui lòng chọn đủ địa điểm cho từng điểm dừng."; return false; }
+        return true;
     }
 }

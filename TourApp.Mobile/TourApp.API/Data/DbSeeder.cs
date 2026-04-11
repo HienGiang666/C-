@@ -9,11 +9,11 @@ namespace TourApp.API.Data
     {
         public static void ApplySchemaPatches(AppDbContext context)
         {
+            if (!context.Database.IsSqlServer())
+                return;
+
             try
             {
-                if (!context.Database.IsSqlServer())
-                    return;
-
                 context.Database.ExecuteSqlRaw("""
                     IF COL_LENGTH(OBJECT_ID(N'dbo.POIs', N'U'), N'ApprovalStatus') IS NULL
                     BEGIN
@@ -26,9 +26,64 @@ namespace TourApp.API.Data
                     END
                     """);
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ApplySchemaPatches] POIs (ApprovalStatus/OwnerUserId): {ex.Message}");
+            }
+
+            // Tách từng bảng: một lệnh ALTER lỗi không được chặn cột Users (đăng nhập CMS).
+            TryAddPublicCatalogColumn(context, "Users", "DF_Users_PublicCatalogNumber");
+            TryAddPublicCatalogColumn(context, "POIs", "DF_POIs_PublicCatalogNumber");
+        }
+
+        private static void TryAddPublicCatalogColumn(AppDbContext context, string table, string constraintName)
+        {
+            try
+            {
+                if (!context.Database.IsSqlServer())
+                    return;
+
+                var sql = $"""
+                    IF COL_LENGTH(OBJECT_ID(N'dbo.{table}', N'U'), N'PublicCatalogNumber') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.{table} ADD PublicCatalogNumber int NOT NULL
+                            CONSTRAINT {constraintName} DEFAULT 0;
+                    END
+                    """;
+                context.Database.ExecuteSqlRaw(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ApplySchemaPatches] dbo.{table}.PublicCatalogNumber: {ex.Message}");
+            }
+        }
+
+        /// <summary>Gán PublicCatalogNumber tăng dần cho bản ghi còn 0 (sau khi thêm cột).</summary>
+        public static void EnsurePublicCatalogNumbers(AppDbContext context)
+        {
+            try
+            {
+                var poiZeros = context.POIs.Where(p => p.PublicCatalogNumber == 0).OrderBy(p => p.Id).ToList();
+                if (poiZeros.Count > 0)
+                {
+                    var maxP = context.POIs.Max(p => (int?)p.PublicCatalogNumber) ?? 0;
+                    foreach (var p in poiZeros)
+                        p.PublicCatalogNumber = ++maxP;
+                    context.SaveChanges();
+                }
+
+                var userZeros = context.Users.Where(u => u.PublicCatalogNumber == 0).OrderBy(u => u.Id).ToList();
+                if (userZeros.Count > 0)
+                {
+                    var maxU = context.Users.Max(u => (int?)u.PublicCatalogNumber) ?? 0;
+                    foreach (var u in userZeros)
+                        u.PublicCatalogNumber = ++maxU;
+                    context.SaveChanges();
+                }
+            }
             catch
             {
-                /* bảng chưa tồn tại hoặc DB khác SQL Server */
+                /* ignore */
             }
         }
 
@@ -57,7 +112,8 @@ namespace TourApp.API.Data
                 DateOfBirth = new DateTime(1990, 1, 1),
                 Role = "Admin",
                 IsActive = true,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                PublicCatalogNumber = 1
             };
             var user1 = new User
             {
@@ -70,7 +126,8 @@ namespace TourApp.API.Data
                 DateOfBirth = new DateTime(1995, 6, 15),
                 Role = "Customer",
                 IsActive = true,
-                CreatedAt = DateTime.Now.AddDays(-30)
+                CreatedAt = DateTime.Now.AddDays(-30),
+                PublicCatalogNumber = 2
             };
             var user2 = new User
             {
@@ -83,7 +140,8 @@ namespace TourApp.API.Data
                 DateOfBirth = new DateTime(1998, 3, 20),
                 Role = "Customer",
                 IsActive = true,
-                CreatedAt = DateTime.Now.AddDays(-15)
+                CreatedAt = DateTime.Now.AddDays(-15),
+                PublicCatalogNumber = 3
             };
             context.Users.AddRange(admin, user1, user2);
             context.SaveChanges();
@@ -91,16 +149,16 @@ namespace TourApp.API.Data
             // ============================================================
             //  2. SEED 10 POIs (Quận 4 - Ẩm thực đường phố)
             // ============================================================
-            var poi1  = new POI { Name = "Ốc Oanh",            Description = "Hải sản tươi sống, nêm nếm đậm đà, nổi tiếng nhất con đường Vĩnh Khánh.",  Latitude = 10.759902, Longitude = 106.701834, Address = "534 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 23:00", Priority = 1,  Radius = 80,  Rating = 4.6, IsActive = true };
-            var poi2  = new POI { Name = "Phá Lấu Bò Cô Oanh", Description = "Phá lấu nước cốt dừa thơm lừng, ăn kèm bánh mì nóng giòn.",                Latitude = 10.762145, Longitude = 106.704251, Address = "200/20 Xóm Chiếu, Q4", OpenTime = "14:00 - 22:00", Priority = 2,  Radius = 80,  Rating = 4.7, IsActive = true };
-            var poi3  = new POI { Name = "Mì Ốc Hến Dì Lan",   Description = "Mì ốc hến chua cay siêu ngon, hủ tiếu nước trong veo.",                    Latitude = 10.761011, Longitude = 106.704838, Address = "2/4 Ngô Văn Sở, Q4",   OpenTime = "07:00 - 19:00", Priority = 3,  Radius = 50,  Rating = 4.4, IsActive = true };
-            var poi4  = new POI { Name = "Bánh Xèo Bà Hai",     Description = "Bánh xèo miền Tây vỏ giòn rụm, nhân tôm thịt đầy ắp, chấm nước mắm ngon.",Latitude = 10.760195, Longitude = 106.708298, Address = "119 Tôn Đản, Q4",      OpenTime = "15:00 - 22:00", Priority = 4,  Radius = 100, Rating = 4.5, IsActive = true };
-            var poi5  = new POI { Name = "Súp Cua Hằng",        Description = "Súp cua sánh đặc, trứng bắc thảo, óc heo – món ăn 'biểu tượng' của Q4.", Latitude = 10.762510, Longitude = 106.704880, Address = "C200 Xóm Chiếu, Q4",  OpenTime = "16:00 - 23:00", Priority = 5,  Radius = 80,  Rating = 4.8, IsActive = true };
-            var poi6  = new POI { Name = "Cơm Tấm Bãi Rác",     Description = "Sườn cốt lết to nướng than hoa thơm lừng, ăn với bì chả ngon.",           Latitude = 10.763150, Longitude = 106.704952, Address = "73 Lê Quốc Hưng, Q4",   OpenTime = "17:00 - 03:00", Priority = 6,  Radius = 80,  Rating = 4.2, IsActive = true };
-            var poi7  = new POI { Name = "Xôi Mặn Tôn Đản",     Description = "Xôi đầy ắp patê thịt kho, lạp xưởng Tàu và trứng muối.",                 Latitude = 10.758820, Longitude = 106.709350, Address = "240 Tôn Đản, Q4",      OpenTime = "06:00 - 12:00", Priority = 7,  Radius = 70,  Rating = 4.5, IsActive = true };
-            var poi8  = new POI { Name = "Ốc Vũ",               Description = "Các món ốc xào sate cực ngon, chả ốc nhồi, ốc len xào dừa.",             Latitude = 10.759245, Longitude = 106.701104, Address = "37 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 00:00", Priority = 8,  Radius = 120, Rating = 4.3, IsActive = true };
-            var poi9  = new POI { Name = "Chè Cung Đình Huế",   Description = "Hơn 20 loại chè truyền thống xứ Huế, chè đậu ván bánh lọc thơm.",        Latitude = 10.764510, Longitude = 106.705602, Address = "10 Hoàng Diệu, Q4",    OpenTime = "18:00 - 23:00", Priority = 9,  Radius = 50,  Rating = 4.6, IsActive = true };
-            var poi10 = new POI { Name = "Chợ Xóm Chiếu",       Description = "Thiên đường ẩm thực đường phố giá rẻ, hàng trăm gian hàng buổi tối.",    Latitude = 10.761890, Longitude = 106.704200, Address = "Phường 14, Q4",       OpenTime = "15:00 - 22:00", Priority = 10, Radius = 150, Rating = 4.9, IsActive = true };
+            var poi1  = new POI { Name = "Ốc Oanh",            Description = "Hải sản tươi sống, nêm nếm đậm đà, nổi tiếng nhất con đường Vĩnh Khánh.",  Latitude = 10.759902, Longitude = 106.701834, Address = "534 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 23:00", Priority = 1,  Radius = 80,  Rating = 4.6, IsActive = true, PublicCatalogNumber = 1 };
+            var poi2  = new POI { Name = "Phá Lấu Bò Cô Oanh", Description = "Phá lấu nước cốt dừa thơm lừng, ăn kèm bánh mì nóng giòn.",                Latitude = 10.762145, Longitude = 106.704251, Address = "200/20 Xóm Chiếu, Q4", OpenTime = "14:00 - 22:00", Priority = 2,  Radius = 80,  Rating = 4.7, IsActive = true, PublicCatalogNumber = 2 };
+            var poi3  = new POI { Name = "Mì Ốc Hến Dì Lan",   Description = "Mì ốc hến chua cay siêu ngon, hủ tiếu nước trong veo.",                    Latitude = 10.761011, Longitude = 106.704838, Address = "2/4 Ngô Văn Sở, Q4",   OpenTime = "07:00 - 19:00", Priority = 3,  Radius = 50,  Rating = 4.4, IsActive = true, PublicCatalogNumber = 3 };
+            var poi4  = new POI { Name = "Bánh Xèo Bà Hai",     Description = "Bánh xèo miền Tây vỏ giòn rụm, nhân tôm thịt đầy ắp, chấm nước mắm ngon.",Latitude = 10.760195, Longitude = 106.708298, Address = "119 Tôn Đản, Q4",      OpenTime = "15:00 - 22:00", Priority = 4,  Radius = 100, Rating = 4.5, IsActive = true, PublicCatalogNumber = 4 };
+            var poi5  = new POI { Name = "Súp Cua Hằng",        Description = "Súp cua sánh đặc, trứng bắc thảo, óc heo – món ăn 'biểu tượng' của Q4.", Latitude = 10.762510, Longitude = 106.704880, Address = "C200 Xóm Chiếu, Q4",  OpenTime = "16:00 - 23:00", Priority = 5,  Radius = 80,  Rating = 4.8, IsActive = true, PublicCatalogNumber = 5 };
+            var poi6  = new POI { Name = "Cơm Tấm Bãi Rác",     Description = "Sườn cốt lết to nướng than hoa thơm lừng, ăn với bì chả ngon.",           Latitude = 10.763150, Longitude = 106.704952, Address = "73 Lê Quốc Hưng, Q4",   OpenTime = "17:00 - 03:00", Priority = 6,  Radius = 80,  Rating = 4.2, IsActive = true, PublicCatalogNumber = 6 };
+            var poi7  = new POI { Name = "Xôi Mặn Tôn Đản",     Description = "Xôi đầy ắp patê thịt kho, lạp xưởng Tàu và trứng muối.",                 Latitude = 10.758820, Longitude = 106.709350, Address = "240 Tôn Đản, Q4",      OpenTime = "06:00 - 12:00", Priority = 7,  Radius = 70,  Rating = 4.5, IsActive = true, PublicCatalogNumber = 7 };
+            var poi8  = new POI { Name = "Ốc Vũ",               Description = "Các món ốc xào sate cực ngon, chả ốc nhồi, ốc len xào dừa.",             Latitude = 10.759245, Longitude = 106.701104, Address = "37 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 00:00", Priority = 8,  Radius = 120, Rating = 4.3, IsActive = true, PublicCatalogNumber = 8 };
+            var poi9  = new POI { Name = "Chè Cung Đình Huế",   Description = "Hơn 20 loại chè truyền thống xứ Huế, chè đậu ván bánh lọc thơm.",        Latitude = 10.764510, Longitude = 106.705602, Address = "10 Hoàng Diệu, Q4",    OpenTime = "18:00 - 23:00", Priority = 9,  Radius = 50,  Rating = 4.6, IsActive = true, PublicCatalogNumber = 9 };
+            var poi10 = new POI { Name = "Chợ Xóm Chiếu",       Description = "Thiên đường ẩm thực đường phố giá rẻ, hàng trăm gian hàng buổi tối.",    Latitude = 10.761890, Longitude = 106.704200, Address = "Phường 14, Q4",       OpenTime = "15:00 - 22:00", Priority = 10, Radius = 150, Rating = 4.9, IsActive = true, PublicCatalogNumber = 10 };
             context.POIs.AddRange(poi1, poi2, poi3, poi4, poi5, poi6, poi7, poi8, poi9, poi10);
             context.SaveChanges();
 

@@ -14,21 +14,15 @@
             </div>
             <div class="card-body p-4">
                 <form asp-action="Create" method="post" id="tourForm">
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label asp-for="Tour.Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
-                            <input asp-for="Tour.Name" class="form-control form-control-lg" placeholder="Nhập tên chuyến đi..." required />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Tour.Destination" class="form-label fw-medium">Địa điểm đến</label>
-                            <input asp-for="Tour.Destination" class="form-control form-control-lg" />
-                        </div>
+                    <div class="mb-3">
+                        <label asp-for="Tour.Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
+                        <input asp-for="Tour.Name" class="form-control form-control-lg" placeholder="Nhập tên chuyến đi..." required />
                     </div>
 
                     <div class="border rounded-3 p-3 mb-3 bg-light">
-                        <label asp-for="RestaurantCount" class="form-label fw-medium">Số quán / điểm dừng trong tour</label>
-                        <input asp-for="RestaurantCount" type="number" class="form-control" min="0" max="50" id="restaurantCount" />
-                        <small class="text-muted">Nhập số lượng, hệ thống hiển thị đúng số dropdown để chọn POI theo thứ tự lộ trình (dùng cho mobile).</small>
+                        <label asp-for="RestaurantCount" class="form-label fw-medium">Số quán / điểm dừng trong tour <span class="text-danger">*</span></label>
+                        <input asp-for="RestaurantCount" type="number" class="form-control" min="1" max="50" id="restaurantCount" required />
+                        <small class="text-muted">Nhập số lượng (≥ 1), hệ thống hiển thị đúng số dropdown để chọn POI theo thứ tự lộ trình (dùng cho mobile).</small>
                         <div id="poiPickerContainer" class="mt-3"></div>
                     </div>
 
@@ -36,33 +30,33 @@
                         <div class="col-md-4">
                             <label asp-for="Tour.Price" class="form-label fw-medium">Giá vé (VNĐ) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input asp-for="Tour.Price" type="number" class="form-control" required min="0" step="1" />
+                                <input asp-for="Tour.Price" type="number" class="form-control" required min="0.01" step="0.01" />
                                 <span class="input-group-text">VNĐ</span>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="Tour.Duration" class="form-label fw-medium">Thời lượng (ngày)</label>
-                            <input asp-for="Tour.Duration" type="number" class="form-control" min="0" />
+                            <label asp-for="Tour.Duration" class="form-label fw-medium">Thời lượng (ngày) <span class="text-danger">*</span></label>
+                            <input asp-for="Tour.Duration" type="number" class="form-control" min="1" max="3" required />
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="Tour.MaxParticipants" class="form-label fw-medium">Số khách tối đa</label>
-                            <input asp-for="Tour.MaxParticipants" type="number" class="form-control" min="0" />
+                            <label asp-for="Tour.MaxParticipants" class="form-label fw-medium">Số khách tối đa <span class="text-danger">*</span></label>
+                            <input asp-for="Tour.MaxParticipants" type="number" class="form-control" min="1" step="1" required />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Tour.ImageUrl" class="form-label fw-medium">Đường dẫn Hình ảnh Cover (URL)</label>
-                        <input asp-for="Tour.ImageUrl" class="form-control" placeholder="https://..." />
+                        <label asp-for="Tour.ImageUrl" class="form-label fw-medium">Đường dẫn Hình ảnh Cover (URL) <span class="text-danger">*</span></label>
+                        <input asp-for="Tour.ImageUrl" class="form-control" placeholder="https://..." required />
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Tour.SearchKeywords" class="form-label fw-medium">Từ khóa tìm kiếm</label>
-                        <input asp-for="Tour.SearchKeywords" class="form-control" />
+                        <label asp-for="Tour.SearchKeywords" class="form-label fw-medium">Từ khóa tìm kiếm <span class="text-danger">*</span></label>
+                        <input asp-for="Tour.SearchKeywords" class="form-control" required />
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Tour.Description" class="form-label fw-medium">Mô tả Tour</label>
-                        <textarea asp-for="Tour.Description" class="form-control" rows="5" placeholder="Lịch trình chi tiết..."></textarea>
+                        <label asp-for="Tour.Description" class="form-label fw-medium">Mô tả Tour <span class="text-danger">*</span></label>
+                        <textarea asp-for="Tour.Description" class="form-control" rows="5" placeholder="Lịch trình chi tiết..." required></textarea>
                     </div>
 
                     <div class="form-check form-switch mb-4">
@@ -87,7 +81,8 @@ const pois = @Html.Raw(poisJson);
 const initialStops = @Html.Raw(initialStops);
 
 function buildPickers() {
-    const n = Math.max(0, parseInt(document.getElementById('restaurantCount').value, 10) || 0);
+    const raw = parseInt(document.getElementById('restaurantCount').value, 10);
+    const n = Math.max(1, isNaN(raw) ? 1 : raw);
     const box = document.getElementById('poiPickerContainer');
     box.innerHTML = '';
     for (let i = 0; i < n; i++) {

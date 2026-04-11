@@ -3,13 +3,16 @@
 @{
     ViewData["Title"] = "Quản lý Thuyết minh (Audio)";
     var poisDict = ViewBag.POIs as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var catalogMap = ViewBag.PoiCatalogMap as Dictionary<int, int> ?? new Dictionary<int, int>();
     var currentPoiId = ViewBag.CurrentPoiId as int?;
     var languageColumns = ViewBag.LanguageColumns as List<TourApp.CMS.Models.LanguageOption> ?? new List<TourApp.CMS.Models.LanguageOption>();
     var grouped = (Model ?? Enumerable.Empty<TourApp.CMS.Models.Audio>())
         .GroupBy(x => x.POIId)
-        .OrderBy(g => g.Key)
+        .OrderBy(g => catalogMap.TryGetValue(g.Key, out var n) ? n : g.Key)
         .ToList();
-    var rowNo = 0;
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
+    var rowNo = (currentPage - 1) * 10;
 }
 
 <div class="card border-0 mb-4">
@@ -55,9 +58,10 @@
                         {
                             rowNo++;
                             var poiAudios = poiGroup.ToList();
+                            var aNum = catalogMap.TryGetValue(poiGroup.Key, out var cn) ? cn : poiGroup.Key;
                             <tr>
                                 <td class="text-center text-muted">@rowNo</td>
-                                <td><span class="badge bg-secondary">#@poiGroup.Key</span></td>
+                                <td><span class="badge bg-secondary">#A@aNum</span></td>
                                 <td class="fw-medium">
                                     @(poisDict.ContainsKey(poiGroup.Key) ? poisDict[poiGroup.Key] : $"POI ID: {poiGroup.Key}")
                                 </td>
@@ -71,6 +75,7 @@
                                                     class="btn btn-sm btn-outline-info mb-2"
                                                     data-text="@audio.ScriptText"
                                                     data-locale="@lang.Locale"
+                                                    data-lang-code="@lang.Code"
                                                     onclick="speakScriptFromButton(this)">
                                                 🔊 Nghe thử
                                             </button>
@@ -106,32 +111,61 @@
             </table>
         </div>
     </div>
+    @if (totalPages > 1)
+    {
+        <div class="card-footer bg-white d-flex justify-content-center flex-wrap gap-1">
+            @for (var p = 1; p <= totalPages; p++)
+            {
+                <a class="btn btn-sm @(p == currentPage ? "btn-primary" : "btn-outline-secondary")" asp-action="Index" asp-route-page="@p" asp-route-poiId="@currentPoiId">@p</a>
+            }
+        </div>
+    }
 </div>
 
 @section Scripts {
 <script>
 const synth = window.speechSynthesis;
 
-function pickFemaleVoice(lang) {
+function pickVoiceForLocale(locale, langCode) {
     const voices = synth.getVoices();
     if (!voices || voices.length === 0) return null;
-    const femaleHints = ['female', 'woman', 'zira', 'hanh', 'linh', 'mai', 'nu'];
-    return voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()) && femaleHints.some(k => v.name.toLowerCase().includes(k)))
-        || voices.find(v => v.lang?.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()))
+    const loc = (locale || 'en-US').toLowerCase();
+    const shortLang = (langCode || loc.slice(0, 2)).toLowerCase();
+    const sameLang = voices.filter(v => (v.lang || '').toLowerCase().startsWith(shortLang));
+    if (shortLang === 'vi') {
+        const preferFemale = (v) => {
+            const n = (v.name || '').toLowerCase();
+            return /female|nữ|hoai|my|lan|mai|linh|minh|google.*vi|microsoft.*vi/i.test(n) && !/^microsoft.*nam\b/i.test(n);
+        };
+        return sameLang.find(preferFemale)
+            || sameLang.find(v => !/(male|nam nghiêm|nam minh)\b/i.test(v.name))
+            || sameLang[0]
+            || null;
+    }
+    const femaleHints = ['female', 'woman', 'zira'];
+    return sameLang.find(v => femaleHints.some(k => v.name.toLowerCase().includes(k)))
+        || sameLang[0]
         || null;
 }
 
 function speakScriptFromButton(btn) {
     const text = btn.getAttribute('data-text') || '';
-    const locale = btn.getAttribute('data-locale') || 'en-US';
+    let locale = btn.getAttribute('data-locale') || 'en-US';
+    const langCode = btn.getAttribute('data-lang-code') || '';
     if (!text) return;
+    if (langCode === 'vi') locale = 'vi-VN';
     synth.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = locale;
-    utter.pitch = 1.08;
-    utter.rate = 0.95;
-    utter.voice = pickFemaleVoice(utter.lang);
+    utter.pitch = langCode === 'vi' ? 1.05 : 1.08;
+    utter.rate = langCode === 'vi' ? 0.92 : 0.95;
+    const v = pickVoiceForLocale(locale, langCode);
+    if (v) utter.voice = v;
     synth.speak(utter);
+}
+
+if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = function () { /* warm-up voice list */ speechSynthesis.getVoices(); };
 }
 </script>
 }

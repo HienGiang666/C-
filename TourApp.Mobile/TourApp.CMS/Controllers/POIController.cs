@@ -6,6 +6,7 @@ namespace TourApp.CMS.Controllers;
 
 public class POIController : Controller
 {
+    private const int PageSize = 10;
     private readonly IHttpClientFactory _clientFactory;
     private readonly IActivityLogger _activityLogger;
     private readonly IFileUploadService _fileUploadService;
@@ -17,19 +18,53 @@ public class POIController : Controller
         _fileUploadService = fileUploadService;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int page = 1)
     {
-        ViewData["Title"] = "Quản lý Địa điểm";
+        ViewData["Title"] = "Quản lý địa điểm";
+        page = Math.Max(1, page);
         var client = _clientFactory.CreateClient("TourApi");
         var url = BuildPoiListUrl();
         var response = await client.GetAsync(url);
 
-        if (response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
+            return View(new List<POI>());
+
+        var all = await response.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
+        all = all.OrderBy(p => p.PublicCatalogNumber).ThenBy(p => p.Id).ToList();
+
+        var ownerNames = await LoadOwnerNamesAsync(client);
+
+        var total = all.Count;
+        var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
+        if (page > totalPages)
+            page = totalPages;
+        var slice = all.Skip((page - 1) * PageSize).Take(PageSize).ToList();
+
+        ViewBag.OwnerNames = ownerNames;
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.TotalCount = total;
+        return View(slice);
+    }
+
+    private async Task<Dictionary<int, string>> LoadOwnerNamesAsync(HttpClient client)
+    {
+        var map = new Dictionary<int, string>();
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(HttpContext.Session.GetString("UserId"), out var uid))
         {
-            var pois = await response.Content.ReadFromJsonAsync<List<POI>>();
-            return View(pois ?? new List<POI>());
+            map[uid] = HttpContext.Session.GetString("FullName") ?? "—";
+            return map;
         }
-        return View(new List<POI>());
+
+        var resp = await client.GetAsync("api/user");
+        if (!resp.IsSuccessStatusCode)
+            return map;
+        var users = await resp.Content.ReadFromJsonAsync<List<User>>() ?? new List<User>();
+        foreach (var u in users)
+            map[u.Id] = u.FullName;
+        return map;
     }
 
     private string BuildPoiListUrl()
@@ -43,17 +78,39 @@ public class POIController : Controller
 
     public IActionResult Create()
     {
-        ViewData["Title"] = "Thêm Địa điểm";
-        return View();
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["error"] = "Chỉ chủ quán mới được thêm địa điểm mới. Vui lòng dùng trang Phê duyệt để kích hoạt POI sau khi chủ quán gửi.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        ViewData["Title"] = "Thêm địa điểm";
+        return View(new POI { Radius = 20, Priority = 1, Rating = 4.5, IsActive = true });
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(POI poi, IFormFile? uploadImage)
     {
-        SanitizePoi(poi);
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["error"] = "Chỉ chủ quán mới được thêm địa điểm mới.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!ValidatePoiRequired(poi, uploadImage, isCreate: true, out var err))
+        {
+            TempData["error"] = err;
+            ViewData["Title"] = "Thêm địa điểm";
+            return View(poi);
+        }
+
         if (uploadImage != null)
             poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
 
+        poi.Radius = 20;
+        poi.Priority = 1;
         ApplyOwnershipForSave(poi, isNew: true);
 
         var client = _clientFactory.CreateClient("TourApi");
@@ -62,12 +119,11 @@ public class POIController : Controller
         if (response.IsSuccessStatusCode)
         {
             _activityLogger.LogActivity(HttpContext, "Create", "POI", null, poi.Name);
-            TempData["success"] = HttpContext.Session.GetString("Role") == "RestaurantOwner"
-                ? "Đã gửi yêu cầu thêm địa điểm. Chờ Admin phê duyệt."
-                : "Thêm địa điểm thành công!";
+            TempData["success"] = "Đã gửi yêu cầu thêm địa điểm. Chờ Admin phê duyệt.";
             return RedirectToAction(nameof(Index));
         }
         TempData["error"] = "Lỗi khi thêm địa điểm!";
+        ViewData["Title"] = "Thêm địa điểm";
         return View(poi);
     }
 
@@ -94,7 +150,7 @@ public class POIController : Controller
 
     public async Task<IActionResult> Edit(int id)
     {
-        ViewData["Title"] = "Cập nhật Địa điểm";
+        ViewData["Title"] = "Cập nhật địa điểm";
         var client = _clientFactory.CreateClient("TourApi");
         var response = await client.GetAsync($"api/POI/{id}");
 
@@ -108,6 +164,8 @@ public class POIController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        var isAdmin = (HttpContext.Session.GetString("Role") ?? "").Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        ViewBag.IsAdminPoiEdit = isAdmin;
         return View(poi);
     }
 
@@ -125,14 +183,55 @@ public class POIController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (uploadImage != null)
-            poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
-        else if (existing != null)
-            poi.ImageUrl = existing.ImageUrl;
+        var role = HttpContext.Session.GetString("Role") ?? "";
+        var isAdmin = role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
-        poi.Id = id;
-        SanitizePoi(poi);
-        ApplyOwnershipForSave(poi, isNew: false, existing);
+        if (isAdmin)
+        {
+            if (existing == null)
+                return RedirectToAction(nameof(Index));
+            if (poi.Radius <= 0 || poi.Priority <= 0 || poi.Rating <= 0)
+            {
+                TempData["error"] = "Bán kính, độ ưu tiên và đánh giá phải lớn hơn 0.";
+                ViewBag.IsAdminPoiEdit = true;
+                return View(poi);
+            }
+            poi.Id = id;
+            poi.Name = existing.Name;
+            poi.Address = existing.Address;
+            poi.Latitude = existing.Latitude;
+            poi.Longitude = existing.Longitude;
+            poi.OpenTime = existing.OpenTime;
+            poi.Description = existing.Description;
+            poi.ImageUrl = existing.ImageUrl;
+            poi.OwnerUserId = existing.OwnerUserId;
+            poi.ApprovalStatus = existing.ApprovalStatus;
+            poi.PublicCatalogNumber = existing.PublicCatalogNumber;
+        }
+        else
+        {
+            if (!ValidatePoiRequired(poi, uploadImage, isCreate: false, out var err))
+            {
+                TempData["error"] = err;
+                ViewBag.IsAdminPoiEdit = false;
+                return View(poi);
+            }
+            if (uploadImage != null)
+                poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
+            else if (existing != null)
+                poi.ImageUrl = existing.ImageUrl;
+
+            poi.Id = id;
+            poi.Radius = 20;
+            poi.Priority = 1;
+            if (existing != null)
+            {
+                poi.ApprovalStatus = existing.ApprovalStatus;
+                if (existing.ApprovalStatus == "Approved")
+                    poi.ApprovalStatus = "Pending";
+            }
+            ApplyOwnershipForSave(poi, isNew: false, existing);
+        }
 
         var response = await client.PutAsJsonAsync($"api/POI/{id}", poi);
 
@@ -143,6 +242,7 @@ public class POIController : Controller
             return RedirectToAction(nameof(Index));
         }
         TempData["error"] = "Lỗi khi cập nhật!";
+        ViewBag.IsAdminPoiEdit = isAdmin;
         return View(poi);
     }
 
@@ -162,16 +262,6 @@ public class POIController : Controller
     private void ApplyOwnershipForSave(POI poi, bool isNew, POI? existing = null)
     {
         var role = HttpContext.Session.GetString("Role") ?? "";
-        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
-        {
-            if (isNew)
-            {
-                poi.ApprovalStatus = "Approved";
-                poi.OwnerUserId ??= null;
-            }
-            return;
-        }
-
         if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) &&
             int.TryParse(HttpContext.Session.GetString("UserId"), out var uid))
         {
@@ -187,10 +277,16 @@ public class POIController : Controller
         }
     }
 
-    private static void SanitizePoi(POI poi)
+    private static bool ValidatePoiRequired(POI poi, IFormFile? uploadImage, bool isCreate, out string error)
     {
-        if (poi.Radius < 0) poi.Radius = 0;
-        if (poi.Priority < 0) poi.Priority = 0;
-        if (poi.Rating < 0) poi.Rating = 0;
+        error = "";
+        if (string.IsNullOrWhiteSpace(poi.Name)) { error = "Tên địa điểm không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(poi.Address)) { error = "Địa chỉ không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(poi.OpenTime)) { error = "Giờ mở cửa không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(poi.Description)) { error = "Mô tả không được để trống."; return false; }
+        if (isCreate && (uploadImage == null || uploadImage.Length == 0)) { error = "Vui lòng chọn ảnh đại diện."; return false; }
+        if (poi.Latitude == 0 || poi.Longitude == 0) { error = "Vĩ độ và kinh độ phải khác 0."; return false; }
+        if (poi.Rating <= 0) { error = "Đánh giá phải lớn hơn 0."; return false; }
+        return true;
     }
 }

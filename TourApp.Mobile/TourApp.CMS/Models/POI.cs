@@ -18,5 +18,6 @@ namespace TourApp.CMS.Models
         public double Rating { get; set; } = 4.5;
         public string ApprovalStatus { get; set; } = "Approved";
         public int? OwnerUserId { get; set; }
+        public int PublicCatalogNumber { get; set; }
     }
 }

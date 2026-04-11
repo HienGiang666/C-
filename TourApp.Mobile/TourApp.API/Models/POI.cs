@@ -20,5 +20,8 @@ public class POI
 
     public int? OwnerUserId { get; set; }
 
+    /// <summary>Mã hiển thị cố định #P1, #P2... (không trùng DB Id).</summary>
+    public int PublicCatalogNumber { get; set; }
+
     public ICollection<Audio> Audios { get; set; } = new List<Audio>();
 }

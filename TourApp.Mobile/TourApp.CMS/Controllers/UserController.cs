@@ -15,8 +15,9 @@ public class UserController : Controller
         _activityLogger = activityLogger;
     }
 
-    public async Task<IActionResult> Index(string search = "")
+    public async Task<IActionResult> Index(string search = "", int page = 1)
     {
+        const int pageSize = 10;
         ViewData["Title"] = "Quản lý User";
         try
         {
@@ -25,18 +26,29 @@ public class UserController : Controller
 
             if (response.IsSuccessStatusCode)
             {
-                var users = await response.Content.ReadFromJsonAsync<List<User>>();
+                var users = await response.Content.ReadFromJsonAsync<List<User>>() ?? new List<User>();
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    users = users?.Where(u => u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                              u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList() ?? new List<User>();
+                    users = users.Where(u => u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                              u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
                     ViewBag.SearchTerm = search;
                 }
-                return View(users ?? new List<User>());
+
+                users = users.OrderBy(u => u.PublicCatalogNumber).ThenBy(u => u.Id).ToList();
+                page = Math.Max(1, page);
+                var total = users.Count;
+                var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+                if (page > totalPages) page = totalPages;
+                var slice = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                return View(slice);
             }
         }
         catch { }
+        ViewBag.CurrentPage = 1;
+        ViewBag.TotalPages = 1;
         return View(new List<User>());
     }
 
