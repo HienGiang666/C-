@@ -168,7 +168,7 @@ public class TourController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, TourFormViewModel vm)
+    public async Task<IActionResult> Edit(int id, TourFormViewModel vm, IFormFile? coverImage)
     {
         await LoadPoiSelectListAsync();
         vm.Tour.Id = id;
@@ -180,6 +180,23 @@ public class TourController : Controller
 
         try
         {
+            // Upload ảnh mới nếu có
+            if (coverImage != null && coverImage.Length > 0)
+            {
+                try
+                {
+                    vm.Tour.ImageUrl = await _fileUploadService.UploadImageAsync(coverImage, "tours");
+                }
+                catch (Exception ex)
+                {
+                    TempData["error"] = ex.Message;
+                    return View(vm);
+                }
+            }
+
+            // Tự động tạo search keywords
+            vm.Tour.SearchKeywords = BuildTourSearchKeywords(vm.Tour, vm.StopPoiIds, await FetchPoisForSessionAsync());
+
             var client = _clientFactory.CreateClient("TourApi");
             var response = await client.PutAsJsonAsync($"api/tour/{id}", vm.Tour);
             if (!response.IsSuccessStatusCode)

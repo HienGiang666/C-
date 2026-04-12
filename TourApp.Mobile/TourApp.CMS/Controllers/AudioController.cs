@@ -53,9 +53,9 @@ public class AudioController : Controller
             {
                 var pois = await poiResponse.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
                 ViewBag.POIs = pois.ToDictionary(p => p.Id, p => p.Name);
-                ViewBag.PoiCatalogMap = pois.ToDictionary(
+                ViewBag.PoiCodeMap = pois.ToDictionary(
                     p => p.Id,
-                    p => p.PublicCatalogNumber > 0 ? p.PublicCatalogNumber : p.Id);
+                    p => p.DisplayCode);
                 if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase))
                 {
                     var allowed = pois.Select(p => p.Id).ToHashSet();
@@ -63,9 +63,9 @@ public class AudioController : Controller
                 }
             }
 
-            var catalogMap = ViewBag.PoiCatalogMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+            var codeMap = ViewBag.PoiCodeMap as Dictionary<int, string> ?? new Dictionary<int, string>();
             var groupedKeys = audios.GroupBy(a => a.POIId).Select(g => g.Key).OrderBy(pid =>
-                catalogMap.TryGetValue(pid, out var n) ? n : pid).ToList();
+                codeMap.TryGetValue(pid, out var c) ? c : $"#P{pid}").ToList();
             page = Math.Max(1, page);
             var totalGroups = groupedKeys.Count;
             var totalPages = Math.Max(1, (int)Math.Ceiling(totalGroups / (double)pageSize));

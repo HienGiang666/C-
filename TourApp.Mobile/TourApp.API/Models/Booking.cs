@@ -17,7 +17,7 @@ namespace TourApp.API.Models
         public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled
         public string Notes { get; set; } = string.Empty;
 
-        /// <summary>M� nghi?p v? BK-n (l?u DB; FK TourId/UserId v?n tr? Id n?i b?).</summary>
-        public int PublicCatalogNumber { get; set; }
+        /// <summary>Mã nghiệp vụ BK-1, BK-2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
     }
 }

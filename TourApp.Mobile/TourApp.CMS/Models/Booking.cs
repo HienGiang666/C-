@@ -17,7 +17,10 @@ namespace TourApp.CMS.Models
         public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled
         public string Notes { get; set; } = string.Empty;
 
-        /// <summary>M� BK-n ??ng b? v?i API (c?t PublicCatalogNumber).</summary>
-        public int PublicCatalogNumber { get; set; }
+        /// <summary>Mã nghiệp vụ BK-1, BK-2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
+
+        /// <summary>Mã hiển thị đầy đủ (VD: BK-1).</summary>
+        public string DisplayCode => string.IsNullOrEmpty(Code) ? $"BK-{Id}" : Code;
     }
 }

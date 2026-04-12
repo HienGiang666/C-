@@ -24,7 +24,10 @@ namespace TourApp.CMS.Models
         public bool IsActive { get; set; } = true;
         public string SearchKeywords { get; set; } = string.Empty;
 
-        /// <summary>Mã TR-n đồng bộ với API (cột PublicCatalogNumber).</summary>
-        public int PublicCatalogNumber { get; set; }
+        /// <summary>Mã nghiệp vụ TR-1, TR-2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
+
+        /// <summary>Mã hiển thị đầy đủ (VD: TR-1).</summary>
+        public string DisplayCode => string.IsNullOrEmpty(Code) ? $"TR-{Id}" : Code;
     }
 }

@@ -36,7 +36,7 @@ public class UserController : Controller
                     ViewBag.SearchTerm = search;
                 }
 
-                users = users.OrderBy(u => u.PublicCatalogNumber).ThenBy(u => u.Id).ToList();
+                users = users.OrderBy(u => u.Code).ThenBy(u => u.Id).ToList();
                 page = Math.Max(1, page);
                 var total = users.Count;
                 var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));

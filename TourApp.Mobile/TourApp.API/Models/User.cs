@@ -10,12 +10,12 @@ namespace TourApp.API.Models
         public string PhoneNumber { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
-        public string Role { get; set; } = "Customer"; // Customer, Admin, RestaurantOwner
+        public string? Role { get; set; } = "Customer"; // Customer, Admin, RestaurantOwner
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        /// <summary>Mã hiển thị cố định #U1, #U2...</summary>
-        public int PublicCatalogNumber { get; set; }
+        /// <summary>Mã nghiệp vụ #U1, #U2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
 
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public DateTime? LastLoginAt { get; set; }

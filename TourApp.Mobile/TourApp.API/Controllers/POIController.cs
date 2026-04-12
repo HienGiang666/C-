@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourApp.API.Data;
 using TourApp.API.Models;
+using TourApp.API.Services;
 
 namespace TourApp.API.Controllers;
 
@@ -10,10 +11,12 @@ namespace TourApp.API.Controllers;
 public class POIController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly BusinessKeyService _keyService;
 
-    public POIController(AppDbContext context)
+    public POIController(AppDbContext context, BusinessKeyService keyService)
     {
         _context = context;
+        _keyService = keyService;
     }
 
     [HttpGet]
@@ -24,7 +27,7 @@ public class POIController : ControllerBase
             q = q.Where(p => p.ApprovalStatus == "Approved" && p.IsActive);
         if (ownerUserId.HasValue)
             q = q.Where(p => p.OwnerUserId == ownerUserId.Value);
-        return await q.OrderBy(p => p.PublicCatalogNumber).ThenBy(p => p.Id).ToListAsync();
+        return await q.OrderBy(p => p.Code).ThenBy(p => p.Id).ToListAsync();
     }
 
     [HttpGet("pending")]
@@ -74,10 +77,10 @@ public class POIController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<POI>> CreatePOI(POI poi)
     {
-        if (poi.PublicCatalogNumber <= 0)
+        // Auto-generate Code nếu chưa có
+        if (string.IsNullOrEmpty(poi.Code))
         {
-            var max = await _context.POIs.MaxAsync(p => (int?)p.PublicCatalogNumber) ?? 0;
-            poi.PublicCatalogNumber = max + 1;
+            poi.Code = await _keyService.GeneratePOICodeAsync();
         }
 
         _context.POIs.Add(poi);
@@ -96,7 +99,7 @@ public class POIController : ControllerBase
 
         var existing = await _context.POIs.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
         if (existing != null)
-            poi.PublicCatalogNumber = existing.PublicCatalogNumber;
+            poi.Code = existing.Code; // Giữ nguyên Code cũ
 
         _context.Entry(poi).State = EntityState.Modified;
 

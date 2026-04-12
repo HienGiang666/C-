@@ -45,7 +45,7 @@ public class UserController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
-        return await _context.Users.OrderBy(u => u.PublicCatalogNumber).ThenBy(u => u.Id).ToListAsync();
+        return await _context.Users.OrderBy(u => u.Code).ThenBy(u => u.Id).ToListAsync();
     }
 
     [HttpGet("{id}")]
@@ -63,10 +63,18 @@ public class UserController : ControllerBase
         // Hash nếu plain text được truyền lên
         if (!string.IsNullOrEmpty(user.PasswordHash) && user.PasswordHash.Length < 60)
             user.PasswordHash = HashPassword(user.PasswordHash);
-        if (user.PublicCatalogNumber <= 0)
+        // Auto-generate Code nếu chưa có
+        if (string.IsNullOrEmpty(user.Code))
         {
-            var max = await _context.Users.MaxAsync(u => (int?)u.PublicCatalogNumber) ?? 0;
-            user.PublicCatalogNumber = max + 1;
+            var maxCodeNum = await _context.Users
+                .Select(u => u.Code)
+                .ToListAsync();
+            var nextNum = maxCodeNum
+                .Where(c => !string.IsNullOrEmpty(c) && c.StartsWith("#U"))
+                .Select(c => { int.TryParse(c.Substring(2), out var n); return n; })
+                .DefaultIfEmpty(1000)
+                .Max() + 1;
+            user.Code = $"#U{nextNum}";
         }
 
         _context.Users.Add(user);
@@ -81,7 +89,7 @@ public class UserController : ControllerBase
         user.Role = NormalizeRole(user.Role);
         var existing = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
         if (existing != null)
-            user.PublicCatalogNumber = existing.PublicCatalogNumber;
+            user.Code = existing.Code; // Giữ nguyên Code cũ
         _context.Entry(user).State = EntityState.Modified;
         try
         {

@@ -69,8 +69,19 @@ public class TourController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Tour>> CreateTour(Tour tour)
     {
-        if (tour.PublicCatalogNumber <= 0)
-            tour.PublicCatalogNumber = (await _context.Tours.MaxAsync(t => (int?)t.PublicCatalogNumber) ?? 0) + 1;
+        // Auto-generate Code nếu chưa có
+        if (string.IsNullOrEmpty(tour.Code))
+        {
+            var maxCodeNum = await _context.Tours
+                .Select(t => t.Code)
+                .ToListAsync();
+            var nextNum = maxCodeNum
+                .Where(c => !string.IsNullOrEmpty(c) && c.StartsWith("TR-"))
+                .Select(c => { int.TryParse(c.Substring(3), out var n); return n; })
+                .DefaultIfEmpty(1000)
+                .Max() + 1;
+            tour.Code = $"TR-{nextNum}";
+        }
         _context.Tours.Add(tour);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetTour), new { id = tour.Id }, tour);
@@ -81,8 +92,8 @@ public class TourController : ControllerBase
     {
         if (id != tour.Id) return BadRequest();
         var existing = await _context.Tours.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
-        if (existing != null && tour.PublicCatalogNumber <= 0)
-            tour.PublicCatalogNumber = existing.PublicCatalogNumber;
+        if (existing != null)
+            tour.Code = existing.Code; // Giữ nguyên Code cũ
         _context.Entry(tour).State = EntityState.Modified;
         
         try

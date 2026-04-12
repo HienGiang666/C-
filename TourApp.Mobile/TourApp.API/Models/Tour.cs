@@ -24,7 +24,7 @@ namespace TourApp.API.Models
         public bool IsActive { get; set; } = true;
         public string SearchKeywords { get; set; } = string.Empty;
 
-        /// <summary>Mã nghiệp vụ TR-n (lưu DB, khác Id khi cần; API route vẫn dùng Id).</summary>
-        public int PublicCatalogNumber { get; set; }
+        /// <summary>Mã nghiệp vụ TR-1, TR-2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
     }
 }

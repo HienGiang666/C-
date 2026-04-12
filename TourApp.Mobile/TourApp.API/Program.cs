@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using TourApp.API.Data;
+using TourApp.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,9 @@ builder.Services.AddControllers();
 // Bật tính năng Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Đăng ký BusinessKeyService (Scoped để dùng DbContext)
+builder.Services.AddScoped<BusinessKeyService>();
 
 // Cấu hình Database — bỏ qua PendingModelChangesWarning khi model đã có cột (ApplySchemaPatches)
 // nhưng chưa có file migration tương ứng, tránh crash tại Migrate().
@@ -48,9 +52,9 @@ try
     }
 
     DbSeeder.ApplySchemaPatches(context);
-    DbSeeder.EnsurePublicCatalogNumbers(context);
+    DbSeeder.EnsureBusinessKeyCodes(context);
     DbSeeder.Seed(context);
-    DbSeeder.EnsurePublicCatalogNumbers(context); // tour/booking seed có PublicCatalogNumber = 0 → gán TR-/BK-
+    DbSeeder.EnsureBusinessKeyCodes(context); // tour/booking seed có Code = null → gán TR-/BK-
     DbSeeder.AssignPoiOwnersCuongHien(context);
 }
 catch (Exception ex)

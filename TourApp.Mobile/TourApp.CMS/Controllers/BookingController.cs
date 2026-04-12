@@ -16,9 +16,9 @@ public class BookingController : Controller
         _activityLogger = activityLogger;
     }
 
-    private static async Task<Dictionary<int, int>> LoadUserDisplayMapAsync(HttpClient client)
+    private static async Task<Dictionary<int, string>> LoadUserCodeMapAsync(HttpClient client)
     {
-        var map = new Dictionary<int, int>();
+        var map = new Dictionary<int, string>();
         try
         {
             var response = await client.GetAsync("api/user");
@@ -28,7 +28,7 @@ public class BookingController : Controller
             if (users == null)
                 return map;
             foreach (var u in users)
-                map[u.Id] = DisplayIdHelper.UserCatalogNumber(u);
+                map[u.Id] = u.DisplayCode;
         }
         catch { }
         return map;
@@ -45,19 +45,19 @@ public class BookingController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var bookings = await response.Content.ReadFromJsonAsync<List<Booking>>();
-                ViewBag.UserDisplayByUserId = await LoadUserDisplayMapAsync(client);
+                ViewBag.UserCodeByUserId = await LoadUserCodeMapAsync(client);
                 var toursResp = await client.GetAsync("api/tour");
                 var tours = toursResp.IsSuccessStatusCode
                     ? await toursResp.Content.ReadFromJsonAsync<List<Tour>>()
                     : null;
-                ViewBag.TourCatalogByTourId = (tours ?? new List<Tour>())
-                    .ToDictionary(t => t.Id, t => t.PublicCatalogNumber > 0 ? t.PublicCatalogNumber : t.Id);
+                ViewBag.TourCodeByTourId = (tours ?? new List<Tour>())
+                    .ToDictionary(t => t.Id, t => t.DisplayCode);
                 return View(bookings ?? new List<Booking>());
             }
         }
         catch { }
-        ViewBag.UserDisplayByUserId = new Dictionary<int, int>();
-        ViewBag.TourCatalogByTourId = new Dictionary<int, int>();
+        ViewBag.UserCodeByUserId = new Dictionary<int, string>();
+        ViewBag.TourCodeByTourId = new Dictionary<int, string>();
         return View(new List<Booking>());
     }
 
@@ -87,7 +87,7 @@ public class BookingController : Controller
                 {
                     var tr = await tourResp.Content.ReadFromJsonAsync<Tour>();
                     if (tr != null)
-                        ViewBag.TourCatalogNumber = tr.PublicCatalogNumber > 0 ? tr.PublicCatalogNumber : tr.Id;
+                        ViewBag.TourCode = tr.DisplayCode;
                 }
 
                 return View(booking);

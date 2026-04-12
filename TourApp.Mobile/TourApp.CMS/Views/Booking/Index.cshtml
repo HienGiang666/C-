@@ -3,10 +3,11 @@
 
 @{
     ViewData["Title"] = "Quản lý Đặt vé (Booking)";
-    var userMap = ViewBag.UserDisplayByUserId as Dictionary<int, int> ?? new Dictionary<int, int>();
-    var tourCat = ViewBag.TourCatalogByTourId as Dictionary<int, int> ?? new Dictionary<int, int>();
-    int UserDisp(int uid) => userMap.TryGetValue(uid, out var n) ? n : uid;
-    int TourDisp(int tourId) => tourCat.TryGetValue(tourId, out var n) ? n : tourId;
+    // Map từ UserId -> User.Code, TourId -> Tour.Code
+    var userCodeMap = ViewBag.UserCodeByUserId as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var tourCodeMap = ViewBag.TourCodeByTourId as Dictionary<int, string> ?? new Dictionary<int, string>();
+    string UserDisp(int uid) => userCodeMap.TryGetValue(uid, out var c) ? c : $"#U{uid}";
+    string TourDisp(int tourId) => tourCodeMap.TryGetValue(tourId, out var c) ? c : $"TR-{tourId}";
 }
 
 <div class="card border-0 mb-4">
@@ -41,14 +42,14 @@
                             stt++;
                             <tr>
                                 <td class="text-center text-muted">@stt</td>
-                                <td><span class="badge bg-secondary">@DisplayIdHelper.BookingRef(DisplayIdHelper.BookingCatalogNumber(booking))</span><br/><small class="text-muted">@booking.BookingDate.ToString("dd/MM/yyyy")</small></td>
+                                <td><span class="badge bg-secondary">@booking.DisplayCode</span><br/><small class="text-muted">@booking.BookingDate.ToString("dd/MM/yyyy")</small></td>
                                 <td>
                                     <a asp-controller="User" asp-action="Details" asp-route-id="@booking.UserId" class="text-decoration-none">
-                                        <span class="badge bg-secondary">@DisplayIdHelper.UserBadgeFromNumber(UserDisp(booking.UserId))</span>
+                                        <span class="badge bg-secondary">@UserDisp(booking.UserId)</span>
                                     </a>
                                 </td>
                                 <td>
-                                    <a asp-controller="Tour" asp-action="Edit" asp-route-id="@booking.TourId" class="fw-medium text-decoration-none text-info">@DisplayIdHelper.TourRef(TourDisp(booking.TourId))</a>
+                                    <a asp-controller="Tour" asp-action="Edit" asp-route-id="@booking.TourId" class="fw-medium text-decoration-none text-info">@TourDisp(booking.TourId)</a>
                                 </td>
                                 <td><i class="fa-regular fa-calendar text-primary me-1"></i> @booking.TourDate.ToString("dd/MM/yyyy")</td>
                                 <td><i class="fa-solid fa-users text-secondary me-1"></i> @booking.NumberOfParticipants</td>

@@ -18,6 +18,11 @@ namespace TourApp.CMS.Models
         public double Rating { get; set; } = 4.5;
         public string ApprovalStatus { get; set; } = "Approved";
         public int? OwnerUserId { get; set; }
-        public int PublicCatalogNumber { get; set; }
+
+        /// <summary>Mã nghiệp vụ #P1, #P2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
+
+        /// <summary>Mã hiển thị đầy đủ (VD: #P1).</summary>
+        public string DisplayCode => string.IsNullOrEmpty(Code) ? $"#P{Id}" : Code;
     }
 }

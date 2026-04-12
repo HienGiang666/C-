@@ -32,13 +32,13 @@ namespace TourApp.API.Data
             }
 
             // Tách từng bảng: một lệnh ALTER lỗi không được chặn cột Users (đăng nhập CMS).
-            TryAddPublicCatalogColumn(context, "Users", "DF_Users_PublicCatalogNumber");
-            TryAddPublicCatalogColumn(context, "POIs", "DF_POIs_PublicCatalogNumber");
-            TryAddPublicCatalogColumn(context, "Tours", "DF_Tours_PublicCatalogNumber");
-            TryAddPublicCatalogColumn(context, "Bookings", "DF_Bookings_PublicCatalogNumber");
+            TryAddCodeColumn(context, "Users");
+            TryAddCodeColumn(context, "POIs");
+            TryAddCodeColumn(context, "Tours");
+            TryAddCodeColumn(context, "Bookings");
         }
 
-        private static void TryAddPublicCatalogColumn(AppDbContext context, string table, string constraintName)
+        private static void TryAddCodeColumn(AppDbContext context, string table)
         {
             try
             {
@@ -46,63 +46,63 @@ namespace TourApp.API.Data
                     return;
 
                 var sql = $"""
-                    IF COL_LENGTH(OBJECT_ID(N'dbo.{table}', N'U'), N'PublicCatalogNumber') IS NULL
+                    IF COL_LENGTH(OBJECT_ID(N'dbo.{table}', N'U'), N'Code') IS NULL
                     BEGIN
-                        ALTER TABLE dbo.{table} ADD PublicCatalogNumber int NOT NULL
-                            CONSTRAINT {constraintName} DEFAULT 0;
+                        ALTER TABLE dbo.{table} ADD Code nvarchar(20) NULL;
                     END
                     """;
                 context.Database.ExecuteSqlRaw(sql);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ApplySchemaPatches] dbo.{table}.PublicCatalogNumber: {ex.Message}");
+                Console.WriteLine($"[ApplySchemaPatches] dbo.{table}.Code: {ex.Message}");
             }
         }
 
-        /// <summary>Gán PublicCatalogNumber tăng dần cho bản ghi còn 0 (sau khi thêm cột).</summary>
-        public static void EnsurePublicCatalogNumbers(AppDbContext context)
+        /// <summary>Gán Code mặc định cho bản ghi còn NULL (sau khi thêm cột).</summary>
+        public static void EnsureBusinessKeyCodes(AppDbContext context)
         {
             try
             {
-                var poiZeros = context.POIs.Where(p => p.PublicCatalogNumber == 0).OrderBy(p => p.Id).ToList();
-                if (poiZeros.Count > 0)
+                // POIs: #P{Id}
+                var poiNulls = context.POIs.Where(p => string.IsNullOrEmpty(p.Code)).OrderBy(p => p.Id).ToList();
+                if (poiNulls.Count > 0)
                 {
-                    var maxP = context.POIs.Max(p => (int?)p.PublicCatalogNumber) ?? 0;
-                    foreach (var p in poiZeros)
-                        p.PublicCatalogNumber = ++maxP;
+                    foreach (var p in poiNulls)
+                        p.Code = $"#P{p.Id}";
                     context.SaveChanges();
                 }
 
-                var userZeros = context.Users.Where(u => u.PublicCatalogNumber == 0).OrderBy(u => u.Id).ToList();
-                if (userZeros.Count > 0)
+                // Users: #U{Id}
+                var userNulls = context.Users.Where(u => string.IsNullOrEmpty(u.Code)).OrderBy(u => u.Id).ToList();
+                if (userNulls.Count > 0)
                 {
-                    var maxU = context.Users.Max(u => (int?)u.PublicCatalogNumber) ?? 0;
-                    foreach (var u in userZeros)
-                        u.PublicCatalogNumber = ++maxU;
+                    foreach (var u in userNulls)
+                        u.Code = $"#U{u.Id}";
                     context.SaveChanges();
                 }
 
-                // Tours / Bookings: mã TR-n / BK-n lưu trong DB — gán = Id nếu còn 0 (đồng bộ với cách hiển thị cũ).
-                var tourZeros = context.Tours.Where(t => t.PublicCatalogNumber == 0).OrderBy(t => t.Id).ToList();
-                if (tourZeros.Count > 0)
+                // Tours: TR-{Id}
+                var tourNulls = context.Tours.Where(t => string.IsNullOrEmpty(t.Code)).OrderBy(t => t.Id).ToList();
+                if (tourNulls.Count > 0)
                 {
-                    foreach (var t in tourZeros)
-                        t.PublicCatalogNumber = t.Id;
+                    foreach (var t in tourNulls)
+                        t.Code = $"TR-{t.Id}";
                     context.SaveChanges();
                 }
 
-                var bookingZeros = context.Bookings.Where(b => b.PublicCatalogNumber == 0).OrderBy(b => b.Id).ToList();
-                if (bookingZeros.Count > 0)
+                // Bookings: BK-{Id}
+                var bookingNulls = context.Bookings.Where(b => string.IsNullOrEmpty(b.Code)).OrderBy(b => b.Id).ToList();
+                if (bookingNulls.Count > 0)
                 {
-                    foreach (var b in bookingZeros)
-                        b.PublicCatalogNumber = b.Id;
+                    foreach (var b in bookingNulls)
+                        b.Code = $"BK-{b.Id}";
                     context.SaveChanges();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                /* ignore */
+                Console.WriteLine($"[EnsureBusinessKeyCodes] {ex.Message}");
             }
         }
 
@@ -132,7 +132,7 @@ namespace TourApp.API.Data
                 Role = "Admin",
                 IsActive = true,
                 CreatedAt = DateTime.Now,
-                PublicCatalogNumber = 1
+                Code = "#U1001"
             };
             var user1 = new User
             {
@@ -146,7 +146,7 @@ namespace TourApp.API.Data
                 Role = "Customer",
                 IsActive = true,
                 CreatedAt = DateTime.Now.AddDays(-30),
-                PublicCatalogNumber = 2
+                Code = "#U1002"
             };
             var user2 = new User
             {
@@ -160,7 +160,7 @@ namespace TourApp.API.Data
                 Role = "Customer",
                 IsActive = true,
                 CreatedAt = DateTime.Now.AddDays(-15),
-                PublicCatalogNumber = 3
+                Code = "#U1003"
             };
             context.Users.AddRange(admin, user1, user2);
             context.SaveChanges();
@@ -168,16 +168,16 @@ namespace TourApp.API.Data
             // ============================================================
             //  2. SEED 10 POIs (Quận 4 - Ẩm thực đường phố)
             // ============================================================
-            var poi1  = new POI { Name = "Ốc Oanh",            Description = "Hải sản tươi sống, nêm nếm đậm đà, nổi tiếng nhất con đường Vĩnh Khánh.",  Latitude = 10.759902, Longitude = 106.701834, Address = "534 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 23:00", Priority = 1,  Radius = 80,  Rating = 4.6, IsActive = true, PublicCatalogNumber = 1 };
-            var poi2  = new POI { Name = "Phá Lấu Bò Cô Oanh", Description = "Phá lấu nước cốt dừa thơm lừng, ăn kèm bánh mì nóng giòn.",                Latitude = 10.762145, Longitude = 106.704251, Address = "200/20 Xóm Chiếu, Q4", OpenTime = "14:00 - 22:00", Priority = 2,  Radius = 80,  Rating = 4.7, IsActive = true, PublicCatalogNumber = 2 };
-            var poi3  = new POI { Name = "Mì Ốc Hến Dì Lan",   Description = "Mì ốc hến chua cay siêu ngon, hủ tiếu nước trong veo.",                    Latitude = 10.761011, Longitude = 106.704838, Address = "2/4 Ngô Văn Sở, Q4",   OpenTime = "07:00 - 19:00", Priority = 3,  Radius = 50,  Rating = 4.4, IsActive = true, PublicCatalogNumber = 3 };
-            var poi4  = new POI { Name = "Bánh Xèo Bà Hai",     Description = "Bánh xèo miền Tây vỏ giòn rụm, nhân tôm thịt đầy ắp, chấm nước mắm ngon.",Latitude = 10.760195, Longitude = 106.708298, Address = "119 Tôn Đản, Q4",      OpenTime = "15:00 - 22:00", Priority = 4,  Radius = 100, Rating = 4.5, IsActive = true, PublicCatalogNumber = 4 };
-            var poi5  = new POI { Name = "Súp Cua Hằng",        Description = "Súp cua sánh đặc, trứng bắc thảo, óc heo – món ăn 'biểu tượng' của Q4.", Latitude = 10.762510, Longitude = 106.704880, Address = "C200 Xóm Chiếu, Q4",  OpenTime = "16:00 - 23:00", Priority = 5,  Radius = 80,  Rating = 4.8, IsActive = true, PublicCatalogNumber = 5 };
-            var poi6  = new POI { Name = "Cơm Tấm Bãi Rác",     Description = "Sườn cốt lết to nướng than hoa thơm lừng, ăn với bì chả ngon.",           Latitude = 10.763150, Longitude = 106.704952, Address = "73 Lê Quốc Hưng, Q4",   OpenTime = "17:00 - 03:00", Priority = 6,  Radius = 80,  Rating = 4.2, IsActive = true, PublicCatalogNumber = 6 };
-            var poi7  = new POI { Name = "Xôi Mặn Tôn Đản",     Description = "Xôi đầy ắp patê thịt kho, lạp xưởng Tàu và trứng muối.",                 Latitude = 10.758820, Longitude = 106.709350, Address = "240 Tôn Đản, Q4",      OpenTime = "06:00 - 12:00", Priority = 7,  Radius = 70,  Rating = 4.5, IsActive = true, PublicCatalogNumber = 7 };
-            var poi8  = new POI { Name = "Ốc Vũ",               Description = "Các món ốc xào sate cực ngon, chả ốc nhồi, ốc len xào dừa.",             Latitude = 10.759245, Longitude = 106.701104, Address = "37 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 00:00", Priority = 8,  Radius = 120, Rating = 4.3, IsActive = true, PublicCatalogNumber = 8 };
-            var poi9  = new POI { Name = "Chè Cung Đình Huế",   Description = "Hơn 20 loại chè truyền thống xứ Huế, chè đậu ván bánh lọc thơm.",        Latitude = 10.764510, Longitude = 106.705602, Address = "10 Hoàng Diệu, Q4",    OpenTime = "18:00 - 23:00", Priority = 9,  Radius = 50,  Rating = 4.6, IsActive = true, PublicCatalogNumber = 9 };
-            var poi10 = new POI { Name = "Chợ Xóm Chiếu",       Description = "Thiên đường ẩm thực đường phố giá rẻ, hàng trăm gian hàng buổi tối.",    Latitude = 10.761890, Longitude = 106.704200, Address = "Phường 14, Q4",       OpenTime = "15:00 - 22:00", Priority = 10, Radius = 150, Rating = 4.9, IsActive = true, PublicCatalogNumber = 10 };
+            var poi1  = new POI { Name = "Ốc Oanh",            Description = "Hải sản tươi sống, nêm nếm đậm đà, nổi tiếng nhất con đường Vĩnh Khánh.",  Latitude = 10.759902, Longitude = 106.701834, Address = "534 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 23:00", Priority = 1,  Radius = 80,  Rating = 4.6, IsActive = true, Code = "#P1001" };
+            var poi2  = new POI { Name = "Phá Lấu Bò Cô Oanh", Description = "Phá lấu nước cốt dừa thơm lừng, ăn kèm bánh mì nóng giòn.",                Latitude = 10.762145, Longitude = 106.704251, Address = "200/20 Xóm Chiếu, Q4", OpenTime = "14:00 - 22:00", Priority = 2,  Radius = 80,  Rating = 4.7, IsActive = true, Code = "#P1002" };
+            var poi3  = new POI { Name = "Mì Ốc Hến Dì Lan",   Description = "Mì ốc hến chua cay siêu ngon, hủ tiếu nước trong veo.",                    Latitude = 10.761011, Longitude = 106.704838, Address = "2/4 Ngô Văn Sở, Q4",   OpenTime = "07:00 - 19:00", Priority = 3,  Radius = 50,  Rating = 4.4, IsActive = true, Code = "#P1003" };
+            var poi4  = new POI { Name = "Bánh Xèo Bà Hai",     Description = "Bánh xèo miền Tây vỏ giòn rụm, nhân tôm thịt đầy ắp, chấm nước mắm ngon.",Latitude = 10.760195, Longitude = 106.708298, Address = "119 Tôn Đản, Q4",      OpenTime = "15:00 - 22:00", Priority = 4,  Radius = 100, Rating = 4.5, IsActive = true, Code = "#P1004" };
+            var poi5  = new POI { Name = "Súp Cua Hằng",        Description = "Súp cua sánh đặc, trứng bắc thảo, óc heo – món ăn 'biểu tượng' của Q4.", Latitude = 10.762510, Longitude = 106.704880, Address = "C200 Xóm Chiếu, Q4",  OpenTime = "16:00 - 23:00", Priority = 5,  Radius = 80,  Rating = 4.8, IsActive = true, Code = "#P1005" };
+            var poi6  = new POI { Name = "Cơm Tấm Bãi Rác",     Description = "Sườn cốt lết to nướng than hoa thơm lừng, ăn với bì chả ngon.",           Latitude = 10.763150, Longitude = 106.704952, Address = "73 Lê Quốc Hưng, Q4",   OpenTime = "17:00 - 03:00", Priority = 6,  Radius = 80,  Rating = 4.2, IsActive = true, Code = "#P1006" };
+            var poi7  = new POI { Name = "Xôi Mặn Tôn Đản",     Description = "Xôi đầy ắp patê thịt kho, lạp xưởng Tàu và trứng muối.",                 Latitude = 10.758820, Longitude = 106.709350, Address = "240 Tôn Đản, Q4",      OpenTime = "06:00 - 12:00", Priority = 7,  Radius = 70,  Rating = 4.5, IsActive = true, Code = "#P1007" };
+            var poi8  = new POI { Name = "Ốc Vũ",               Description = "Các món ốc xào sate cực ngon, chả ốc nhồi, ốc len xào dừa.",             Latitude = 10.759245, Longitude = 106.701104, Address = "37 Vĩnh Khánh, Q4",    OpenTime = "15:00 - 00:00", Priority = 8,  Radius = 120, Rating = 4.3, IsActive = true, Code = "#P1008" };
+            var poi9  = new POI { Name = "Chè Cung Đình Huế",   Description = "Hơn 20 loại chè truyền thống xứ Huế, chè đậu ván bánh lọc thơm.",        Latitude = 10.764510, Longitude = 106.705602, Address = "10 Hoàng Diệu, Q4",    OpenTime = "18:00 - 23:00", Priority = 9,  Radius = 50,  Rating = 4.6, IsActive = true, Code = "#P1009" };
+            var poi10 = new POI { Name = "Chợ Xóm Chiếu",       Description = "Thiên đường ẩm thực đường phố giá rẻ, hàng trăm gian hàng buổi tối.",    Latitude = 10.761890, Longitude = 106.704200, Address = "Phường 14, Q4",       OpenTime = "15:00 - 22:00", Priority = 10, Radius = 150, Rating = 4.9, IsActive = true, Code = "#P1010" };
             context.POIs.AddRange(poi1, poi2, poi3, poi4, poi5, poi6, poi7, poi8, poi9, poi10);
             context.SaveChanges();
 
@@ -194,7 +194,8 @@ namespace TourApp.API.Data
                 MaxParticipants = 20,
                 SearchKeywords = "ốc vĩnh khánh hải sản quận 4 đêm",
                 IsActive = true,
-                CreatedAt = DateTime.Now.AddDays(-10)
+                CreatedAt = DateTime.Now.AddDays(-10),
+                Code = "TR-1001"
             };
             var tour2 = new Tour
             {
@@ -206,7 +207,8 @@ namespace TourApp.API.Data
                 MaxParticipants = 15,
                 SearchKeywords = "bữa sáng sáng sớm xôi mì hủ tiếu quận 4",
                 IsActive = true,
-                CreatedAt = DateTime.Now.AddDays(-7)
+                CreatedAt = DateTime.Now.AddDays(-7),
+                Code = "TR-1002"
             };
             var tour3 = new Tour
             {
@@ -218,7 +220,8 @@ namespace TourApp.API.Data
                 MaxParticipants = 25,
                 SearchKeywords = "xóm chiếu chợ đêm phá lấu súp cua bánh xèo chè",
                 IsActive = true,
-                CreatedAt = DateTime.Now.AddDays(-5)
+                CreatedAt = DateTime.Now.AddDays(-5),
+                Code = "TR-1003"
             };
             context.Tours.AddRange(tour1, tour2, tour3);
             context.SaveChanges();
@@ -302,13 +305,17 @@ namespace TourApp.API.Data
                 if (!context.POIs.Any() || !context.Users.Any())
                     return;
 
-                var ownerUsers = context.Users
-                    .Where(u => new[] { "restaurantowner", "staff" }.Contains(u.Role.ToLower()))
+                // Lấy tất cả users rồi filter client-side để tránh lỗi SQL NULL
+                var allUsers = context.Users.ToList();
+                var ownerUsers = allUsers
+                    .Where(u => !string.IsNullOrEmpty(u.Role) && 
+                                new[] { "restaurantowner", "staff" }.Contains(u.Role.ToLower()))
                     .ToList();
 
                 static bool MatchesOwner(User u, string ascii, string unicode)
                 {
-                    if (u.Username.Equals(ascii, StringComparison.OrdinalIgnoreCase))
+                    var un = u.Username ?? string.Empty;
+                    if (un.Equals(ascii, StringComparison.OrdinalIgnoreCase))
                         return true;
                     var fn = u.FullName ?? string.Empty;
                     if (fn.Contains(ascii, StringComparison.OrdinalIgnoreCase))
@@ -329,10 +336,15 @@ namespace TourApp.API.Data
 
                 foreach (var p in context.POIs.ToList())
                 {
-                    if (p.PublicCatalogNumber >= 1 && p.PublicCatalogNumber <= 5)
-                        p.OwnerUserId = cuong.Id;
-                    else if (p.PublicCatalogNumber >= 6 && p.PublicCatalogNumber <= 10)
-                        p.OwnerUserId = hien.Id;
+                    // Gán owner theo Code: #P1001-#P1005 -> Cuong, #P1006-#P1010 -> Hien
+                    var codeNum = 0;
+                    if (!string.IsNullOrEmpty(p.Code) && p.Code.StartsWith("#P") && int.TryParse(p.Code.Substring(2), out codeNum))
+                    {
+                        if (codeNum >= 1001 && codeNum <= 1005)
+                            p.OwnerUserId = cuong.Id;
+                        else if (codeNum >= 1006 && codeNum <= 1010)
+                            p.OwnerUserId = hien.Id;
+                    }
                 }
 
                 context.SaveChanges();

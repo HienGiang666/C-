@@ -30,7 +30,7 @@ public class POIController : Controller
             return View(new List<POI>());
 
         var all = await response.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
-        all = all.OrderBy(p => p.PublicCatalogNumber).ThenBy(p => p.Id).ToList();
+        all = all.OrderBy(p => p.Code).ThenBy(p => p.Id).ToList();
 
         var ownerNames = await LoadOwnerNamesAsync(client);
 
@@ -206,7 +206,7 @@ public class POIController : Controller
             poi.ImageUrl = existing.ImageUrl;
             poi.OwnerUserId = existing.OwnerUserId;
             poi.ApprovalStatus = existing.ApprovalStatus;
-            poi.PublicCatalogNumber = existing.PublicCatalogNumber;
+            poi.Code = existing.Code;
         }
         else
         {
