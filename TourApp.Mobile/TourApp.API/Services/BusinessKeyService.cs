@@ -119,7 +119,7 @@ public class BusinessKeyService
     }
 
     /// <summary>Trích xuất số lớn nhất từ danh sách Code</summary>
-    private static int ExtractMaxNumber(List<string> codes, string prefix)
+    private static int ExtractMaxNumber(List<string?> codes, string prefix)
     {
         var max = 0;
         foreach (var code in codes)

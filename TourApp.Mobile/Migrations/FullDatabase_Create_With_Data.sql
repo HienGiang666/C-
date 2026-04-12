@@ -1,7 +1,6 @@
 -- =============================================
 -- TOURAPP DATABASE - FULL CREATE SCRIPT WITH SAMPLE DATA
--- For: SQL Server (can be adapted for MySQL)
--- Includes: All tables, relationships, indexes, and sample data
+-- Đã cập nhật khớp với Models C# (API & CMS)
 -- =============================================
 
 -- Create Database
@@ -15,10 +14,10 @@ USE TourAppDB;
 GO
 
 -- =============================================
--- 1. CREATE TABLES
+-- 1. CREATE TABLES - Đúng cấu trúc Models
 -- =============================================
 
--- Users table
+-- Users table (khớp với User.cs)
 IF OBJECT_ID(N'[Users]', N'U') IS NULL
 BEGIN
     CREATE TABLE [Users] (
@@ -33,15 +32,20 @@ BEGIN
         [Role] nvarchar(50) NULL DEFAULT 'Customer',
         [IsActive] bit NOT NULL DEFAULT 1,
         [CreatedAt] datetime2 NOT NULL DEFAULT GETDATE(),
+        [LastLoginAt] datetime2 NULL,
         [Code] varchar(50) NULL,
         CONSTRAINT [PK_Users] PRIMARY KEY ([Id]),
         CONSTRAINT [UQ_Users_Username] UNIQUE ([Username]),
-        CONSTRAINT [UQ_Users_Email] UNIQUE ([Email]),
-        CONSTRAINT [UQ_Users_Code] UNIQUE ([Code])
+        CONSTRAINT [UQ_Users_Email] UNIQUE ([Email])
     );
-    CREATE INDEX [IX_Users_Role] ON [Users]([Role]);
-    CREATE INDEX [IX_Users_Code] ON [Users]([Code]);
 END
+GO
+
+-- Create indexes for Users (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Users_Role' AND object_id = OBJECT_ID('Users'))
+    CREATE INDEX [IX_Users_Role] ON [Users]([Role]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Users_Code' AND object_id = OBJECT_ID('Users'))
+    CREATE INDEX [IX_Users_Code] ON [Users]([Code]);
 GO
 
 -- POIs table (Points of Interest)
@@ -67,10 +71,16 @@ BEGIN
         CONSTRAINT [FK_POIs_Users] FOREIGN KEY ([OwnerUserId]) REFERENCES [Users]([Id]),
         CONSTRAINT [UQ_POIs_Code] UNIQUE ([Code])
     );
-    CREATE INDEX [IX_POIs_OwnerUserId] ON [POIs]([OwnerUserId]);
-    CREATE INDEX [IX_POIs_Code] ON [POIs]([Code]);
-    CREATE INDEX [IX_POIs_ApprovalStatus] ON [POIs]([ApprovalStatus]);
 END
+GO
+
+-- Create indexes for POIs (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POIs_OwnerUserId' AND object_id = OBJECT_ID('POIs'))
+    CREATE INDEX [IX_POIs_OwnerUserId] ON [POIs]([OwnerUserId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POIs_Code' AND object_id = OBJECT_ID('POIs'))
+    CREATE INDEX [IX_POIs_Code] ON [POIs]([Code]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POIs_ApprovalStatus' AND object_id = OBJECT_ID('POIs'))
+    CREATE INDEX [IX_POIs_ApprovalStatus] ON [POIs]([ApprovalStatus]);
 GO
 
 -- Tours table
@@ -92,9 +102,14 @@ BEGIN
         CONSTRAINT [PK_Tours] PRIMARY KEY ([Id]),
         CONSTRAINT [UQ_Tours_Code] UNIQUE ([Code])
     );
-    CREATE INDEX [IX_Tours_Code] ON [Tours]([Code]);
-    CREATE INDEX [IX_Tours_IsActive] ON [Tours]([IsActive]);
 END
+GO
+
+-- Create indexes for Tours (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Tours_Code' AND object_id = OBJECT_ID('Tours'))
+    CREATE INDEX [IX_Tours_Code] ON [Tours]([Code]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Tours_IsActive' AND object_id = OBJECT_ID('Tours'))
+    CREATE INDEX [IX_Tours_IsActive] ON [Tours]([IsActive]);
 GO
 
 -- Tour-POI Relationship table (for multiple stops in a tour)
@@ -110,33 +125,106 @@ BEGIN
         CONSTRAINT [FK_TourPOIs_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE,
         CONSTRAINT [UQ_TourPOIs_Tour_POI] UNIQUE ([TourId], [POIId])
     );
-    CREATE INDEX [IX_TourPOIs_TourId] ON [TourPOIs]([TourId]);
-    CREATE INDEX [IX_TourPOIs_POIId] ON [TourPOIs]([POIId]);
 END
 GO
 
--- Audios table
+-- Create indexes for TourPOIs (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_TourPOIs_TourId' AND object_id = OBJECT_ID('TourPOIs'))
+    CREATE INDEX [IX_TourPOIs_TourId] ON [TourPOIs]([TourId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_TourPOIs_POIId' AND object_id = OBJECT_ID('TourPOIs'))
+    CREATE INDEX [IX_TourPOIs_POIId] ON [TourPOIs]([POIId]);
+GO
+
+-- Audios table (đúng cấu trúc Audio.cs - đơn giản hơn)
 IF OBJECT_ID(N'[Audios]', N'U') IS NULL
 BEGIN
     CREATE TABLE [Audios] (
         [Id] int NOT NULL IDENTITY(1,1),
         [POIId] int NOT NULL,
-        [Title] nvarchar(200) NOT NULL,
-        [Description] nvarchar(1000) NULL,
-        [VietnameseUrl] nvarchar(500) NULL,
-        [EnglishUrl] nvarchar(500) NULL,
-        [ChineseUrl] nvarchar(500) NULL,
-        [JapaneseUrl] nvarchar(500) NULL,
-        [Duration] int NULL,
+        [Language] nvarchar(10) NOT NULL DEFAULT 'vi',
+        [AudioPath] nvarchar(500) NOT NULL,
+        [Duration] int NOT NULL DEFAULT 0,
+        [ScriptText] nvarchar(2000) NULL,
         [IsActive] bit NOT NULL DEFAULT 1,
-        [Code] varchar(50) NULL,
+        [CreatedAt] datetime2 NOT NULL DEFAULT GETDATE(),
         CONSTRAINT [PK_Audios] PRIMARY KEY ([Id]),
-        CONSTRAINT [FK_Audios_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE,
-        CONSTRAINT [UQ_Audios_Code] UNIQUE ([Code])
+        CONSTRAINT [FK_Audios_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE
     );
-    CREATE INDEX [IX_Audios_POIId] ON [Audios]([POIId]);
-    CREATE INDEX [IX_Audios_Code] ON [Audios]([Code]);
 END
+GO
+
+-- Create indexes for Audios (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Audios_POIId' AND object_id = OBJECT_ID('Audios'))
+    CREATE INDEX [IX_Audios_POIId] ON [Audios]([POIId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Audios_Language' AND object_id = OBJECT_ID('Audios'))
+    CREATE INDEX [IX_Audios_Language] ON [Audios]([Language]);
+GO
+
+-- FavoritePOIs table (khớp với FavoritePOI.cs)
+IF OBJECT_ID(N'[FavoritePOIs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [FavoritePOIs] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [UserId] int NOT NULL,
+        [POIId] int NOT NULL,
+        [CreatedAt] datetime2 NOT NULL DEFAULT GETDATE(),
+        CONSTRAINT [PK_FavoritePOIs] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_FavoritePOIs_Users] FOREIGN KEY ([UserId]) REFERENCES [Users]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_FavoritePOIs_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [UQ_FavoritePOIs_User_POI] UNIQUE ([UserId], [POIId])
+    );
+END
+GO
+
+-- Create indexes for FavoritePOIs (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_FavoritePOIs_UserId' AND object_id = OBJECT_ID('FavoritePOIs'))
+    CREATE INDEX [IX_FavoritePOIs_UserId] ON [FavoritePOIs]([UserId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_FavoritePOIs_POIId' AND object_id = OBJECT_ID('FavoritePOIs'))
+    CREATE INDEX [IX_FavoritePOIs_POIId] ON [FavoritePOIs]([POIId]);
+GO
+
+-- UserLocationLogs table (khớp với UserLocationLog.cs)
+IF OBJECT_ID(N'[UserLocationLogs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [UserLocationLogs] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [DeviceId] nvarchar(200) NOT NULL,
+        [Latitude] float NOT NULL,
+        [Longitude] float NOT NULL,
+        [Timestamp] datetime2 NOT NULL DEFAULT GETDATE(),
+        CONSTRAINT [PK_UserLocationLogs] PRIMARY KEY ([Id])
+    );
+END
+GO
+
+-- Create indexes for UserLocationLogs (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UserLocationLogs_DeviceId' AND object_id = OBJECT_ID('UserLocationLogs'))
+    CREATE INDEX [IX_UserLocationLogs_DeviceId] ON [UserLocationLogs]([DeviceId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UserLocationLogs_Timestamp' AND object_id = OBJECT_ID('UserLocationLogs'))
+    CREATE INDEX [IX_UserLocationLogs_Timestamp] ON [UserLocationLogs]([Timestamp]);
+GO
+
+-- NarrationLogs table (khớp với NarrationLog.cs)
+IF OBJECT_ID(N'[NarrationLogs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [NarrationLogs] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [POIId] int NOT NULL,
+        [AudioId] int NULL,
+        [TriggerType] nvarchar(100) NOT NULL,
+        [Timestamp] datetime2 NOT NULL DEFAULT GETDATE(),
+        [DeviceId] nvarchar(200) NOT NULL,
+        CONSTRAINT [PK_NarrationLogs] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_NarrationLogs_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Create indexes for NarrationLogs (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NarrationLogs_POIId' AND object_id = OBJECT_ID('NarrationLogs'))
+    CREATE INDEX [IX_NarrationLogs_POIId] ON [NarrationLogs]([POIId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NarrationLogs_Timestamp' AND object_id = OBJECT_ID('NarrationLogs'))
+    CREATE INDEX [IX_NarrationLogs_Timestamp] ON [NarrationLogs]([Timestamp]);
 GO
 
 -- Bookings table
@@ -158,31 +246,18 @@ BEGIN
         CONSTRAINT [FK_Bookings_Users] FOREIGN KEY ([UserId]) REFERENCES [Users]([Id]),
         CONSTRAINT [UQ_Bookings_Code] UNIQUE ([Code])
     );
-    CREATE INDEX [IX_Bookings_TourId] ON [Bookings]([TourId]);
-    CREATE INDEX [IX_Bookings_UserId] ON [Bookings]([UserId]);
-    CREATE INDEX [IX_Bookings_Status] ON [Bookings]([Status]);
-    CREATE INDEX [IX_Bookings_Code] ON [Bookings]([Code]);
 END
 GO
 
--- Activity Logs table
-IF OBJECT_ID(N'[ActivityLogs]', N'U') IS NULL
-BEGIN
-    CREATE TABLE [ActivityLogs] (
-        [Id] int NOT NULL IDENTITY(1,1),
-        [UserId] int NULL,
-        [Action] nvarchar(100) NOT NULL,
-        [EntityType] nvarchar(100) NULL,
-        [EntityId] int NULL,
-        [Description] nvarchar(500) NULL,
-        [Timestamp] datetime2 NOT NULL DEFAULT GETDATE(),
-        [IpAddress] nvarchar(50) NULL,
-        CONSTRAINT [PK_ActivityLogs] PRIMARY KEY ([Id]),
-        CONSTRAINT [FK_ActivityLogs_Users] FOREIGN KEY ([UserId]) REFERENCES [Users]([Id])
-    );
-    CREATE INDEX [IX_ActivityLogs_Timestamp] ON [ActivityLogs]([Timestamp]);
-    CREATE INDEX [IX_ActivityLogs_UserId] ON [ActivityLogs]([UserId]);
-END
+-- Create indexes for Bookings (with IF NOT EXISTS check)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_TourId' AND object_id = OBJECT_ID('Bookings'))
+    CREATE INDEX [IX_Bookings_TourId] ON [Bookings]([TourId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_UserId' AND object_id = OBJECT_ID('Bookings'))
+    CREATE INDEX [IX_Bookings_UserId] ON [Bookings]([UserId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Status' AND object_id = OBJECT_ID('Bookings'))
+    CREATE INDEX [IX_Bookings_Status] ON [Bookings]([Status]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Code' AND object_id = OBJECT_ID('Bookings'))
+    CREATE INDEX [IX_Bookings_Code] ON [Bookings]([Code]);
 GO
 
 -- =============================================
@@ -190,25 +265,26 @@ GO
 -- =============================================
 
 -- Users (Admin first, then others)
+-- MẬT KHẨU MẶC ĐỊNH CHO TẤT CẢ TÀI KHOẢN DƯỚI ĐÂY LÀ: admin123
 SET IDENTITY_INSERT [Users] ON;
 
--- Admin user #U1000
+-- Admin user
 IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 1)
     INSERT INTO [Users] ([Id], [FullName], [Username], [PasswordHash], [Email], [PhoneNumber], [Address], [Role], [IsActive], [CreatedAt], [Code])
-    VALUES (1, N'Quản trị viên', 'admin', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'admin@tourapp.vn', '0901234567', N'HCM', 'Admin', 1, GETDATE(), '#U1000');
+    VALUES (1, N'Quản trị viên', 'admin', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'admin@tourapp.vn', '0901234567', N'HCM', 'Admin', 1, GETDATE(), '#U1001');
 
--- Regular users starting from #U1001
+-- Regular users
 IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 2)
     INSERT INTO [Users] ([Id], [FullName], [Username], [PasswordHash], [Email], [PhoneNumber], [Role], [IsActive], [CreatedAt], [Code])
-    VALUES (2, N'Phạm Cường', 'cuong', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'phamcuong80690@gmail.com', '0773980690', 'Customer', 1, GETDATE(), '#U1001');
+    VALUES (2, N'Cuong', 'cuong', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'pcz5@gmail.com', '0773980690', 'Customer', 1, GETDATE(), '#U1002');
 
 IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 3)
     INSERT INTO [Users] ([Id], [FullName], [Username], [PasswordHash], [Email], [PhoneNumber], [Role], [IsActive], [CreatedAt], [Code])
-    VALUES (3, N'Cường Restaurant', 'cuongowner', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'phamcuong80690@gmail.com', '0773980690', 'RestaurantOwner', 1, GETDATE(), '#U1002');
+    VALUES (3, N'Cuong', 'cuongowner', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'phamcuong80690@gmail.com', '0773980690', 'RestaurantOwner', 1, GETDATE(), '#U1003');
 
 IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 4)
     INSERT INTO [Users] ([Id], [FullName], [Username], [PasswordHash], [Email], [PhoneNumber], [Role], [IsActive], [CreatedAt], [Code])
-    VALUES (4, N'Hiền', 'hien', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', '123@gmail.com', '0255445544', 'RestaurantOwner', 1, GETDATE(), '#U1003');
+    VALUES (4, N'Hien', 'hien', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', '123@gmail.com', '0255445544', 'RestaurantOwner', 1, GETDATE(), '#U1004');
 
 SET IDENTITY_INSERT [Users] OFF;
 
@@ -216,7 +292,7 @@ SET IDENTITY_INSERT [Users] OFF;
 DBCC CHECKIDENT ('[Users]', RESEED, 4);
 GO
 
--- POIs (10 POIs with codes #P1001 to #P1010)
+-- POIs (11 POIs with codes #P1001 to #P1011)
 SET IDENTITY_INSERT [POIs] ON;
 
 IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 1)
@@ -241,141 +317,63 @@ IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 5)
 
 IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 6)
     INSERT INTO [POIs] ([Id], [Name], [Description], [Latitude], [Longitude], [Radius], [Priority], [Address], [ImageUrl], [OpenTime], [IsActive], [Rating], [ApprovalStatus], [OwnerUserId], [Code])
-    VALUES (6, N'Sườn nướng muối ớt', N'Đặc sản sườn nướng, cơm chiên', 10.76161627, 106.7048494, 80, 1, N'712 Vĩnh Khánh, Q4', '/images/pois/suon-nuong.jpg', '10:00-22:00', 1, 4.4, 'Pending', 4, '#P1006');
+    VALUES (6, N'Ốc 35k', N'Điểm nổi bật của Ốc 35k với các món hải sản tươi ngon, giá cả phải chăng', 10.7614812, 106.702496, 80, 1, N'612 Vĩnh Khánh, Q4', '/images/pois/oc-35k.jpg', '10:00-22:00', 1, 4.5, 'Approved', 4, '#P1006');
 
 IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 7)
     INSERT INTO [POIs] ([Id], [Name], [Description], [Latitude], [Longitude], [Radius], [Priority], [Address], [ImageUrl], [OpenTime], [IsActive], [Rating], [ApprovalStatus], [OwnerUserId], [Code])
-    VALUES (7, N'Bánh canh cua', N'Bánh canh sợi dai, nhiều thịt cua', 10.760, 106.703, 80, 1, N'480 Vĩnh Khánh, Q4', '/images/pois/banh-canh.jpg', '06:00-21:00', 1, 4.5, 'Approved', 4, '#P1007');
+    VALUES (7, N'Ốc 662', N'Quán Ốc 662 là một quán ốc bình dân nổi tiếng', 10.7634607, 106.701916, 80, 1, N'662 Vĩnh Khánh, Q4', '/images/pois/oc-662.jpg', '16:00-23:00', 1, 4.3, 'Approved', 4, '#P1007');
 
 IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 8)
     INSERT INTO [POIs] ([Id], [Name], [Description], [Latitude], [Longitude], [Radius], [Priority], [Address], [ImageUrl], [OpenTime], [IsActive], [Rating], [ApprovalStatus], [OwnerUserId], [Code])
-    VALUES (8, N'Lẩu dê', N'Lẩu dê thuốc bắc, nhậu khuya', 10.758, 106.705, 80, 1, N'600 Vĩnh Khánh, Q4', '/images/pois/lau-de.jpg', '17:00-02:00', 1, 4.3, 'Approved', 4, '#P1008');
+    VALUES (8, N'Nem Nướng Đặc Sản Quê Nhà', N'Nem Nướng Đặc Sản Quê Nhà với hương vị truyền thống', 10.7612055, 106.7037086, 80, 1, N'620 Vĩnh Khánh, Q4', '/images/pois/nem-nuong.jpg', '09:00-21:00', 1, 4.6, 'Approved', 4, '#P1008');
 
 IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 9)
     INSERT INTO [POIs] ([Id], [Name], [Description], [Latitude], [Longitude], [Radius], [Priority], [Address], [ImageUrl], [OpenTime], [IsActive], [Rating], [ApprovalStatus], [OwnerUserId], [Code])
-    VALUES (9, N'Bún riêu', N'Bún riêu cua đồng, chả cá', 10.762, 106.700, 80, 1, N'450 Vĩnh Khánh, Q4', '/images/pois/bun-rieu.jpg', '06:00-20:00', 1, 4.4, 'Approved', 4, '#P1009');
+    VALUES (9, N'Thế Giới Bò - Nướng, Sốt và Lẩu', N'Thế Giới Bò nổi bật với các món bò nướng, sốt đặc biệt và lẩu', 10.7640394, 106.69937, 80, 1, N'580 Vĩnh Khánh, Q4', '/images/pois/the-gioi-bo.jpg', '10:00-22:00', 1, 4.4, 'Approved', 4, '#P1009');
 
 IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 10)
     INSERT INTO [POIs] ([Id], [Name], [Description], [Latitude], [Longitude], [Radius], [Priority], [Address], [ImageUrl], [OpenTime], [IsActive], [Rating], [ApprovalStatus], [OwnerUserId], [Code])
-    VALUES (10, N'Chè truyền thống', N'Chè thập cẩm, chè chuối, chè bưởi', 10.7615, 106.7015, 80, 1, N'500 Vĩnh Khánh, Q4', '/images/pois/che.jpg', '14:00-22:00', 1, 4.6, 'Approved', 4, '#P1010');
+    VALUES (10, N'Bánh Mì Que - Pizza Đà Nẵng QUIN', N'Bánh ngon nha, nóng giòn và đầy đặn', 10.7637277, 106.7017558, 80, 1, N'590 Vĩnh Khánh, Q4', '/images/pois/banh-mi-que.jpg', '07:00-21:00', 1, 4.5, 'Approved', 4, '#P1010');
+
+-- POI 11: Sườn nướng muối ớt (Cuong, chờ duyệt)
+IF NOT EXISTS (SELECT 1 FROM [POIs] WHERE [Id] = 11)
+    INSERT INTO [POIs] ([Id], [Name], [Description], [Latitude], [Longitude], [Radius], [Priority], [Address], [ImageUrl], [OpenTime], [IsActive], [Rating], [ApprovalStatus], [OwnerUserId], [Code])
+    VALUES (11, N'Sườn nướng muối ớt', N'Thiên đường nướng với hơn 100 món nướng đặc sắc', 10.7608097, 106.7035061, 80, 1, N'712 Vĩnh Khánh, Q4', '/images/pois/suon-nuong.jpg', '10:00-22:00', 1, 4.4, 'Pending', 3, '#P1011');
 
 SET IDENTITY_INSERT [POIs] OFF;
-DBCC CHECKIDENT ('[POIs]', RESEED, 10);
+DBCC CHECKIDENT ('[POIs]', RESEED, 11);
 GO
 
--- Tours (3 tours with codes TR-1, TR-2, TR-3)
-SET IDENTITY_INSERT [Tours] ON;
 
-IF NOT EXISTS (SELECT 1 FROM [Tours] WHERE [Id] = 1)
-    INSERT INTO [Tours] ([Id], [Name], [Description], [Price], [Duration], [Destination], [MaxParticipants], [ImageUrl], [CreatedAt], [IsActive], [SearchKeywords], [Code])
-    VALUES (1, N'Tour Ẩm Thực Vĩnh Khánh - Con Đường Ốc', 
-            N'Khám phá con phố ẩm thực nổi tiếng nhất Quận 4 - đường Vĩnh Khánh. Thưởng thức đặc sản ốc, hải sản tươi sống và các món nhậu dân dã.',
-            250000, 1, N'Đường Vĩnh Khánh, Quận 4, TP.HCM', 20, 
-            '/images/tours/vinh-khanh-oc.jpg', GETDATE(), 0, 
-            N'tour ẩm thực vĩnh khánh ốc oanh thảo đào hải sản', 'TR-1');
 
-IF NOT EXISTS (SELECT 1 FROM [Tours] WHERE [Id] = 2)
-    INSERT INTO [Tours] ([Id], [Name], [Description], [Price], [Duration], [Destination], [MaxParticipants], [ImageUrl], [CreatedAt], [IsActive], [SearchKeywords], [Code])
-    VALUES (2, N'Tour Ẩm Thực Buổi Sáng Quận 4', 
-            N'Trải nghiệm ẩm thực sáng tại Quận 4 với bánh canh cua, bún riêu, chè truyền thống. Phù hợp cho người thích khám phá văn hóa địa phương.',
-            150000, 1, N'Quận 4, TP.HCM', 15, 
-            '/images/tours/buoi-sang.jpg', GETDATE(), 1, 
-            N'tour buổi sáng bánh canh bún riêu chè quận 4', 'TR-2');
-
-IF NOT EXISTS (SELECT 1 FROM [Tours] WHERE [Id] = 3)
-    INSERT INTO [Tours] ([Id], [Name], [Description], [Price], [Duration], [Destination], [MaxParticipants], [ImageUrl], [CreatedAt], [IsActive], [SearchKeywords], [Code])
-    VALUES (3, N'Tour Xóm Chiếu - Chợ Đêm Ẩm Thực', 
-            N'Khám phá chợ đêm Xóm Chiếu với lẩu dê, sườn nướng, các món nhậu đêm. Trải nghiệm cuộc sống về đêm của người dân Quận 4.',
-            200000, 1, N'Xóm Chiếu, Quận 4, TP.HCM', 25, 
-            '/images/tours/cho-dem.jpg', GETDATE(), 1, 
-            N'tour chợ đêm xóm chiếu lẩu dê sườn nướng quận 4', 'TR-3');
-
-SET IDENTITY_INSERT [Tours] OFF;
-DBCC CHECKIDENT ('[Tours]', RESEED, 3);
-GO
-
--- Tour-POI Relationships (which POIs are in which tours)
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 1 AND [POIId] = 1)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (1, 1, 0);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 1 AND [POIId] = 2)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (1, 2, 1);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 1 AND [POIId] = 3)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (1, 3, 2);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 1 AND [POIId] = 4)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (1, 4, 3);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 1 AND [POIId] = 5)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (1, 5, 4);
-
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 2 AND [POIId] = 7)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (2, 7, 0);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 2 AND [POIId] = 9)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (2, 9, 1);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 2 AND [POIId] = 10)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (2, 10, 2);
-
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 3 AND [POIId] = 6)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (3, 6, 0);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 3 AND [POIId] = 8)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (3, 8, 1);
-IF NOT EXISTS (SELECT 1 FROM [TourPOIs] WHERE [TourId] = 3 AND [POIId] = 5)
-    INSERT INTO [TourPOIs] ([TourId], [POIId], [OrderIndex]) VALUES (3, 5, 2);
-GO
-
--- Audios (6 audios with codes #A1001 to #A1006)
+-- Audios (đúng cấu trúc Audio.cs - mỗi POI có 1 audio Tiếng Việt)
 SET IDENTITY_INSERT [Audios] ON;
 
 IF NOT EXISTS (SELECT 1 FROM [Audios] WHERE [Id] = 1)
-    INSERT INTO [Audios] ([Id], [POIId], [Title], [Description], [VietnameseUrl], [EnglishUrl], [ChineseUrl], [JapaneseUrl], [Duration], [IsActive], [Code])
-    VALUES (1, 1, N'Giới thiệu Ốc Oanh', N'Thuật minh về lịch sử và đặc sản ốc tại quán Ốc Oanh',
-            '/audio/oc-oanh-vn.mp3', '/audio/oc-oanh-en.mp3', '/audio/oc-oanh-cn.mp3', '/audio/oc-oanh-jp.mp3', 120, 1, '#A1001');
+    INSERT INTO [Audios] ([Id], [POIId], [Language], [AudioPath], [Duration], [ScriptText], [IsActive], [CreatedAt])
+    VALUES (1, 1, 'vi', '/audio/oc-oanh.mp3', 120, N'Giới thiệu Ốc Oanh - Hải sản tươi sống, nêm nước chấm đặc biệt', 1, GETDATE());
 
 IF NOT EXISTS (SELECT 1 FROM [Audios] WHERE [Id] = 2)
-    INSERT INTO [Audios] ([Id], [POIId], [Title], [Description], [VietnameseUrl], [EnglishUrl], [ChineseUrl], [JapaneseUrl], [Duration], [IsActive], [Code])
-    VALUES (2, 2, N'Giới thiệu Ốc Thảo', N'Thuật minh về không gian và menu đa dạng tại Ốc Thảo',
-            '/audio/oc-thao-vn.mp3', '/audio/oc-thao-en.mp3', '/audio/oc-thao-cn.mp3', '/audio/oc-thao-jp.mp3', 110, 1, '#A1002');
+    INSERT INTO [Audios] ([Id], [POIId], [Language], [AudioPath], [Duration], [ScriptText], [IsActive], [CreatedAt])
+    VALUES (2, 2, 'vi', '/audio/oc-thao.mp3', 110, N'Giới thiệu Ốc Thảo - Không gian rộng rãi, menu đa dạng', 1, GETDATE());
 
 IF NOT EXISTS (SELECT 1 FROM [Audios] WHERE [Id] = 3)
-    INSERT INTO [Audios] ([Id], [POIId], [Title], [Description], [VietnameseUrl], [EnglishUrl], [ChineseUrl], [JapaneseUrl], [Duration], [IsActive], [Code])
-    VALUES (3, 3, N'Giới thiệu Ốc Đào 2', N'Thuật minh về hơn 30 loại ốc và cách nêm nước chấm',
-            '/audio/oc-dao-vn.mp3', '/audio/oc-dao-en.mp3', '/audio/oc-dao-cn.mp3', '/audio/oc-dao-jp.mp3', 130, 1, '#A1003');
+    INSERT INTO [Audios] ([Id], [POIId], [Language], [AudioPath], [Duration], [ScriptText], [IsActive], [CreatedAt])
+    VALUES (3, 3, 'vi', '/audio/oc-dao-2.mp3', 130, N'Giới thiệu Ốc Đào 2 - Hơn 30 loại ốc, nêm đậm đà', 1, GETDATE());
 
 IF NOT EXISTS (SELECT 1 FROM [Audios] WHERE [Id] = 4)
-    INSERT INTO [Audios] ([Id], [POIId], [Title], [Description], [VietnameseUrl], [EnglishUrl], [ChineseUrl], [JapaneseUrl], [Duration], [IsActive], [Code])
-    VALUES (4, 4, N'Giới thiệu Ốc Vũ', N'Thuật minh về quán ốc mở khuya giá sinh viên',
-            '/audio/oc-vu-vn.mp3', '/audio/oc-vu-en.mp3', '/audio/oc-vu-cn.mp3', '/audio/oc-vu-jp.mp3', 100, 1, '#A1004');
+    INSERT INTO [Audios] ([Id], [POIId], [Language], [AudioPath], [Duration], [ScriptText], [IsActive], [CreatedAt])
+    VALUES (4, 4, 'vi', '/audio/oc-vu.mp3', 100, N'Giới thiệu Ốc Vũ - Quán ốc mở khuya, giá sinh viên', 1, GETDATE());
 
 IF NOT EXISTS (SELECT 1 FROM [Audios] WHERE [Id] = 5)
-    INSERT INTO [Audios] ([Id], [POIId], [Title], [Description], [VietnameseUrl], [EnglishUrl], [ChineseUrl], [JapaneseUrl], [Duration], [IsActive], [Code])
-    VALUES (5, 5, N'Giới thiệu Làng Restaurant', N'Thuật minh về ẩm thực Việt Nam tại Làng Restaurant',
-            '/audio/lang-restaurant-vn.mp3', '/audio/lang-restaurant-en.mp3', '/audio/lang-restaurant-cn.mp3', '/audio/lang-restaurant-jp.mp3', 140, 1, '#A1005');
-
-IF NOT EXISTS (SELECT 1 FROM [Audios] WHERE [Id] = 6)
-    INSERT INTO [Audios] ([Id], [POIId], [Title], [Description], [VietnameseUrl], [EnglishUrl], [ChineseUrl], [JapaneseUrl], [Duration], [IsActive], [Code])
-    VALUES (6, 6, N'Giới thiệu Sườn nướng muối ớt', N'Thuật minh về đặc sản sườn nướng và cơm chiên',
-            '/audio/suon-nuong-vn.mp3', '/audio/suon-nuong-en.mp3', '/audio/suon-nuong-cn.mp3', '/audio/suon-nuong-jp.mp3', 115, 1, '#A1006');
+    INSERT INTO [Audios] ([Id], [POIId], [Language], [AudioPath], [Duration], [ScriptText], [IsActive], [CreatedAt])
+    VALUES (5, 5, 'vi', '/audio/lang-restaurant.mp3', 140, N'Giới thiệu Làng Restaurant - Thực đơn của Làng là ẩm thực Việt', 1, GETDATE());
 
 SET IDENTITY_INSERT [Audios] OFF;
-DBCC CHECKIDENT ('[Audios]', RESEED, 6);
+DBCC CHECKIDENT ('[Audios]', RESEED, 5);
 GO
 
--- Bookings (3 sample bookings)
-SET IDENTITY_INSERT [Bookings] ON;
 
-IF NOT EXISTS (SELECT 1 FROM [Bookings] WHERE [Id] = 1)
-    INSERT INTO [Bookings] ([Id], [TourId], [UserId], [NumberOfParticipants], [BookingDate], [TourDate], [TotalPrice], [Status], [Notes], [Code])
-    VALUES (1, 1, 2, 2, GETDATE(), DATEADD(day, 7, GETDATE()), 500000, 'Confirmed', N'Đặt cho 2 người, có trẻ em', 'BK-1');
-
-IF NOT EXISTS (SELECT 1 FROM [Bookings] WHERE [Id] = 2)
-    INSERT INTO [Bookings] ([Id], [TourId], [UserId], [NumberOfParticipants], [BookingDate], [TourDate], [TotalPrice], [Status], [Notes], [Code])
-    VALUES (2, 2, 2, 1, GETDATE(), DATEADD(day, 5, GETDATE()), 150000, 'Pending', N'Đặt cho 1 người', 'BK-2');
-
-IF NOT EXISTS (SELECT 1 FROM [Bookings] WHERE [Id] = 3)
-    INSERT INTO [Bookings] ([Id], [TourId], [UserId], [NumberOfParticipants], [BookingDate], [TourDate], [TotalPrice], [Status], [Notes], [Code])
-    VALUES (3, 1, 3, 4, GETDATE(), DATEADD(day, 10, GETDATE()), 1000000, 'Confirmed', N'Đặt cho nhóm 4 người', 'BK-3');
-
-SET IDENTITY_INSERT [Bookings] OFF;
-DBCC CHECKIDENT ('[Bookings]', RESEED, 3);
-GO
 
 -- =============================================
 -- 3. CREATE __EFMigrationsHistory TABLE
@@ -395,15 +393,4 @@ END
 GO
 
 PRINT 'Database created successfully with sample data!';
-PRINT '';
-PRINT 'Sample accounts:';
-PRINT '  - Admin: admin/admin (Code: #U1000)';
-PRINT '  - User: cuong/cuong (Code: #U1001)';
-PRINT '  - Restaurant Owner: cuongowner/cuong (Code: #U1002)';
-PRINT '  - Restaurant Owner: hien/hien (Code: #U1003)';
-PRINT '';
-PRINT 'POIs: #P1001 to #P1010';
-PRINT 'Audios: #A1001 to #A1006';
-PRINT 'Tours: TR-1, TR-2, TR-3';
-PRINT 'Bookings: BK-1, BK-2, BK-3';
-GO
+

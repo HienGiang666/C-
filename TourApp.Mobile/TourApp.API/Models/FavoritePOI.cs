@@ -1,9 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace TourApp.API.Models
 {
     public class FavoritePOI
     {
+        [Key]
         public int Id { get; set; }
         public int UserId { get; set; }
         public int POIId { get; set; }

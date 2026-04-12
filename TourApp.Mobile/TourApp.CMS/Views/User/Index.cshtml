@@ -57,7 +57,7 @@
                                         <img src="https://ui-avatars.com/api/?name=@user.FullName&background=random" width="35" class="rounded-circle me-3" />
                                         <div>
                                             <div class="fw-bold">@user.FullName</div>
-                                            <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> @user.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                            <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> @(user.CreatedAt?.ToString("dd/MM/yyyy") ?? "N/A")</small>
                                         </div>
                                     </div>
                                 </td>

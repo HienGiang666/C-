@@ -43,6 +43,9 @@
             border-color: #4f46e5;
             box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
         }
+        .cursor-pointer { cursor: pointer; }
+        .input-group-text { border-right: none; }
+        .form-control { border-left: none; }
     </style>
 </head>
 <body>
@@ -73,9 +76,12 @@
 
                 <div class="mb-3">
                     <label asp-for="Password" class="form-label fw-medium">Mật khẩu</label>
-                    <div class="input-group">
+                    <div class="input-group position-relative">
                         <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
-                        <input asp-for="Password" type="password" class="form-control border-start-0 ps-0" placeholder="Nhập mật khẩu..." required />
+                        <input asp-for="Password" type="password" class="form-control border-start-0 ps-0 pe-5" placeholder="Nhập mật khẩu..." required />
+                        <span id="togglePassword" class="position-absolute end-0 top-50 translate-middle-y me-3 cursor-pointer" style="z-index: 10; cursor: pointer;">
+                            <i class="fa-regular fa-eye text-muted"></i>
+                        </span>
                     </div>
                 </div>
 
@@ -91,5 +97,21 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('Password');
+            const icon = this.querySelector('i');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    </script>
 </body>
 </html>

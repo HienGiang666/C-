@@ -54,6 +54,12 @@
                         <textarea asp-for="Address" class="form-control" rows="2"></textarea>
                     </div>
 
+                    <div class="mb-4 p-3 bg-light rounded border border-warning">
+                        <label class="form-label fw-bold text-warning"><i class="fa-solid fa-key me-1"></i> Đổi mật khẩu mới (Admin)</label>
+                        <input name="PasswordHash" type="password" class="form-control" placeholder="Nhập mật khẩu mới nếu muốn thay đổi..." />
+                        <small class="text-muted">Để trống nếu không muốn đổi mật khẩu.</small>
+                    </div>
+
                     <div class="form-check form-switch mb-4">
                         <input class="form-check-input mt-1" type="checkbox" role="switch" asp-for="IsActive">
                         <label class="form-check-label ms-2 fw-medium text-danger" asp-for="IsActive">Cho phép hoạt động (Bỏ tick để Khóa tài khoản)</label>

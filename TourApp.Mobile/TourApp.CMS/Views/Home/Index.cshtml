@@ -130,25 +130,25 @@
                     <div class="@(isAdmin ? "col-md-4" : "col-md-6")">
                         @if (isAdmin)
                         {
-                        <a asp-controller="POI" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start d-flex align-items-center">
+                        <a asp-controller="POI" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start d-flex align-items-center h-100">
                             <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
                                 <i class="fa-solid fa-map-location-dot text-primary"></i>
                             </div>
                             <div>
-                                <div class="fw-bold">Danh sách địa điểm</div>
-                                <small class="text-muted">Chỉ chủ quán thêm POI — Admin phê duyệt</small>
+                                <div class="fw-bold text-truncate">Danh sách địa điểm</div>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">Chỉ chủ quán thêm POI — Admin phê duyệt</small>
                             </div>
                         </a>
                         }
                         else
                         {
-                        <a asp-controller="POI" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start d-flex align-items-center">
+                        <a asp-controller="POI" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start d-flex align-items-center h-100">
                             <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
                                 <i class="fa-solid fa-map-pin text-primary"></i>
                             </div>
                             <div>
                                 <div class="fw-bold">Thêm địa điểm</div>
-                                <small class="text-muted">Tạo POI mới (chờ phê duyệt)</small>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">Tạo POI mới (chờ phê duyệt)</small>
                             </div>
                         </a>
                         }
@@ -156,13 +156,13 @@
                     @if (!isAdmin)
                     {
                     <div class="col-md-6">
-                        <a asp-controller="Audio" asp-action="Index" class="btn btn-outline-info w-100 py-3 text-start d-flex align-items-center">
+                        <a asp-controller="Audio" asp-action="Index" class="btn btn-outline-info w-100 py-3 text-start d-flex align-items-center h-100">
                             <div class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
                                 <i class="fa-solid fa-headphones text-info"></i>
                             </div>
                             <div>
                                 <div class="fw-bold">Thuyết minh (Audio)</div>
-                                <small class="text-muted">Quản lý file theo địa điểm</small>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">Quản lý file theo địa điểm</small>
                             </div>
                         </a>
                     </div>
@@ -170,24 +170,24 @@
                     @if (isAdmin)
                     {
                     <div class="col-md-4">
-                        <a asp-controller="Tour" asp-action="Create" class="btn btn-outline-success w-100 py-3 text-start d-flex align-items-center">
+                        <a asp-controller="Tour" asp-action="Create" class="btn btn-outline-success w-100 py-3 text-start d-flex align-items-center h-100">
                             <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
                                 <i class="fa-solid fa-plus text-success"></i>
                             </div>
                             <div>
                                 <div class="fw-bold">Tạo Tour</div>
-                                <small class="text-muted">Tạo chuyến mới</small>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">Tạo chuyến mới</small>
                             </div>
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a asp-controller="User" asp-action="Create" class="btn btn-outline-warning w-100 py-3 text-start d-flex align-items-center">
+                        <a asp-controller="User" asp-action="Create" class="btn btn-outline-warning w-100 py-3 text-start d-flex align-items-center h-100">
                             <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;min-width:40px">
                                 <i class="fa-solid fa-user-plus text-warning"></i>
                             </div>
                             <div>
                                 <div class="fw-bold">Thêm User</div>
-                                <small class="text-muted">Tạo tài khoản</small>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">Tạo tài khoản</small>
                             </div>
                         </a>
                     </div>

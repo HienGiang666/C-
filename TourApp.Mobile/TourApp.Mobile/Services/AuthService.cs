@@ -40,7 +40,7 @@ namespace TourApp.Mobile.Services
                 var request = new
                 {
                     Username = username,
-                    Password = HashPassword(password)
+                    Password = password
                 };
 
                 HttpResponseMessage response;
@@ -64,6 +64,16 @@ namespace TourApp.Mobile.Services
                     
                     if (user != null)
                     {
+                        // Kiểm tra vai trò: Mobile chỉ dành cho Customer
+                        if (user.Role != null && user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return (false, "Tài khoản Admin chỉ dùng cho CMS quản trị!", null, false);
+                        }
+                        if (user.Role != null && user.Role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return (false, "Tài khoản Chủ quán chỉ dùng cho CMS quản trị!", null, false);
+                        }
+
                         CurrentUser = user;
                         // Save to preferences for auto-login
                         Preferences.Default.Set("user_id", user.Id);

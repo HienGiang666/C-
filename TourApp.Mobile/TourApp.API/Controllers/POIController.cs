@@ -35,7 +35,7 @@ public class POIController : ControllerBase
     {
         return await _context.POIs.Include(p => p.Audios)
             .Where(p => p.ApprovalStatus == "Pending")
-            .OrderByDescending(p => p.Id)
+            .OrderByDescending(p => p.Id) // Sắp xếp cái mới nhất (ID lớn nhất) lên đầu
             .ToListAsync();
     }
 

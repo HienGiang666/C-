@@ -104,7 +104,7 @@ public class UserController : Controller
         if (string.IsNullOrWhiteSpace(user.Address))
             ModelState.AddModelError(nameof(user.Address), "Vui lòng nhập địa chỉ liên hệ.");
 
-        if (user.DateOfBirth == default || user.DateOfBirth.Year < 1900 || user.DateOfBirth.Date > DateTime.Today)
+        if (!user.DateOfBirth.HasValue || user.DateOfBirth.Value.Year < 1900 || user.DateOfBirth.Value.Date > DateTime.Today)
             ModelState.AddModelError(nameof(user.DateOfBirth), "Vui lòng chọn ngày sinh hợp lệ.");
 
         if (!ModelState.IsValid)
@@ -137,7 +137,7 @@ public class UserController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var user = await response.Content.ReadFromJsonAsync<User>();
-                if (user != null && user.Role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+                if (user != null && user.Role?.Equals("Staff", StringComparison.OrdinalIgnoreCase) == true)
                     user.Role = "RestaurantOwner";
                 return View(user);
             }
@@ -149,7 +149,7 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(int id, User user)
     {
-        if (user.Role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+        if (user.Role?.Equals("Staff", StringComparison.OrdinalIgnoreCase) == true)
             user.Role = "RestaurantOwner";
 
         try

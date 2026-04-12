@@ -43,7 +43,7 @@
                 </div>
                 <div class="row mb-3 pb-3 border-bottom">
                     <div class="col-sm-4 text-muted fw-medium">Ngày sinh:</div>
-                    <div class="col-sm-8">@Model.DateOfBirth.ToString("dd/MM/yyyy")</div>
+                    <div class="col-sm-8">@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</div>
                 </div>
                 <div class="row mb-3 pb-3 border-bottom">
                     <div class="col-sm-4 text-muted fw-medium">Địa chỉ:</div>
@@ -51,7 +51,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-4 text-muted fw-medium">Ngày tham gia:</div>
-                    <div class="col-sm-8"><i class="fa-regular fa-calendar-days me-1 text-primary"></i> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="col-sm-8"><i class="fa-regular fa-calendar-days me-1 text-primary"></i> @(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</div>
                 </div>
             </div>
         </div>

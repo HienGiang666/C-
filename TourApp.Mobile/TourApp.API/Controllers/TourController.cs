@@ -76,8 +76,8 @@ public class TourController : ControllerBase
                 .Select(t => t.Code)
                 .ToListAsync();
             var nextNum = maxCodeNum
-                .Where(c => !string.IsNullOrEmpty(c) && c.StartsWith("TR-"))
-                .Select(c => { int.TryParse(c.Substring(3), out var n); return n; })
+                .Where(c => !string.IsNullOrEmpty(c) && c!.StartsWith("TR-"))
+                .Select(c => int.TryParse(c!.Substring(3), out var n) ? n : 0)
                 .DefaultIfEmpty(1000)
                 .Max() + 1;
             tour.Code = $"TR-{nextNum}";

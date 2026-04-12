@@ -36,24 +36,26 @@ public class HomeController : Controller
 
             await Task.WhenAll(poiTask, tourTask, userTask, bookingTask);
 
+            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
             if (poiTask.Result.IsSuccessStatusCode)
             {
-                var pois = await poiTask.Result.Content.ReadFromJsonAsync<List<POI>>();
+                var pois = await poiTask.Result.Content.ReadFromJsonAsync<List<POI>>(options);
                 poiCount = pois?.Count ?? 0;
             }
             if (tourTask.Result.IsSuccessStatusCode)
             {
-                var tours = await tourTask.Result.Content.ReadFromJsonAsync<List<Tour>>();
+                var tours = await tourTask.Result.Content.ReadFromJsonAsync<List<Tour>>(options);
                 tourCount = tours?.Count ?? 0;
             }
             if (userTask.Result.IsSuccessStatusCode)
             {
-                var users = await userTask.Result.Content.ReadFromJsonAsync<List<User>>();
+                var users = await userTask.Result.Content.ReadFromJsonAsync<List<User>>(options);
                 userCount = users?.Count ?? 0;
             }
             if (bookingTask.Result.IsSuccessStatusCode)
             {
-                var bookings = await bookingTask.Result.Content.ReadFromJsonAsync<List<Booking>>();
+                var bookings = await bookingTask.Result.Content.ReadFromJsonAsync<List<Booking>>(options);
                 bookingCount = bookings?.Count ?? 0;
             }
         }

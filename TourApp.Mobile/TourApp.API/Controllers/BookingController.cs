@@ -40,8 +40,8 @@ public class BookingController : ControllerBase
                 .Select(b => b.Code)
                 .ToListAsync();
             var nextNum = maxCodeNum
-                .Where(c => !string.IsNullOrEmpty(c) && c.StartsWith("BK-"))
-                .Select(c => { int.TryParse(c.Substring(3), out var n); return n; })
+                .Where(c => !string.IsNullOrEmpty(c) && c!.StartsWith("BK-"))
+                .Select(c => int.TryParse(c!.Substring(3), out var n) ? n : 0)
                 .DefaultIfEmpty(0)
                 .Max() + 1;
             booking.Code = $"BK-{nextNum}";

@@ -42,8 +42,11 @@ try
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // 1. CHẠY MIGRATION TRƯỚC ĐỂ ĐẢM BẢO CẤU TRÚC DB SẴN SÀNG
     try
     {
+        Console.WriteLine("[System] Applying migrations...");
         context.Database.Migrate();
     }
     catch (Exception ex)
@@ -51,9 +54,12 @@ try
         Console.WriteLine($"[Migrate] {ex.Message}");
     }
 
+    // 2. SAU ĐÓ MỚI SEED DỮ LIỆU
+    Console.WriteLine("[System] Auto-resetting Admin credentials...");
+    DbSeeder.Seed(context); 
+
     DbSeeder.ApplySchemaPatches(context);
     DbSeeder.EnsureBusinessKeyCodes(context);
-    DbSeeder.Seed(context);
     DbSeeder.EnsureBusinessKeyCodes(context); // tour/booking seed có Code = null → gán TR-/BK-
     DbSeeder.AssignPoiOwnersCuongHien(context);
 }
@@ -69,9 +75,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseSwaggerUI(c =>
+
 // --- 2. KÍCH HOẠT CỔNG CORS (Bắt buộc phải đặt trước Authorization) ---
-app.UseCors("AllowAll"));
+app.UseCors("AllowAll");
 // ----------------------------------------------------------------------
 
 // [DISABLED] Phone kết nối qua HTTP → nếu redirect sang HTTPS sẽ fail

@@ -91,7 +91,7 @@ function buildPickers() {
         wrap.className = 'mb-2';
         wrap.innerHTML = `<label class="form-label small text-muted">Điểm dừng thứ ${i + 1}</label>`;
         const sel = document.createElement('select');
-        sel.className = 'form-select';
+        sel.className = 'form-select poi-select';
         sel.name = 'StopPoiIds';
         sel.required = true;
         const o0 = document.createElement('option');
@@ -108,6 +108,28 @@ function buildPickers() {
         if (preset) sel.value = String(preset);
         wrap.appendChild(sel);
         box.appendChild(wrap);
+
+        sel.addEventListener('change', function() {
+            checkDuplicatePOIs(this);
+        });
+    }
+}
+
+function checkDuplicatePOIs(currentSelect) {
+    const allSelects = document.querySelectorAll('.poi-select');
+    const currentVal = currentSelect.value;
+    if (!currentVal) return;
+
+    let duplicateFound = false;
+    allSelects.forEach(s => {
+        if (s !== currentSelect && s.value === currentVal) {
+            duplicateFound = true;
+        }
+    });
+
+    if (duplicateFound) {
+        alert('Địa điểm này đã được chọn trong tour. Vui lòng chọn địa điểm khác!');
+        currentSelect.value = '';
     }
 }
 
