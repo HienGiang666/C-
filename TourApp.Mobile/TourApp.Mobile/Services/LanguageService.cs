@@ -2,6 +2,9 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Reflection;
 using System.Xml.Linq;
+using Microsoft.Maui.Storage;
+using Microsoft.Maui.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TourApp.Mobile.Services
 {
@@ -393,16 +396,16 @@ namespace TourApp.Mobile.Services
                 System.Diagnostics.Debug.WriteLine($"  {lang.Key}: {lang.Value.Count} keys");
             }
         }
-    }
-    
-    /// <summary>
-    /// Thông tin ngôn ngữ
-    /// </summary>
-    public class LanguageInfo
-    {
-        public string Code { get; set; } = "";
-        public string Name { get; set; } = "";
-        public string NativeName { get; set; } = "";
-        public bool IsActive { get; set; } = true;
+        
+        /// <summary>
+        /// Thông tin ngôn ngữ
+        /// </summary>
+        public class LanguageInfo
+        {
+            public string Code { get; set; } = "";
+            public string Name { get; set; } = "";
+            public string NativeName { get; set; } = "";
+            public bool IsActive { get; set; } = true;
+        }
     }
 }

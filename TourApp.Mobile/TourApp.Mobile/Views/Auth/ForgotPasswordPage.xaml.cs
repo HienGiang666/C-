@@ -28,7 +28,7 @@ public partial class ForgotPasswordPage : ContentPage
         }
 
         // Show loading
-        var sendButton = (Button)sender;
+        var sendButton = (Microsoft.Maui.Controls.Button)sender;
         sendButton.IsEnabled = false;
         sendButton.Text = LanguageService.GetString("Loading");
 
@@ -53,6 +53,12 @@ public partial class ForgotPasswordPage : ContentPage
                 if (result.DemoCode != null)
                 {
                     await Navigation.PushAsync(new ResetPasswordPage(email, result.DemoCode));
+                }
+                else
+                {
+                    // If no demo code, we might need a different flow or just wait for email
+                    // For now, let's assume we need a code to proceed
+                    await DisplayAlert(LanguageService.GetString("Error"), "No reset code received", LanguageService.GetString("OK"));
                 }
             }
             else

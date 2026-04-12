@@ -186,10 +186,10 @@ public partial class MapPage : ContentPage
     {
         if (_pendingPoiId.HasValue && _pois != null && _pois.Any())
         {
-            var poi = _pois.FirstOrDefault(p => p.PoiId == _pendingPoiId.Value);
+            var poi = _pois.FirstOrDefault(p => p.Id == _pendingPoiId.Value);
             if (poi != null)
             {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending POI: {poi.PoiName}");
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending POI: {poi.Name}");
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     // Hiển thị chi tiết POI
@@ -301,7 +301,7 @@ public partial class MapPage : ContentPage
     private void ShowPoiDetails(POI poi)
     {
         _currentPoi = poi;
-        PoiNameLabel.Text = poi.PoiName;
+        PoiNameLabel.Text = poi.Name;
         PoiDescLabel.Text = poi.Description;
         PoiRatingLabel.Text = $"⭐ {poi.Rating:F1}";
         PoiDistanceLabel.Text = $"• {poi.Radius}m bán kính";
@@ -319,7 +319,7 @@ public partial class MapPage : ContentPage
             ? ImageSource.FromUri(new Uri(poi.ImageUrl))
             : null;
 
-        bool isFav = Preferences.Default.Get($"fav_{poi.PoiId}", false);
+        bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
         FavBtn.Text = isFav ? "❤️" : "🤍";
 
         BottomSheetView.IsVisible = true;
@@ -351,15 +351,15 @@ public partial class MapPage : ContentPage
                 if (int.TryParse(query["id"], out int poiId))
                 {
                     System.Diagnostics.Debug.WriteLine($"[MapWebView] Looking for POI ID: {poiId}");
-                    var poi = _pois?.FirstOrDefault(p => p.PoiId == poiId);
+                    var poi = _pois?.FirstOrDefault(p => p.Id == poiId);
                     if (poi != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[MapWebView] Found POI: {poi.PoiName}");
+                        System.Diagnostics.Debug.WriteLine($"[MapWebView] Found POI: {poi.Name}");
                         MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"[MapWebView] POI not found. Available POIs: {string.Join(", ", _pois?.Select(p => $"ID:{p.PoiId}") ?? new[] { "none" })}");
+                        System.Diagnostics.Debug.WriteLine($"[MapWebView] POI not found. Available POIs: {string.Join(", ", _pois?.Select(p => $"ID:{p.Id}") ?? new[] { "none" })}");
                     }
                 }
             }
@@ -388,8 +388,8 @@ public partial class MapPage : ContentPage
     private void OnFavoriteClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
-        bool isFav = Preferences.Default.Get($"fav_{_currentPoi.PoiId}", false);
-        Preferences.Default.Set($"fav_{_currentPoi.PoiId}", !isFav);
+        bool isFav = Preferences.Default.Get($"fav_{_currentPoi.Id}", false);
+        Preferences.Default.Set($"fav_{_currentPoi.Id}", !isFav);
         FavBtn.Text = !isFav ? "❤️" : "🤍";
     }
 
@@ -458,7 +458,7 @@ public partial class MapPage : ContentPage
 
         // 1. Tìm trong dữ liệu POI local trước
         var local = _pois?.FirstOrDefault(p =>
-            p.PoiName.Contains(query, StringComparison.OrdinalIgnoreCase));
+            p.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
         if (local != null)
         {
             ShowPoiDetails(local);
@@ -542,12 +542,12 @@ public partial class MapPage : ContentPage
     private static string SerializeMapPois(IEnumerable<POI>? pois)
     {
         var mapPois = (pois ?? Enumerable.Empty<POI>())
-            .Select(p => new
+            .Select(p => new POIMapDto
             {
-                p.PoiId,
-                p.PoiName,
-                p.Latitude,
-                p.Longitude
+                Id = p.Id,
+                Name = p.Name,
+                Latitude = p.Latitude,
+                Longitude = p.Longitude
             });
 
         return System.Text.Json.JsonSerializer.Serialize(mapPois);

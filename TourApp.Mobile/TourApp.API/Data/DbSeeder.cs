@@ -43,19 +43,28 @@ namespace TourApp.API.Data
                 Console.WriteLine("[DbSeeder] Main Admin created with 'admin123'.");
             }
 
-            // Đồng bộ mật khẩu cho các tài khoản đặc biệt: Pham, cuongpham, hien
-            var specialUsernames = new[] { "pham", "cuongpham", "hien" };
-            var specialUsers = context.Users.Where(u => specialUsernames.Contains(u.Username.ToLower())).ToList();
-            foreach (var user in specialUsers)
-            {
-                user.PasswordHash = adminHash; // Set mật khẩu mặc định là 'admin123' cho các user này
-                user.IsActive = true;
-                Console.WriteLine($"[DbSeeder] Special User '{user.Username}' password updated to 'admin123'.");
-            }
+            // 2. Đồng bộ mật khẩu cho các tài khoản đặc biệt (Dùng '12345678')
+            var specialPassHash = SecurityHelper.HashPassword("12345678");
+            
+            // pham
+            var pham = context.Users.FirstOrDefault(u => u.Username.ToLower() == "pham");
+            if (pham != null) { pham.PasswordHash = specialPassHash; pham.IsActive = true; }
 
-            // Đối với các user khác, chúng ta GIỮ NGUYÊN mật khẩu họ đã đổi trước đó
-            // Chỉ đảm bảo Username không bị trống
-            var otherUsers = context.Users.Where(u => u.Username != "admin").ToList();
+            // cuongpham
+            var cuong = context.Users.FirstOrDefault(u => u.Username.ToLower() == "cuongpham");
+            if (cuong != null) { cuong.PasswordHash = specialPassHash; cuong.IsActive = true; }
+
+            // hien
+            var hien = context.Users.FirstOrDefault(u => u.Username.ToLower() == "hien");
+            if (hien != null) { hien.PasswordHash = specialPassHash; hien.IsActive = true; }
+
+            Console.WriteLine("[DbSeeder] Reset passwords for pham, cuongpham, hien to '12345678'.");
+
+            // 3. Đối với các user khác, chúng ta GIỮ NGUYÊN mật khẩu họ đã đổi trước đó (không ghi đè)
+            var specialUsernames = new[] { "pham", "cuongpham", "hien" };
+            var otherUsers = context.Users
+                .Where(u => u.Username.ToLower() != "admin" && !specialUsernames.Contains(u.Username.ToLower()))
+                .ToList();
             foreach (var user in otherUsers)
             {
                 if (string.IsNullOrWhiteSpace(user.Username)) {

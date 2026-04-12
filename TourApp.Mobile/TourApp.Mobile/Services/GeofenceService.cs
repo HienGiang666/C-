@@ -97,7 +97,7 @@ namespace TourApp.Mobile.Services
                 if (poi.Distance <= poi.Poi.Radius)
                 {
                     // Cooldown 2 phút/POI
-                    if (poi.Poi.PoiId == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
+                    if (poi.Poi.Id == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
                         continue;
 
                     TriggerNarration(poi.Poi);
@@ -108,17 +108,17 @@ namespace TourApp.Mobile.Services
 
         private void TriggerNarration(POI poi)
         {
-            _lastSpokenPoiId = poi.PoiId;
+            _lastSpokenPoiId = poi.Id;
             _lastSpokenTime = DateTime.Now;
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.PoiId);
+                HighlightRequested?.Invoke(this, poi.Id);
             });
 
             _ = SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.PoiId, null, "geofence");
+            _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace TourApp.Mobile.Services
                 var script = poi.GetScript(lang);
                 var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
 
-                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.PoiName}, lang={lang}, script={script.Substring(0, Math.Min(50, script.Length))}...");
+                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script.Substring(0, Math.Min(50, script.Length))}...");
 
                 var locales = await TextToSpeech.Default.GetLocalesAsync();
                 var matchedLocale = locales.FirstOrDefault(l =>
@@ -169,7 +169,7 @@ namespace TourApp.Mobile.Services
         /// </summary>
         public async Task TriggerFromQRAsync(POI poi)
         {
-            System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.PoiName}");
+            System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
 
             // Reset cooldown để QR luôn phát được
             _lastSpokenPoiId = -1;
@@ -177,11 +177,11 @@ namespace TourApp.Mobile.Services
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.PoiId);
+                HighlightRequested?.Invoke(this, poi.Id);
             });
 
             await SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.PoiId, null, "qr");
+            _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
         }
     }
 }

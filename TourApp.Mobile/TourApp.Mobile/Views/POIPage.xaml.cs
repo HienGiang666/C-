@@ -118,7 +118,7 @@ public partial class POIPage : ContentPage
             
             // Filter POIs
             var filtered = _allPois?.Where(p => 
-                p.PoiName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 p.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 p.Address.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -151,7 +151,7 @@ public partial class POIPage : ContentPage
             PoiCollectionView.SelectedItem = null;
             
             // Navigate to MapPage with POI ID
-            await Shell.Current.GoToAsync($"///MapPage?poiId={selectedPoi.PoiId}");
+            await Shell.Current.GoToAsync($"//MapPage?poiId={selectedPoi.Id}");
         }
     }
 }

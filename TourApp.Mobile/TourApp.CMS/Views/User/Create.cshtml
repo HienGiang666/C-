@@ -28,7 +28,12 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Mật khẩu <span class="text-danger">*</span></label>
-                            <input asp-for="PasswordHash" type="password" class="form-control" required autocomplete="new-password" />
+                            <div class="input-group position-relative">
+                                <input asp-for="PasswordHash" type="password" class="form-control pe-5" id="passwordField" required autocomplete="new-password" />
+                                <span class="position-absolute end-0 top-50 translate-middle-y me-3 cursor-pointer" style="z-index: 10;" id="togglePassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </span>
+                            </div>
                             <span asp-validation-for="PasswordHash" class="text-danger"></span>
                         </div>
                     </div>
@@ -77,3 +82,21 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('passwordField');
+            const icon = this.querySelector('i');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    </script>
+}

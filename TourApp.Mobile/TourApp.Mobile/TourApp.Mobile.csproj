@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<DefaultItemExcludes>$(DefaultItemExcludes);TourApp.API\**;TourApp.CMS\**;TourApp.Mobile\**</DefaultItemExcludes>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<TargetFrameworks>net9.0-android</TargetFrameworks>
@@ -43,12 +44,6 @@
 
 
 	<ItemGroup>
-		<Compile Remove="MainPage.xaml.cs" />
-		<Compile Remove="Views\LoginPage.xaml.cs" />
-		<Compile Remove="Views\RegisterPage.xaml.cs" />
-		<MauiXaml Remove="MainPage.xaml" />
-		<MauiXaml Remove="Views\LoginPage.xaml" />
-		<MauiXaml Remove="Views\RegisterPage.xaml" />
 	</ItemGroup>
 
 	<ItemGroup>

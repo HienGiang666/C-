@@ -26,13 +26,13 @@ namespace TourApp.Mobile
         private void UpdateTabLabels()
         {
             // Update tab labels theo ngôn ngữ hiện tại
-            if (Items.Count >= 5)
+            if (Items.Count > 0 && Items[0] is TabBar tabBar && tabBar.Items.Count >= 5)
             {
-                Items[0].Title = LanguageService.GetString("TabHome");
-                Items[1].Title = LanguageService.GetString("TabFood");
-                Items[2].Title = LanguageService.GetString("TabMap");
-                Items[3].Title = LanguageService.GetString("TabTour");
-                Items[4].Title = LanguageService.GetString("TabProfile");
+                tabBar.Items[0].Title = LanguageService.GetString("TabHome");
+                tabBar.Items[1].Title = LanguageService.GetString("TabFood");
+                tabBar.Items[2].Title = LanguageService.GetString("TabMap");
+                tabBar.Items[3].Title = LanguageService.GetString("TabTour");
+                tabBar.Items[4].Title = LanguageService.GetString("TabProfile");
             }
         }
         

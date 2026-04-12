@@ -10,20 +10,16 @@
     <div class="col-md-9">
         <div class="card border-0">
             <div class="card-header bg-white">
-                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-fw fa-pen me-2 text-primary"></i> @ViewData["Title"] (#@Model.Tour.Id)</h5>
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-fw fa-pen me-2 text-primary"></i> @ViewData["Title"] (#@Model.Tour.DisplayCode)</h5>
             </div>
             <div class="card-body p-4">
                 <form asp-action="Edit" method="post" enctype="multipart/form-data" id="tourForm">
                     <input type="hidden" asp-for="Tour.Id" />
                     <input type="hidden" asp-for="Tour.CreatedAt" />
                     <div class="row mb-3">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <label asp-for="Tour.Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
                             <input asp-for="Tour.Name" class="form-control form-control-lg" required />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Tour.Destination" class="form-label fw-medium">Địa điểm đến</label>
-                            <input asp-for="Tour.Destination" class="form-control form-control-lg" />
                         </div>
                     </div>
 

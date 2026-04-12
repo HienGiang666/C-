@@ -1,4 +1,3 @@
-using Microsoft.Maui;
 using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
 
@@ -6,7 +5,7 @@ namespace TourApp.Mobile.Views;
 
 public partial class ProfilePage : ContentPage
 {
-    private List<LanguageInfo>? _languages;
+    private List<LanguageService.LanguageInfo>? _languages;
     private readonly ApiService _apiService;
 
     public ProfilePage()
@@ -76,7 +75,7 @@ public partial class ProfilePage : ContentPage
             if (apiLanguages?.Any() == true)
             {
                 // Chuyển đổi từ API model sang LanguageInfo
-                _languages = apiLanguages.Select(l => new LanguageInfo 
+                _languages = apiLanguages.Select(l => new LanguageService.LanguageInfo 
                 { 
                     Code = l.Code ?? "vi", 
                     Name = l.Name ?? "Vietnamese", 

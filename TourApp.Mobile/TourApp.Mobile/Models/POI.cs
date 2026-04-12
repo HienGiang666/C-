@@ -5,16 +5,16 @@ namespace TourApp.Mobile.Models
     public class POI
     {
         [JsonPropertyName("id")]
-        public int PoiId { get; set; }
+        public int Id { get; set; }
 
         [JsonPropertyName("name")]
-        public string PoiName { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
         [JsonPropertyName("description")]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         [JsonPropertyName("address")]
-        public string Address { get; set; } = string.Empty;
+        public string? Address { get; set; }
 
         [JsonPropertyName("latitude")]
         public double Latitude { get; set; }
@@ -29,10 +29,10 @@ namespace TourApp.Mobile.Models
         public int Priority { get; set; }
 
         [JsonPropertyName("imageUrl")]
-        public string ImageUrl { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
 
         [JsonPropertyName("openTime")]
-        public string OpenTime { get; set; } = string.Empty;
+        public string? OpenTime { get; set; }
 
         [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
@@ -40,11 +40,18 @@ namespace TourApp.Mobile.Models
         [JsonPropertyName("rating")]
         public double Rating { get; set; } = 4.5;
 
-        /// <summary>
-        /// Danh sách audio/script đa ngôn ngữ từ DB (đã được CMS auto-translate).
-        /// API trả về cùng POI (Include Audios).
-        /// Mobile dùng để phát TTS đúng ngôn ngữ user đang chọn.
-        /// </summary>
+        [JsonPropertyName("approvalStatus")]
+        public string? ApprovalStatus { get; set; }
+
+        [JsonPropertyName("ownerUserId")]
+        public int? OwnerUserId { get; set; }
+
+        [JsonPropertyName("code")]
+        public string? Code { get; set; }
+
+        [JsonPropertyName("displayCode")]
+        public string DisplayCode => string.IsNullOrEmpty(Code) ? $"#P{Id}" : Code;
+
         [JsonPropertyName("audios")]
         public List<Audio> Audios { get; set; } = new();
 
@@ -61,7 +68,15 @@ namespace TourApp.Mobile.Models
             if (viAudio != null) return viAudio.ScriptText;
 
             // Fallback cuối: dùng Description
-            return $"Chào mừng bạn đến {PoiName}. {Description}";
-        }
+        return $"Chào mừng bạn đến {Name}. {Description}";
     }
+}
+
+public class POIMapDto
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+}
 }

@@ -76,7 +76,7 @@ public partial class QRScannerPage : ContentPage
                 // Navigate to MapPage with the POI ID
                 await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
-                    await Shell.Current.GoToAsync($"///MapPage?poiId={poiId}");
+                    await Shell.Current.GoToAsync($"//MapPage?poiId={poiId}");
                 });
             }
             else

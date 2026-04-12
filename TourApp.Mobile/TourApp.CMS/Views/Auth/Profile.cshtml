@@ -93,11 +93,21 @@
                     <div class="modal-body p-4">
                         <div class="mb-3">
                             <label class="form-label fw-medium">Mật khẩu mới</label>
-                            <input type="password" name="newPassword" class="form-control" required minlength="6" placeholder="Nhập ít nhất 6 ký tự..." />
+                            <div class="input-group position-relative">
+                                <input type="password" name="newPassword" class="form-control pe-5" id="newPasswordField" required minlength="6" placeholder="Nhập ít nhất 6 ký tự..." />
+                                <span class="position-absolute end-0 top-50 translate-middle-y me-3 cursor-pointer" style="z-index: 10;" id="toggleNewPassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </span>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-medium">Xác nhận mật khẩu</label>
-                            <input type="password" name="confirmPassword" class="form-control" required minlength="6" placeholder="Nhập lại mật khẩu mới..." />
+                            <div class="input-group position-relative">
+                                <input type="password" name="confirmPassword" class="form-control pe-5" id="confirmPasswordField" required minlength="6" placeholder="Nhập lại mật khẩu mới..." />
+                                <span class="position-absolute end-0 top-50 translate-middle-y me-3 cursor-pointer" style="z-index: 10;" id="toggleConfirmPassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
@@ -108,4 +118,30 @@
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        function setupPasswordToggle(toggleId, inputId) {
+            const toggle = document.getElementById(toggleId);
+            const input = document.getElementById(inputId);
+            if (toggle && input) {
+                toggle.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            }
+        }
+
+        setupPasswordToggle('toggleNewPassword', 'newPasswordField');
+        setupPasswordToggle('toggleConfirmPassword', 'confirmPasswordField');
+    </script>
 }

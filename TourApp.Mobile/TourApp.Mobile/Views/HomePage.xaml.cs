@@ -121,9 +121,9 @@ public partial class HomePage : ContentPage
                     {
                         MockPois.Add(new MockItem 
                         { 
-                            Name = poi.PoiName, 
+                            Name = poi.Name, 
                             Summary = $"⭐ {poi.Rating:F1}",
-                            PoiId = poi.PoiId,
+                            PoiId = poi.Id,
                             Latitude = poi.Latitude,
                             Longitude = poi.Longitude
                         });
@@ -155,7 +155,7 @@ public partial class HomePage : ContentPage
     {
         // Search in POIs
         var matchingPois = _allPois?.Where(p => 
-            p.PoiName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             p.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
             .ToList();
             
@@ -179,7 +179,7 @@ public partial class HomePage : ContentPage
             resultMessage += $"🍽️ {LanguageService.GetString("RestaurantsFound", matchingPois.Count, "")}:\n";
             foreach (var poi in matchingPois.Take(5))
             {
-                resultMessage += $"• {poi.PoiName}\n";
+                resultMessage += $"• {poi.Name}\n";
             }
         }
         
@@ -234,7 +234,7 @@ public partial class HomePage : ContentPage
     {
         // Filter POIs by keyword in name or description
         var filteredPois = _allPois?.Where(p =>
-            p.PoiName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+            p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
             p.Description.Contains(keyword, StringComparison.OrdinalIgnoreCase))
             .ToList();
             
@@ -283,11 +283,11 @@ public partial class HomePage : ContentPage
 
             if (selectedTour.TourId > 0)
             {
-                await Shell.Current.GoToAsync($"///MapPage?tourId={selectedTour.TourId}");
+                await Shell.Current.GoToAsync($"//MapPage?tourId={selectedTour.TourId}");
                 return;
             }
 
-            await Shell.Current.GoToAsync("///MapPage");
+            await Shell.Current.GoToAsync("//MapPage");
         }
     }
 
@@ -301,12 +301,12 @@ public partial class HomePage : ContentPage
             // Navigate to Map page with POI ID
             if (selectedPoi.PoiId > 0)
             {
-                await Shell.Current.GoToAsync($"///MapPage?poiId={selectedPoi.PoiId}");
+                await Shell.Current.GoToAsync($"//MapPage?poiId={selectedPoi.PoiId}");
             }
             else
             {
                 // If no ID, just go to Map page
-                await Shell.Current.GoToAsync("///MapPage");
+                await Shell.Current.GoToAsync("//MapPage");
             }
         }
     }

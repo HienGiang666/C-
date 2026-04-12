@@ -159,6 +159,7 @@ public class TourController : Controller
                 RestaurantCount = stopIds.Count,
                 StopPoiIds = stopIds
             };
+            ViewBag.PoisJson = JsonSerializer.Serialize(await FetchPoisForSessionAsync());
             return View(vm);
         }
         catch

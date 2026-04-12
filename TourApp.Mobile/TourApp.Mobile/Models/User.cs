@@ -37,6 +37,9 @@ namespace TourApp.Mobile.Models
         [JsonPropertyName("lastLoginAt")]
         public DateTime? LastLoginAt { get; set; }
 
+        [JsonPropertyName("code")]
+        public string? Code { get; set; }
+
         // Computed property for display
         public string DisplayName => !string.IsNullOrEmpty(FullName) ? FullName : Username ?? "Người dùng";
     }
@@ -66,6 +69,9 @@ namespace TourApp.Mobile.Models
 
         [JsonPropertyName("totalPrice")]
         public decimal? TotalPrice { get; set; }
+
+        [JsonPropertyName("code")]
+        public string? Code { get; set; }
 
         // Tour name from API (stored in Notes temporarily)
         public string? TourName => Notes;

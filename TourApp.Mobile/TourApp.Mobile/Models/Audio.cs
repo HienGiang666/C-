@@ -1,20 +1,31 @@
-using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace TourApp.Mobile.Models
 {
     public class Audio
     {
+        [JsonPropertyName("id")]
         public int Id { get; set; }
+
+        [JsonPropertyName("poiId")]
         public int POIId { get; set; }
-        public string Language { get; set; } = "vi";
-        public string AudioPath { get; set; } = string.Empty;
-        
-        [Range(1, int.MaxValue, ErrorMessage = "Th?i lu?ng âm thanh ph?i l?n hon 0")]
+
+        [JsonPropertyName("language")]
+        public string? Language { get; set; } = "vi";
+
+        [JsonPropertyName("audioPath")]
+        public string? AudioPath { get; set; }
+
+        [JsonPropertyName("duration")]
         public int Duration { get; set; }
-        
-        public string ScriptText { get; set; } = string.Empty;
+
+        [JsonPropertyName("scriptText")]
+        public string? ScriptText { get; set; }
+
+        [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
+
+        [JsonPropertyName("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }
-

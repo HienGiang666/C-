@@ -93,8 +93,8 @@ namespace TourApp.CMS.Services
                 if (hiddenBefore.HasValue)
                     q = q.Where(l => l.Timestamp > hiddenBefore.Value);
                 if (!string.IsNullOrWhiteSpace(usernameFilter))
-                    q = q.Where(l => l.Username.Equals(usernameFilter, StringComparison.OrdinalIgnoreCase));
-                ordered = q.OrderBy(l => l.Timestamp).ToList();
+                    q = q.Where(l => l.Username.Trim().Equals(usernameFilter.Trim(), StringComparison.OrdinalIgnoreCase));
+                ordered = q.OrderByDescending(l => l.Timestamp).ToList();
             }
 
             var total = ordered.Count;

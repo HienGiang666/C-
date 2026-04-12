@@ -179,7 +179,7 @@ public class UserController : ControllerBase
         if (user == null) return NotFound();
 
         // Kiểm tra xem user có đang sở hữu POI nào không
-        var hasPOIs = await _context.POIs.AnyAsync(p => p.CreatedByUserId == id);
+        var hasPOIs = await _context.POIs.AnyAsync(p => p.OwnerUserId == id);
         
         if (hasPOIs)
         {
