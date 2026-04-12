@@ -13,7 +13,7 @@
                 <h5 class="mb-0 fw-bold"><i class="fa-solid fa-fw fa-plus me-2 text-primary"></i> @ViewData["Title"]</h5>
             </div>
             <div class="card-body p-4">
-                <form asp-action="Create" method="post" id="tourForm">
+                <form asp-action="Create" method="post" enctype="multipart/form-data" id="tourForm">
                     <div class="mb-3">
                         <label asp-for="Tour.Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
                         <input asp-for="Tour.Name" class="form-control form-control-lg" placeholder="Nhập tên chuyến đi..." required />
@@ -45,13 +45,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Tour.ImageUrl" class="form-label fw-medium">Đường dẫn Hình ảnh Cover (URL) <span class="text-danger">*</span></label>
-                        <input asp-for="Tour.ImageUrl" class="form-control" placeholder="https://..." required />
+                        <label class="form-label fw-medium">Ảnh cover tour <span class="text-danger">*</span></label>
+                        <input type="file" name="coverImage" class="form-control" accept="image/*" required />
+                        <small class="text-muted">Chọn file ảnh (JPG, PNG, …). Hệ thống lưu và gán URL tự động.</small>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Tour.SearchKeywords" class="form-label fw-medium">Từ khóa tìm kiếm <span class="text-danger">*</span></label>
-                        <input asp-for="Tour.SearchKeywords" class="form-control" required />
+                        <label class="form-label fw-medium text-muted">Từ khóa tìm kiếm</label>
+                        <div class="form-control bg-light text-muted small py-2">Tự động tạo từ <strong>tên tour</strong>, <strong>mô tả</strong> và <strong>tên các điểm dừng</strong> khi lưu.</div>
                     </div>
 
                     <div class="mb-4">

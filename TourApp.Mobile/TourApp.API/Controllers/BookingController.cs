@@ -33,6 +33,8 @@ public class BookingController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Booking>> CreateBooking(Booking booking)
     {
+        if (booking.PublicCatalogNumber <= 0)
+            booking.PublicCatalogNumber = (await _context.Bookings.MaxAsync(b => (int?)b.PublicCatalogNumber) ?? 0) + 1;
         _context.Bookings.Add(booking);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
@@ -42,6 +44,9 @@ public class BookingController : ControllerBase
     public async Task<IActionResult> UpdateBooking(int id, Booking booking)
     {
         if (id != booking.Id) return BadRequest();
+        var existing = await _context.Bookings.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id);
+        if (existing != null && booking.PublicCatalogNumber <= 0)
+            booking.PublicCatalogNumber = existing.PublicCatalogNumber;
         _context.Entry(booking).State = EntityState.Modified;
         
         try

@@ -87,6 +87,17 @@ public class AudioController : Controller
     public async Task<IActionResult> EditByPoi(int poiId)
     {
         var client = _clientFactory.CreateClient("TourApi");
+        
+        // Lấy thông tin POI để hiển thị tên
+        var poiResponse = await client.GetAsync($"api/POI/{poiId}");
+        string poiName = $"Địa điểm #{poiId}";
+        if (poiResponse.IsSuccessStatusCode)
+        {
+            var poi = await poiResponse.Content.ReadFromJsonAsync<POI>();
+            if (!string.IsNullOrWhiteSpace(poi?.Name))
+                poiName = poi.Name;
+        }
+        
         var response = await client.GetAsync($"api/Audio?poiId={poiId}");
         if (!response.IsSuccessStatusCode)
         {
@@ -108,6 +119,7 @@ public class AudioController : Controller
         };
 
         ViewBag.Languages = languages;
+        ViewBag.POIName = poiName;
         ViewData["Title"] = "Sửa thuyết minh theo địa điểm";
         return View(model);
     }

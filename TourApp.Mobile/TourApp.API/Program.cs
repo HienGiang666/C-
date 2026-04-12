@@ -50,6 +50,7 @@ try
     DbSeeder.ApplySchemaPatches(context);
     DbSeeder.EnsurePublicCatalogNumbers(context);
     DbSeeder.Seed(context);
+    DbSeeder.EnsurePublicCatalogNumbers(context); // tour/booking seed có PublicCatalogNumber = 0 → gán TR-/BK-
     DbSeeder.AssignPoiOwnersCuongHien(context);
 }
 catch (Exception ex)

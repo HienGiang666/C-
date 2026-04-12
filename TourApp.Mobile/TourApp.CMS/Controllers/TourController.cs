@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -10,11 +11,16 @@ public class TourController : Controller
 {
     private readonly IHttpClientFactory _clientFactory;
     private readonly IActivityLogger _activityLogger;
+    private readonly IFileUploadService _fileUploadService;
 
-    public TourController(IHttpClientFactory clientFactory, IActivityLogger activityLogger)
+    public TourController(
+        IHttpClientFactory clientFactory,
+        IActivityLogger activityLogger,
+        IFileUploadService fileUploadService)
     {
         _clientFactory = clientFactory;
         _activityLogger = activityLogger;
+        _fileUploadService = fileUploadService;
     }
 
     public async Task<IActionResult> Index()
@@ -47,12 +53,32 @@ public class TourController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(TourFormViewModel vm)
+    public async Task<IActionResult> Create(TourFormViewModel vm, IFormFile? coverImage)
     {
-        await LoadPoiSelectListAsync();
+        var pois = await FetchPoisForSessionAsync();
+        await LoadPoiSelectListFromPoisAsync(pois);
         vm.Tour.Destination = string.Empty;
         SanitizeTourNumbers(vm.Tour);
         NormalizeStops(vm);
+
+        if (coverImage == null || coverImage.Length == 0)
+        {
+            TempData["error"] = "Vui lòng chọn ảnh cover cho tour.";
+            return View(vm);
+        }
+
+        try
+        {
+            vm.Tour.ImageUrl = await _fileUploadService.UploadImageAsync(coverImage, "tours");
+        }
+        catch (Exception ex)
+        {
+            TempData["error"] = ex.Message;
+            return View(vm);
+        }
+
+        vm.Tour.SearchKeywords = BuildTourSearchKeywords(vm.Tour, vm.StopPoiIds, pois);
+
         if (!ValidateTourCreateForm(vm, out var tourErr))
         {
             TempData["error"] = tourErr;
@@ -200,21 +226,31 @@ public class TourController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task LoadPoiSelectListAsync()
+    private async Task<List<POI>> FetchPoisForSessionAsync()
     {
         var client = _clientFactory.CreateClient("TourApi");
         var role = HttpContext.Session.GetString("Role") ?? "";
         var userId = HttpContext.Session.GetString("UserId");
-        string url = "api/POI";
+        var url = "api/POI";
         if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) && int.TryParse(userId, out var oid))
             url += $"?ownerUserId={oid}";
 
         var resp = await client.GetAsync(url);
-        var pois = resp.IsSuccessStatusCode
+        return resp.IsSuccessStatusCode
             ? await resp.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>()
             : new List<POI>();
+    }
+
+    private async Task LoadPoiSelectListFromPoisAsync(List<POI> pois)
+    {
         ViewBag.PoiOptions = new SelectList(pois, "Id", "Name");
         ViewBag.PoisJson = JsonSerializer.Serialize(pois.Select(p => new { id = p.Id, name = p.Name }));
+    }
+
+    private async Task LoadPoiSelectListAsync()
+    {
+        var pois = await FetchPoisForSessionAsync();
+        await LoadPoiSelectListFromPoisAsync(pois);
     }
 
     private static void SanitizeTourNumbers(Tour tour)
@@ -240,13 +276,49 @@ public class TourController : Controller
         var t = vm.Tour;
         if (string.IsNullOrWhiteSpace(t.Name)) { error = "Tên tour không được để trống."; return false; }
         if (string.IsNullOrWhiteSpace(t.Description)) { error = "Mô tả tour không được để trống."; return false; }
-        if (string.IsNullOrWhiteSpace(t.ImageUrl)) { error = "URL ảnh cover không được để trống."; return false; }
-        if (string.IsNullOrWhiteSpace(t.SearchKeywords)) { error = "Từ khóa tìm kiếm không được để trống."; return false; }
+        if (string.IsNullOrWhiteSpace(t.ImageUrl)) { error = "Ảnh cover không hợp lệ."; return false; }
+        if (string.IsNullOrWhiteSpace(t.SearchKeywords)) { error = "Không tạo được từ khóa tìm kiếm."; return false; }
         if (t.Price <= 0) { error = "Giá vé phải lớn hơn 0."; return false; }
         if (t.Duration < 1 || t.Duration > 3) { error = "Thời lượng phải từ 1 đến 3 ngày."; return false; }
         if (t.MaxParticipants < 1) { error = "Số khách tối đa phải là số nguyên lớn hơn 0."; return false; }
         if (vm.RestaurantCount < 1) { error = "Số quán / điểm dừng phải lớn hơn 0."; return false; }
         if (vm.StopPoiIds.Count != vm.RestaurantCount) { error = "Vui lòng chọn đủ địa điểm cho từng điểm dừng."; return false; }
         return true;
+    }
+
+    private static string BuildTourSearchKeywords(Tour tour, List<int> stopPoiIds, List<POI> pois)
+    {
+        var text = new StringBuilder();
+        void AppendChunk(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return;
+            if (text.Length > 0) text.Append(' ');
+            text.Append(s.Trim());
+        }
+
+        AppendChunk(tour.Name);
+        AppendChunk(tour.Description);
+        AppendChunk(tour.Destination);
+        foreach (var pid in stopPoiIds)
+        {
+            var p = pois.FirstOrDefault(x => x.Id == pid);
+            if (p != null)
+                AppendChunk(p.Name);
+        }
+
+        var raw = text.ToString();
+        if (string.IsNullOrWhiteSpace(raw))
+            return string.Empty;
+
+        var delims = new[] { ' ', ',', '.', ';', '/', '-', '–', '\n', '\r', '\t' };
+        var tokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var part in raw.Split(delims, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var s = part.Trim();
+            if (s.Length >= 2)
+                tokens.Add(s);
+        }
+
+        return string.Join(", ", tokens.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
     }
 }

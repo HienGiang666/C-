@@ -23,5 +23,8 @@ namespace TourApp.CMS.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
         public string SearchKeywords { get; set; } = string.Empty;
+
+        /// <summary>Mã TR-n đồng bộ với API (cột PublicCatalogNumber).</summary>
+        public int PublicCatalogNumber { get; set; }
     }
 }

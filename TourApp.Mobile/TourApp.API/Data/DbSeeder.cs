@@ -34,6 +34,8 @@ namespace TourApp.API.Data
             // Tách từng bảng: một lệnh ALTER lỗi không được chặn cột Users (đăng nhập CMS).
             TryAddPublicCatalogColumn(context, "Users", "DF_Users_PublicCatalogNumber");
             TryAddPublicCatalogColumn(context, "POIs", "DF_POIs_PublicCatalogNumber");
+            TryAddPublicCatalogColumn(context, "Tours", "DF_Tours_PublicCatalogNumber");
+            TryAddPublicCatalogColumn(context, "Bookings", "DF_Bookings_PublicCatalogNumber");
         }
 
         private static void TryAddPublicCatalogColumn(AppDbContext context, string table, string constraintName)
@@ -78,6 +80,23 @@ namespace TourApp.API.Data
                     var maxU = context.Users.Max(u => (int?)u.PublicCatalogNumber) ?? 0;
                     foreach (var u in userZeros)
                         u.PublicCatalogNumber = ++maxU;
+                    context.SaveChanges();
+                }
+
+                // Tours / Bookings: mã TR-n / BK-n lưu trong DB — gán = Id nếu còn 0 (đồng bộ với cách hiển thị cũ).
+                var tourZeros = context.Tours.Where(t => t.PublicCatalogNumber == 0).OrderBy(t => t.Id).ToList();
+                if (tourZeros.Count > 0)
+                {
+                    foreach (var t in tourZeros)
+                        t.PublicCatalogNumber = t.Id;
+                    context.SaveChanges();
+                }
+
+                var bookingZeros = context.Bookings.Where(b => b.PublicCatalogNumber == 0).OrderBy(b => b.Id).ToList();
+                if (bookingZeros.Count > 0)
+                {
+                    foreach (var b in bookingZeros)
+                        b.PublicCatalogNumber = b.Id;
                     context.SaveChanges();
                 }
             }

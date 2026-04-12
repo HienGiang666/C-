@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TourApp.CMS.Helpers;
 using TourApp.CMS.Models;
 using TourApp.CMS.Services;
 
@@ -28,7 +29,20 @@ public class ApprovalController : Controller
             return View(new List<POI>());
 
         var list = await resp.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
+        ViewBag.OwnerDisplayLabels = await LoadOwnerDisplayLabelsAsync(client);
         return View(list);
+    }
+
+    private static async Task<Dictionary<int, string>> LoadOwnerDisplayLabelsAsync(HttpClient client)
+    {
+        var map = new Dictionary<int, string>();
+        var usersResp = await client.GetAsync("api/user");
+        if (!usersResp.IsSuccessStatusCode)
+            return map;
+        var users = await usersResp.Content.ReadFromJsonAsync<List<User>>() ?? new List<User>();
+        foreach (var u in users)
+            map[u.Id] = DisplayIdHelper.OwnerDisplayLabel(u);
+        return map;
     }
 
     [HttpPost]

@@ -1,4 +1,5 @@
 @model IEnumerable<TourApp.CMS.Models.User>
+@using TourApp.CMS.Helpers
 
 @{
     ViewData["Title"] = "Quản lý Người Dùng";
@@ -50,7 +51,7 @@
                             stt++;
                             <tr>
                                 <td class="text-center text-muted align-middle"><small>@stt</small></td>
-                                <td><span class="badge bg-secondary">#U@(user.PublicCatalogNumber > 0 ? user.PublicCatalogNumber : user.Id)</span></td>
+                                <td><span class="badge bg-secondary">@DisplayIdHelper.UserBadge(user)</span></td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <img src="https://ui-avatars.com/api/?name=@user.FullName&background=random" width="35" class="rounded-circle me-3" />

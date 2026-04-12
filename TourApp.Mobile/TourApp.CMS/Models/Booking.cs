@@ -8,7 +8,7 @@ namespace TourApp.CMS.Models
         public int TourId { get; set; }
         public int UserId { get; set; }
         
-        [Range(1, int.MaxValue, ErrorMessage = "S? lu?ng khách ph?i l?n hon 0")]
+        [Range(1, int.MaxValue, ErrorMessage = "S? lu?ng khï¿½ch ph?i l?n hon 0")]
         public int NumberOfParticipants { get; set; }
         
         public DateTime BookingDate { get; set; } = DateTime.Now;
@@ -16,5 +16,8 @@ namespace TourApp.CMS.Models
         public decimal TotalPrice { get; set; }
         public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled
         public string Notes { get; set; } = string.Empty;
+
+        /// <summary>Mï¿½ BK-n ??ng b? v?i API (c?t PublicCatalogNumber).</summary>
+        public int PublicCatalogNumber { get; set; }
     }
 }

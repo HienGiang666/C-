@@ -23,5 +23,8 @@ namespace TourApp.API.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
         public string SearchKeywords { get; set; } = string.Empty;
+
+        /// <summary>Mã nghiệp vụ TR-n (lưu DB, khác Id khi cần; API route vẫn dùng Id).</summary>
+        public int PublicCatalogNumber { get; set; }
     }
 }

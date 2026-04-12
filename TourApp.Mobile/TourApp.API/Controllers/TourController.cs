@@ -69,6 +69,8 @@ public class TourController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Tour>> CreateTour(Tour tour)
     {
+        if (tour.PublicCatalogNumber <= 0)
+            tour.PublicCatalogNumber = (await _context.Tours.MaxAsync(t => (int?)t.PublicCatalogNumber) ?? 0) + 1;
         _context.Tours.Add(tour);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetTour), new { id = tour.Id }, tour);
@@ -78,6 +80,9 @@ public class TourController : ControllerBase
     public async Task<IActionResult> UpdateTour(int id, Tour tour)
     {
         if (id != tour.Id) return BadRequest();
+        var existing = await _context.Tours.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
+        if (existing != null && tour.PublicCatalogNumber <= 0)
+            tour.PublicCatalogNumber = existing.PublicCatalogNumber;
         _context.Entry(tour).State = EntityState.Modified;
         
         try

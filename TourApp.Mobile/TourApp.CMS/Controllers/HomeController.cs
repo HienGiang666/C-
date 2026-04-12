@@ -22,7 +22,14 @@ public class HomeController : Controller
         {
             var client = _clientFactory.CreateClient("TourApi");
 
-            var poiTask = client.GetAsync("api/POI");
+            var role = HttpContext.Session.GetString("Role") ?? "";
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            var poiUrl = "api/POI";
+            if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(userIdStr, out var ownerId))
+                poiUrl = $"api/POI?ownerUserId={ownerId}";
+
+            var poiTask = client.GetAsync(poiUrl);
             var tourTask = client.GetAsync("api/tour");
             var userTask = client.GetAsync("api/user");
             var bookingTask = client.GetAsync("api/booking");
