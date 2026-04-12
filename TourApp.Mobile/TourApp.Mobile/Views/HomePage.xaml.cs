@@ -201,12 +201,12 @@ public partial class HomePage : ContentPage
         if (action == LanguageService.GetString("ViewRestaurants") && matchingPois?.Any() == true)
         {
             // Navigate to POI page with search filter
-            await Shell.Current.GoToAsync("///POIPage");
+            await Shell.Current.GoToAsync("//POIPage");
         }
         else if (action == LanguageService.GetString("ViewTours") && matchingTours.Any())
         {
             // Navigate to Tour page
-            await Shell.Current.GoToAsync("///TourPage");
+            await Shell.Current.GoToAsync("//TourPage");
         }
     }
 
@@ -269,7 +269,7 @@ public partial class HomePage : ContentPage
                 
             if (result)
             {
-                await Shell.Current.GoToAsync("///POIPage");
+                await Shell.Current.GoToAsync("//POIPage");
             }
         }
     }
@@ -313,12 +313,12 @@ public partial class HomePage : ContentPage
 
     private async void OnXemThemTourTapped(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("///TourPage");
+        await Shell.Current.GoToAsync("//TourPage");
     }
 
     private async void OnXemThemPoiTapped(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("///POIPage");
+        await Shell.Current.GoToAsync("//POIPage");
     }
 
     private async void OnQRScanClicked(object sender, EventArgs e)
