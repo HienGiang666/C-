@@ -1,0 +1,110 @@
+@using System.Text.Json
+@model TourApp.CMS.Models.AudioBulkCreateViewModel
+@{
+    ViewData["Title"] = "Sửa thuyết minh theo địa điểm";
+    var languages = ViewBag.Languages as List<TourApp.CMS.Models.LanguageOption> ?? new List<TourApp.CMS.Models.LanguageOption>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-pen-to-square me-2 text-info"></i>@ViewData["Title"]</h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="EditByPoi" method="post">
+                    <input type="hidden" asp-for="POIId" />
+                    <div class="alert alert-info border mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary">POI #@Model.POIId</span>
+                            <strong class="fs-5">@ViewBag.POIName</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Văn bản gốc</label>
+                        <textarea id="srcText" asp-for="SourceText" class="form-control" rows="4" oninput="handleSourceInput(this.value)"></textarea>
+                    </div>
+
+                    <div class="row g-3">
+                        @foreach (var lang in languages)
+                        {
+                            var value = Model.Scripts.TryGetValue(lang.Code, out var script) ? script : string.Empty;
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">@lang.Name (@lang.Code)</label>
+                                <textarea id="dst-@lang.Code" name="Scripts[@lang.Code]" class="form-control" rows="4">@value</textarea>
+                            </div>
+                        }
+                    </div>
+
+                    <hr />
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a asp-action="Index" asp-route-poiId="@Model.POIId" class="btn btn-light border">Hủy</a>
+                        <button type="submit" class="btn btn-primary">Lưu tất cả ngôn ngữ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const languages = @Html.Raw(JsonSerializer.Serialize(languages));
+
+function detectLang(text) {
+    if (!text.trim()) return 'vi';
+    if (/[\u4e00-\u9fff]/.test(text)) return 'zh';
+    if (/[\u3040-\u30ff]/.test(text)) return 'ja';
+    if (/[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/.test(text)) return 'vi';
+    return 'en';
+}
+
+async function translateInto(targetCode, text) {
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (data && data[0] && data[0].length > 0) {
+            return data[0].map(x => x[0]).join('');
+        }
+        return text; // fallback: return original
+    } catch (err) {
+        console.warn('Translation failed:', err);
+        return text; // fallback: return original text
+    }
+}
+
+let timer;
+function handleSourceInput(text) {
+    clearTimeout(timer);
+    timer = setTimeout(() => translateAll(text), 350);
+}
+
+async function translateAll(text) {
+    const src = (text || '').trim();
+    if (!src) return;
+    const detected = detectLang(src);
+    for (const lang of languages) {
+        const box = document.getElementById(`dst-${lang.Code}`);
+        if (!box) continue;
+        if (lang.Code === detected) {
+            box.value = src;
+            continue;
+        }
+
+        try {
+            box.value = await translateInto(lang.Code, src);
+        } catch {
+            box.value = src;
+        }
+    }
+}
+</script>
+}

@@ -5,23 +5,29 @@ namespace TourApp.API.Models
     public class Tour
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        public string? Name { get; set; }
+        public string? Description { get; set; }
         
-        [Range(1, double.MaxValue, ErrorMessage = "Giá Tour phải lớn hơn 0")]
+        [Range(0, double.MaxValue, ErrorMessage = "Giá Tour không được âm")]
         public decimal Price { get; set; }
         
-        [Range(1, int.MaxValue, ErrorMessage = "Thời lượng tối thiểu là 1 ngày")]
-        public int Duration { get; set; } // Số ngày
+        [Range(0, int.MaxValue, ErrorMessage = "Thời lượng không được âm")]
+        public int Duration { get; set; } = 1; // Số ngày
         
-        public string Destination { get; set; } = string.Empty;
+        public string? Destination { get; set; }
         
-        [Range(1, int.MaxValue, ErrorMessage = "Số khách tham gia tối thiểu là 1")]
+        [Range(0, int.MaxValue, ErrorMessage = "Số khách không được âm")]
         public int MaxParticipants { get; set; }
         
         public string? ImageUrl { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
-        public string SearchKeywords { get; set; } = string.Empty;
+        public string? SearchKeywords { get; set; }
+
+        /// <summary>Mã nghiệp vụ TR-1, TR-2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
+        
+        // Navigation property for many-to-many with POIs
+        public virtual ICollection<TourPOI> TourPOIs { get; set; } = new List<TourPOI>();
     }
 }

@@ -1,14 +1,17 @@
 @model TourApp.CMS.Models.Booking
+@using TourApp.CMS.Helpers
 
 @{
     ViewData["Title"] = "Chi tiết Vé & Duyệt đơn";
+    var userBadge = ViewBag.UserBadge as string ?? $"#U{Model.UserId}";
+    var tourCode = ViewBag.TourCode as string ?? $"TR-{Model.TourId}";
 }
 
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card border-0">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i> Đơn Đặt Vé #BK-@Model.Id</h5>
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i> Đơn Đặt Vé @Model.DisplayCode</h5>
                 @if(Model.Status == "Confirmed") {
                     <span class="badge bg-success bg-opacity-10 text-success px-3 border border-success">Đã Xác Nhận</span>
                 } else if(Model.Status == "Cancelled") {
@@ -21,12 +24,12 @@
                 <div class="row mb-4">
                     <div class="col-md-6 border-end">
                         <h6 class="text-uppercase text-muted fw-bold mb-3">Thông tin Khách</h6>
-                        <p class="mb-1"><i class="fa-solid fa-id-card text-muted me-2 width-20"></i> <span class="fw-medium">Mã User:</span> USR-@Model.UserId</p>
+                        <p class="mb-1"><i class="fa-solid fa-id-card text-muted me-2 width-20"></i> <span class="fw-medium">Mã thành viên:</span> <a asp-controller="User" asp-action="Details" asp-route-id="@Model.UserId" class="text-decoration-none">@userBadge</a></p>
                         <p class="mb-1"><i class="fa-regular fa-clock text-muted me-2 width-20"></i> <span class="fw-medium">Giờ đặt vé:</span> @Model.BookingDate.ToString("dd/MM/yyyy HH:mm")</p>
                     </div>
                     <div class="col-md-6 ps-md-4">
                         <h6 class="text-uppercase text-muted fw-bold mb-3">Thông tin Tour</h6>
-                        <p class="mb-1"><i class="fa-solid fa-suitcase-rolling text-muted me-2 width-20"></i> <span class="fw-medium">Mã Tour:</span> TR-@Model.TourId</p>
+                        <p class="mb-1"><i class="fa-solid fa-suitcase-rolling text-muted me-2 width-20"></i> <span class="fw-medium">Mã Tour:</span> <a asp-controller="Tour" asp-action="Edit" asp-route-id="@Model.TourId" class="text-decoration-none">@tourCode</a></p>
                         <p class="mb-1"><i class="fa-solid fa-calendar-day text-muted me-2 width-20"></i> <span class="fw-medium">Ngày bay:</span> @Model.TourDate.ToString("dd/MM/yyyy")</p>
                         <p class="mb-1"><i class="fa-solid fa-users text-muted me-2 width-20"></i> <span class="fw-medium">SL Khách:</span> @Model.NumberOfParticipants khách</p>
                     </div>

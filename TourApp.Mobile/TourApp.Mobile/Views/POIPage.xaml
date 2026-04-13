@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:TourApp.Mobile.Models"
+             x:Class="TourApp.Mobile.Views.POIPage"
+             BackgroundColor="#F5F6F8"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header Content -->
+        <VerticalStackLayout Grid.Row="0">
+            <Grid>
+                <!-- Orange Header -->
+                <BoxView Color="#FF3D00" HeightRequest="150" VerticalOptions="Start" />
+                
+                <VerticalStackLayout Padding="20,40,20,20">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+                            <Label Text="🍲" FontSize="24" />
+                            <Label Text="Quán Ăn" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+
+                        <!-- QR Code Scanner button -->
+                        <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
+                            <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </Grid>
+
+                    <!-- Search Bar -->
+                    <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
+                        <Grid ColumnDefinitions="30,*">
+                            <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
+                            <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm quán ăn..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- Main Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
+                <CollectionView x:Name="PoiCollectionView" SelectionMode="Single" SelectionChanged="OnPoiSelected">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="15" VerticalItemSpacing="15" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:POI">
+                            <Border StrokeThickness="0" Padding="0" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                <Border.Shadow>
+                                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                </Border.Shadow>
+                                <Grid RowDefinitions="120,Auto">
+                                    <Image Grid.Row="0" Source="media__1775454533773.jpg" Aspect="AspectFill"/>
+                                    <VerticalStackLayout Grid.Row="1" Padding="15">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14" TextColor="Black"/>
+                                        <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

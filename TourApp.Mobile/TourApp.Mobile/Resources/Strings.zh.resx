@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- AppShell / Navigation -->
+  <data name="TabHome" xml:space="preserve">
+    <value>首页</value>
+  </data>
+  <data name="TabFood" xml:space="preserve">
+    <value>餐厅</value>
+  </data>
+  <data name="TabMap" xml:space="preserve">
+    <value>地图</value>
+  </data>
+  <data name="TabTour" xml:space="preserve">
+    <value>旅游</value>
+  </data>
+  <data name="TabProfile" xml:space="preserve">
+    <value>我的</value>
+  </data>
+  <!-- Common -->
+  <data name="AppName" xml:space="preserve">
+    <value>第四区旅游</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>加载中...</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>成功</value>
+  </data>
+  <!-- HomePage -->
+  <data name="HomeTitle" xml:space="preserve">
+    <value>探索第四区美食</value>
+  </data>
+  <data name="HomeSubtitle" xml:space="preserve">
+    <value>寻找美味餐厅，体验独特旅游</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>搜索餐厅、地点...</value>
+  </data>
+  <data name="Categories" xml:space="preserve">
+    <value>分类</value>
+  </data>
+  <data name="CategoryGrill" xml:space="preserve">
+    <value>烧烤</value>
+  </data>
+  <data name="CategoryHotpot" xml:space="preserve">
+    <value>火锅</value>
+  </data>
+  <data name="CategorySeafood" xml:space="preserve">
+    <value>海鲜</value>
+  </data>
+  <data name="CategorySnacks" xml:space="preserve">
+    <value>小吃</value>
+  </data>
+  <data name="PopularPOIs" xml:space="preserve">
+    <value>热门餐厅</value>
+  </data>
+  <data name="ViewAll" xml:space="preserve">
+    <value>查看全部</value>
+  </data>
+  <data name="Tours" xml:space="preserve">
+    <value>推荐旅游</value>
+  </data>
+  <data name="ScanQR" xml:space="preserve">
+    <value>扫描二维码</value>
+  </data>
+  <!-- POIPage -->
+  <data name="POITitle" xml:space="preserve">
+    <value>餐厅</value>
+  </data>
+  <data name="POISearchPlaceholder" xml:space="preserve">
+    <value>搜索餐厅...</value>
+  </data>
+  <data name="NoPOIFound" xml:space="preserve">
+    <value>未找到餐厅</value>
+  </data>
+  <data name="Rating" xml:space="preserve">
+    <value>评分</value>
+  </data>
+  <!-- MapPage -->
+  <data name="MapLoading" xml:space="preserve">
+    <value>正在加载地图...</value>
+  </data>
+  <data name="MapNeedInternet" xml:space="preserve">
+    <value>需要网络连接</value>
+  </data>
+  <data name="MapLoadError" xml:space="preserve">
+    <value>无法加载地图</value>
+  </data>
+  <data name="MapCheckInternet" xml:space="preserve">
+    <value>Goong地图需要网络连接。请检查WiFi并重试。</value>
+  </data>
+  <data name="Radius" xml:space="preserve">
+    <value>半径</value>
+  </data>
+  <data name="Distance" xml:space="preserve">
+    <value>距离您</value>
+  </data>
+  <data name="Meters" xml:space="preserve">
+    <value>米</value>
+  </data>
+  <data name="Kilometers" xml:space="preserve">
+    <value>公里</value>
+  </data>
+  <data name="Listen" xml:space="preserve">
+    <value>听解说</value>
+  </data>
+  <data name="Directions" xml:space="preserve">
+    <value>导航</value>
+  </data>
+  <data name="Favorite" xml:space="preserve">
+    <value>收藏</value>
+  </data>
+  <data name="CloseDetail" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="SearchLocation" xml:space="preserve">
+    <value>搜索地点...</value>
+  </data>
+  <data name="ServerSettings" xml:space="preserve">
+    <value>服务器设置</value>
+  </data>
+  <data name="ServerAddressHint" xml:space="preserve">
+    <value>输入API服务器地址（例如：http://192.168.1.7:5254）</value>
+  </data>
+  <data name="AddressRequired" xml:space="preserve">
+    <value>地址必须以http://或https://开头</value>
+  </data>
+  <data name="ConnectedSuccess" xml:space="preserve">
+    <value>连接成功</value>
+  </data>
+  <data name="ConnectedLocations" xml:space="preserve">
+    <value>已加载{0}个地点</value>
+  </data>
+  <data name="ConnectionFailed" xml:space="preserve">
+    <value>连接失败</value>
+  </data>
+  <data name="ConnectionCheck" xml:space="preserve">
+    <value>无法连接。请检查：API是否运行？同一WiFi网络？IP正确？防火墙设置？</value>
+  </data>
+  <data name="SearchNotFound" xml:space="preserve">
+    <value>未在地点列表中找到'{0}'</value>
+  </data>
+  <data name="Recenter" xml:space="preserve">
+    <value>当前位置</value>
+  </data>
+  <!-- TourPage -->
+  <data name="TourTitle" xml:space="preserve">
+    <value>旅游列表</value>
+  </data>
+  <data name="TourSearchPlaceholder" xml:space="preserve">
+    <value>搜索旅游...</value>
+  </data>
+  <data name="NoTourFound" xml:space="preserve">
+    <value>未找到旅游</value>
+  </data>
+  <data name="Price" xml:space="preserve">
+    <value>价格</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>时长</value>
+  </data>
+  <data name="StartTour" xml:space="preserve">
+    <value>开始旅游</value>
+  </data>
+  <!-- ProfilePage -->
+  <data name="ProfileTitle" xml:space="preserve">
+    <value>账户</value>
+  </data>
+  <data name="NoEmail" xml:space="preserve">
+    <value>未提供邮箱</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="SelectLanguage" xml:space="preserve">
+    <value>选择语言</value>
+  </data>
+  <data name="LanguageCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="LanguageChanged" xml:space="preserve">
+    <value>语言已更改</value>
+  </data>
+  <data name="LanguageChangedMessage" xml:space="preserve">
+    <value>已切换至：{0}
+
+✓ 切换页面时全部UI将更新
+✓ 音频解说/TTS将使用{1}</value>
+  </data>
+  <data name="TourHistory" xml:space="preserve">
+    <value>旅游历史</value>
+  </data>
+  <data name="TourHistoryDesc" xml:space="preserve">
+    <value>此功能将显示您已预订并完成的旅游。
+
+暂无数据。请预订旅游并体验以更新历史记录。</value>
+  </data>
+  <data name="Favorites" xml:space="preserve">
+    <value>收藏</value>
+  </data>
+  <data name="FavoritePOIs" xml:space="preserve">
+    <value>收藏餐厅</value>
+  </data>
+  <data name="FavoriteTours" xml:space="preserve">
+    <value>收藏旅游</value>
+  </data>
+  <data name="FavoritesDesc" xml:space="preserve">
+    <value>此功能将保存您喜爱的地点和旅游以便日后查看。
+
+暂无数据。请在查看POI或旅游详情时添加收藏。</value>
+  </data>
+  <data name="ChangeServerIP" xml:space="preserve">
+    <value>更改服务器IP</value>
+  </data>
+  <data name="ServerIPHint" xml:space="preserve">
+    <value>输入服务器地址（例如：http://192.168.1.5:5254）</value>
+  </data>
+  <data name="ServerIPUpdated" xml:space="preserve">
+    <value>服务器地址已更新</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="ClearCacheConfirm" xml:space="preserve">
+    <value>您要清除应用程序缓存吗？</value>
+  </data>
+  <data name="CacheCleared" xml:space="preserve">
+    <value>缓存已清除</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>退出登录</value>
+  </data>
+  <data name="LogoutConfirm" xml:space="preserve">
+    <value>您确定要退出登录吗？</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <!-- Auth -->
+  <data name="LoginTitle" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>用户名</value>
+  </data>
+  <data name="UsernamePlaceholder" xml:space="preserve">
+    <value>请输入用户名</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>密码</value>
+  </data>
+  <data name="PasswordPlaceholder" xml:space="preserve">
+    <value>请输入密码</value>
+  </data>
+  <data name="ShowPassword" xml:space="preserve">
+    <value>显示密码</value>
+  </data>
+  <data name="HidePassword" xml:space="preserve">
+    <value>隐藏密码</value>
+  </data>
+  <data name="LoginButton" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="NoAccount" xml:space="preserve">
+    <value>还没有账户？</value>
+  </data>
+  <data name="RegisterNow" xml:space="preserve">
+    <value>立即注册</value>
+  </data>
+  <data name="ForgotPassword" xml:space="preserve">
+    <value>忘记密码？</value>
+  </data>
+  <data name="LoginSuccess" xml:space="preserve">
+    <value>登录成功！</value>
+  </data>
+  <data name="LoginFailed" xml:space="preserve">
+    <value>用户名或密码错误！</value>
+  </data>
+  <data name="ServerError" xml:space="preserve">
+    <value>无法连接到服务器</value>
+  </data>
+  <data name="RegisterTitle" xml:space="preserve">
+    <value>注册</value>
+  </data>
+  <data name="FullName" xml:space="preserve">
+    <value>全名</value>
+  </data>
+  <data name="FullNamePlaceholder" xml:space="preserve">
+    <value>请输入全名</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>邮箱</value>
+  </data>
+  <data name="EmailPlaceholder" xml:space="preserve">
+    <value>请输入邮箱</value>
+  </data>
+  <data name="ConfirmPassword" xml:space="preserve">
+    <value>确认密码</value>
+  </data>
+  <data name="ConfirmPasswordPlaceholder" xml:space="preserve">
+    <value>请再次输入密码</value>
+  </data>
+  <data name="RegisterButton" xml:space="preserve">
+    <value>注册</value>
+  </data>
+  <data name="HasAccount" xml:space="preserve">
+    <value>已有账户？</value>
+  </data>
+  <data name="LoginNow" xml:space="preserve">
+    <value>立即登录</value>
+  </data>
+  <data name="RegisterSuccess" xml:space="preserve">
+    <value>注册成功！</value>
+  </data>
+  <data name="RegisterFailed" xml:space="preserve">
+    <value>注册失败</value>
+  </data>
+  <data name="PasswordMismatch" xml:space="preserve">
+    <value>两次输入的密码不一致</value>
+  </data>
+  <data name="PasswordTooShort" xml:space="preserve">
+    <value>密码至少需要6个字符</value>
+  </data>
+  <data name="FullNameRequired" xml:space="preserve">
+    <value>请输入全名</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>请输入邮箱</value>
+  </data>
+  <!-- QR Scanner -->
+  <data name="QRScannerTitle" xml:space="preserve">
+    <value>扫描二维码</value>
+  </data>
+  <data name="QRInstruction" xml:space="preserve">
+    <value>将相机对准二维码进行扫描</value>
+  </data>
+  <data name="QRScanning" xml:space="preserve">
+    <value>正在扫描...</value>
+  </data>
+  <data name="QRSuccess" xml:space="preserve">
+    <value>扫描成功</value>
+  </data>
+  <data name="QRInvalid" xml:space="preserve">
+    <value>无效的二维码</value>
+  </data>
+  <!-- Search Results -->
+  <data name="SearchResults" xml:space="preserve">
+    <value>搜索结果</value>
+  </data>
+  <data name="ViewRestaurants" xml:space="preserve">
+    <value>查看餐厅</value>
+  </data>
+  <data name="ViewTours" xml:space="preserve">
+    <value>查看旅游</value>
+  </data>
+  <data name="NoResults" xml:space="preserve">
+    <value>未找到'{0}'的结果</value>
+  </data>
+  <!-- Categories -->
+  <data name="RestaurantsFound" xml:space="preserve">
+    <value>找到{0}家{1}餐厅</value>
+  </data>
+  <data name="ViewAllRestaurants" xml:space="preserve">
+    <value>查看全部</value>
+  </data>
+</root>

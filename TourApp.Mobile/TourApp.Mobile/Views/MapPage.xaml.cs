@@ -4,6 +4,8 @@ using System.Text.Json;
 
 namespace TourApp.Mobile.Views;
 
+[QueryProperty(nameof(PoiIdQuery), "poiId")]
+[QueryProperty(nameof(TourIdQuery), "tourId")]
 public partial class MapPage : ContentPage
 {
     private readonly LocationService _locationService;
@@ -15,6 +17,35 @@ public partial class MapPage : ContentPage
     private POI? _currentPoi;
     private Location? _lastLocation;
     private Location? _lastCheckedLocation;
+    private bool _isJsMapReady = false;
+    private string? _pendingMapPoisJson;
+    private int? _pendingPoiId = null;
+    private int? _pendingTourId = null;
+
+    // Query properties for navigation
+    public string PoiIdQuery
+    {
+        set
+        {
+            if (int.TryParse(value, out int id))
+            {
+                _pendingPoiId = id;
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Received poiId from query: {id}");
+            }
+        }
+    }
+    
+    public string TourIdQuery
+    {
+        set
+        {
+            if (int.TryParse(value, out int id))
+            {
+                _pendingTourId = id;
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Received tourId from query: {id}");
+            }
+        }
+    }
 
     // ----------------------------------------------------------------
     //  GOONG KEYS
@@ -34,20 +65,28 @@ public partial class MapPage : ContentPage
         try
         {
             InitializeComponent();
+            
             var services = IPlatformApplication.Current?.Services;
             _locationService = services?.GetService<LocationService>() ?? new LocationService();
             _apiService = services?.GetService<ApiService>() ?? new ApiService();
             _geofenceService = services?.GetService<GeofenceService>() ?? new GeofenceService(_apiService);
 
+            // Đồng bộ ngôn ngữ từ LanguageService để TTS đúng ngôn ngữ user đã chọn
+            _geofenceService.CurrentLanguage = LanguageService.CurrentLanguage;
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Initialized with language: {_geofenceService.CurrentLanguage}");
+
             _locationService.LocationChanged += OnLocationChanged;
             _geofenceService.PoiTriggered += OnPoiTriggered;
             _geofenceService.HighlightRequested += (_, poiId) =>
-                MapWebView.Eval($"highlightPoi({poiId});");
+            {
+                if (_isJsMapReady)
+                    MapWebView.Eval($"highlightPoi({poiId});");
+            };
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[MapPage] CONSTRUCTOR ERROR: {ex}");
-            // Fallback — tạo service mặc định để app không crash
+            // Fallback
             _locationService ??= new LocationService();
             _apiService ??= new ApiService();
             _geofenceService ??= new GeofenceService(_apiService);
@@ -60,6 +99,9 @@ public partial class MapPage : ContentPage
         {
             base.OnAppearing();
 
+            // Tránh lỗi nén tài nguyên trên Android cũ khi load quá nhanh lúc bật app
+            await Task.Delay(200);
+
             // Load map ngay lập tức với danh sách POI trống
             if (!_isMapLoaded)
             {
@@ -67,8 +109,11 @@ public partial class MapPage : ContentPage
                 _isMapLoaded = true;
             }
 
+            // [ANTI CRASH] Đợi WebView nạp HTML vào bộ nhớ đệm an toàn rồi mới xin quyền GPS (tránh xung đột vòng đời Activity gây văng app)
+            await Task.Delay(1000); 
+
             // Load POI từ API trong background — an toàn, không crash app
-            LoadPoisInBackgroundAsync().ContinueWith(t =>
+            _ = LoadPoisInBackgroundAsync().ContinueWith(t =>
             {
                 if (t.IsFaulted)
                     System.Diagnostics.Debug.WriteLine($"[MapPage] POI load faulted: {t.Exception}");
@@ -81,7 +126,7 @@ public partial class MapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"[MapPage.OnAppearing] ERROR: {ex}");
 #if DEBUG
-            try { await DisplayAlert("⚠️ Lỗi khởi động", ex.Message, "OK"); }
+            try { await DisplayAlert($"⚠️ {LanguageService.GetString("Error")}", ex.Message, LanguageService.GetString("OK")); }
             catch { }
 #endif
         }
@@ -100,7 +145,10 @@ public partial class MapPage : ContentPage
                 // Chạy HTTP call trên background thread — tránh VS break trên UI thread
                 var pois = await Task.Run(async () =>
                 {
-                    try { return await _apiService.GetAllPOIsAsync(); }
+                    try { 
+                        await ApiService.AutoDiscoverApiAsync();
+                        return await _apiService.GetAllPOIsAsync(); 
+                    }
                     catch { return new List<POI>(); } // nuốt tất cả lỗi kết nối
                 });
 
@@ -110,12 +158,13 @@ public partial class MapPage : ContentPage
                 _geofenceService.SetPois(_pois);
 
                 // Nếu có POI → refresh markers trên map
-                if (_pois.Any())
-                {
-                    var poisJson = System.Text.Json.JsonSerializer.Serialize(_pois);
-                    MainThread.BeginInvokeOnMainThread(() =>
-                        MapWebView.Eval($"refreshMarkers({poisJson});"));
-                }
+                QueueMapMarkerRefresh();
+                
+                // Xử lý pending POI ID nếu có
+                ProcessPendingPoiId();
+                
+                // Xử lý pending Tour ID nếu có
+                ProcessPendingTourId();
             }
         }
         catch (Exception ex)
@@ -128,6 +177,80 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         _locationService.StopTracking();
+    }
+    
+    /// <summary>
+    /// Xử lý POI ID từ navigation (ví dụ: từ HomePage khi click vào quán ăn)
+    /// </summary>
+    private void ProcessPendingPoiId()
+    {
+        if (_pendingPoiId.HasValue && _pois != null && _pois.Any())
+        {
+            var poi = _pois.FirstOrDefault(p => p.Id == _pendingPoiId.Value);
+            if (poi != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending POI: {poi.Name}");
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    // Hiển thị chi tiết POI
+                    ShowPoiDetails(poi);
+                    
+                    // Fly đến vị trí POI trên bản đồ
+                    if (_isJsMapReady)
+                    {
+                        MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
+                    }
+                });
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Pending POI ID {_pendingPoiId.Value} not found");
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await DisplayAlert(LanguageService.GetString("Error"), 
+                        LanguageService.GetString("SearchNotFound", _pendingPoiId.Value.ToString()), 
+                        LanguageService.GetString("OK"));
+                });
+            }
+            _pendingPoiId = null;
+        }
+    }
+
+    /// <summary>
+    /// Xử lý Tour ID từ navigation (ví dụ: từ TourPage khi click vào tour)
+    /// </summary>
+    private async void ProcessPendingTourId()
+    {
+        if (_pendingTourId.HasValue)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending Tour ID: {_pendingTourId.Value}");
+                
+                // Load tour details
+                var tour = await _apiService.GetTourByIdAsync(_pendingTourId.Value);
+                if (tour != null && _pois != null)
+                {
+                    // Show alert
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        DisplayAlert("Tour", $"Đang hiển thị tour: {tour.Name}", "OK");
+                    });
+                    
+                    // TODO: Load tour POIs and draw route
+                    // For now, just fly to center of Vĩnh Khánh
+                    if (_isJsMapReady)
+                    {
+                        MapWebView.Eval("map.flyTo({center: [106.7018, 10.7596], zoom: 15});");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] ProcessPendingTourId error: {ex.Message}");
+            }
+            _pendingTourId = null;
+        }
     }
 
     private void OnLocationChanged(object? sender, Location location)
@@ -144,14 +267,17 @@ public partial class MapPage : ContentPage
             shouldCheckGeofence = movedMeters > 5;
         }
 
+        if (shouldCheckGeofence)
+        {
+            _lastCheckedLocation = location;
+            _ = Task.Run(() => _geofenceService.CheckGeofences(location));
+        }
+
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
-
-            if (shouldCheckGeofence)
+            if (_isJsMapReady)
             {
-                _lastCheckedLocation = location;
-                _geofenceService.CheckGeofences(location);
+                MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
             }
 
             if (BottomSheetView.IsVisible && _currentPoi != null)
@@ -175,7 +301,7 @@ public partial class MapPage : ContentPage
     private void ShowPoiDetails(POI poi)
     {
         _currentPoi = poi;
-        PoiNameLabel.Text = poi.PoiName;
+        PoiNameLabel.Text = poi.Name;
         PoiDescLabel.Text = poi.Description;
         PoiRatingLabel.Text = $"⭐ {poi.Rating:F1}";
         PoiDistanceLabel.Text = $"• {poi.Radius}m bán kính";
@@ -193,7 +319,7 @@ public partial class MapPage : ContentPage
             ? ImageSource.FromUri(new Uri(poi.ImageUrl))
             : null;
 
-        bool isFav = Preferences.Default.Get($"fav_{poi.PoiId}", false);
+        bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
         FavBtn.Text = isFav ? "❤️" : "🤍";
 
         BottomSheetView.IsVisible = true;
@@ -203,7 +329,17 @@ public partial class MapPage : ContentPage
     {
         System.Diagnostics.Debug.WriteLine($"[MapWebView Navigation] URL: {e.Url}");
 
-        if (e.Url.StartsWith("poi://selected"))
+        if (e.Url.StartsWith("http://map/ready", StringComparison.OrdinalIgnoreCase))
+        {
+            e.Cancel = true;
+            _isJsMapReady = true;
+            TryRefreshMapMarkers();
+            // Process pending POI if POIs are already loaded
+            ProcessPendingPoiId();
+            return;
+        }
+
+        if (e.Url.StartsWith("poi://selected") || e.Url.StartsWith("http://poi/selected"))
         {
             e.Cancel = true;
             System.Diagnostics.Debug.WriteLine($"[MapWebView] POI selected: {e.Url}");
@@ -215,15 +351,15 @@ public partial class MapPage : ContentPage
                 if (int.TryParse(query["id"], out int poiId))
                 {
                     System.Diagnostics.Debug.WriteLine($"[MapWebView] Looking for POI ID: {poiId}");
-                    var poi = _pois?.FirstOrDefault(p => p.PoiId == poiId);
+                    var poi = _pois?.FirstOrDefault(p => p.Id == poiId);
                     if (poi != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[MapWebView] Found POI: {poi.PoiName}");
+                        System.Diagnostics.Debug.WriteLine($"[MapWebView] Found POI: {poi.Name}");
                         MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"[MapWebView] POI not found. Available POIs: {string.Join(", ", _pois?.Select(p => $"ID:{p.PoiId}") ?? new[] { "none" })}");
+                        System.Diagnostics.Debug.WriteLine($"[MapWebView] POI not found. Available POIs: {string.Join(", ", _pois?.Select(p => $"ID:{p.Id}") ?? new[] { "none" })}");
                     }
                 }
             }
@@ -237,8 +373,8 @@ public partial class MapPage : ContentPage
     private void OnPlayAudioClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
-        _ = TextToSpeech.Default.SpeakAsync(
-            $"Chào mừng bạn đến {_currentPoi.PoiName}. {_currentPoi.Description}");
+        // Dùng ScriptText từ DB (đúng ngôn ngữ CurrentLanguage), fallback về Description
+        _ = _geofenceService.SpeakNarrationAsync(_currentPoi);
     }
 
     private async void OnDirectionsClicked(object? sender, EventArgs e)
@@ -246,14 +382,14 @@ public partial class MapPage : ContentPage
         if (_currentPoi == null) return;
         var url = $"https://www.google.com/maps/dir/?api=1&destination={_currentPoi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{_currentPoi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&travelmode=walking";
         try { await Launcher.Default.OpenAsync(new Uri(url)); }
-        catch { await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "OK"); }
+        catch { await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("Error"), LanguageService.GetString("OK")); }
     }
 
     private void OnFavoriteClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
-        bool isFav = Preferences.Default.Get($"fav_{_currentPoi.PoiId}", false);
-        Preferences.Default.Set($"fav_{_currentPoi.PoiId}", !isFav);
+        bool isFav = Preferences.Default.Get($"fav_{_currentPoi.Id}", false);
+        Preferences.Default.Set($"fav_{_currentPoi.Id}", !isFav);
         FavBtn.Text = !isFav ? "❤️" : "🤍";
     }
 
@@ -288,7 +424,7 @@ public partial class MapPage : ContentPage
         result = result.TrimEnd('/');
         if (!result.StartsWith("http"))
         {
-            await DisplayAlert("Lỗi", "Địa chỉ phải bắt đầu bằng http:// hoặc https://", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("AddressRequired"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -304,14 +440,15 @@ public partial class MapPage : ContentPage
             _pois = await new ApiService().GetAllPOIsAsync();
             LoadMap();
             _isMapLoaded = true;
-            await DisplayAlert("✅ Thành công", $"Đã kết nối: {result}\nTải được {_pois.Count} địa điểm.", "OK");
+            await DisplayAlert($"✅ {LanguageService.GetString("ConnectedSuccess")}", 
+                LanguageService.GetString("ConnectedLocations", _pois?.Count ?? 0), 
+                LanguageService.GetString("OK"));
         }
         else
         {
-            await DisplayAlert("❌ Không kết nối được",
-                $"Không thể kết nối tới:\n{result}\n\n" +
-                "Kiểm tra:\n• API đang chạy?\n• Cùng mạng WiFi?\n• IP đúng chưa?\n• Firewall cho phép chưa?",
-                "OK");
+            await DisplayAlert($"❌ {LanguageService.GetString("ConnectionFailed")}",
+                LanguageService.GetString("ConnectionCheck"),
+                LanguageService.GetString("OK"));
         }
     }
 
@@ -321,7 +458,7 @@ public partial class MapPage : ContentPage
 
         // 1. Tìm trong dữ liệu POI local trước
         var local = _pois?.FirstOrDefault(p =>
-            p.PoiName.Contains(query, StringComparison.OrdinalIgnoreCase));
+            p.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
         if (local != null)
         {
             ShowPoiDetails(local);
@@ -332,7 +469,9 @@ public partial class MapPage : ContentPage
         // 2. Goong Places API (chỉ gọi nếu có REST API key)
         if (string.IsNullOrEmpty(GoongRestApiKey))
         {
-            await DisplayAlert("Tìm kiếm", $"Không tìm thấy '{query}' trong danh sách địa điểm.", "OK");
+            await DisplayAlert(LanguageService.GetString("Search"), 
+                LanguageService.GetString("SearchNotFound", query), 
+                LanguageService.GetString("OK"));
             return;
         }
 
@@ -382,11 +521,54 @@ public partial class MapPage : ContentPage
             MapWebView.Eval("map.flyTo({center: [106.7018, 10.7596], zoom: 17});");
     }
 
+    /// <summary>
+    /// QR Scanner: Điều hướng đến QRScannerPage để quét mã thực tế
+    /// </summary>
+    private async void OnQRScanClicked(object? sender, EventArgs e)
+    {
+        // Navigate to real QR scanner page
+        await Shell.Current.GoToAsync("QRScannerPage");
+    }
+
     private void LoadMap()
     {
-        var poisJson = System.Text.Json.JsonSerializer.Serialize(_pois ?? new List<POI>());
+        _isJsMapReady = false;
+        _pendingMapPoisJson = SerializeMapPois(_pois);
+        var poisJson = _pendingMapPoisJson;
         var html = BuildMapHtml(poisJson);
         MapWebView.Source = new HtmlWebViewSource { Html = html };
+    }
+
+    private static string SerializeMapPois(IEnumerable<POI>? pois)
+    {
+        var mapPois = (pois ?? Enumerable.Empty<POI>())
+            .Select(p => new POIMapDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Latitude = p.Latitude,
+                Longitude = p.Longitude
+            });
+
+        return System.Text.Json.JsonSerializer.Serialize(mapPois);
+    }
+
+    private void QueueMapMarkerRefresh()
+    {
+        _pendingMapPoisJson = SerializeMapPois(_pois);
+        TryRefreshMapMarkers();
+    }
+
+    private void TryRefreshMapMarkers()
+    {
+        if (!_isJsMapReady || string.IsNullOrWhiteSpace(_pendingMapPoisJson))
+            return;
+
+        var poisJson = _pendingMapPoisJson;
+        _pendingMapPoisJson = null;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+            MapWebView.Eval($"refreshMarkers({poisJson});"));
     }
 
     private static string BuildMapHtml(string poisJson)
@@ -469,7 +651,7 @@ public partial class MapPage : ContentPage
      Lý do: onerror/onload của script CDN gọi các hàm này ngay khi CDN load xong.
      Nếu khai báo sau, hàm chưa tồn tại → ReferenceError → map trắng -->
 <script>
-var map, pois = {poisJson}, userMarker = null;
+var map, pois = {poisJson}, userMarker = null, poiMarkers = [];
 
 function onGoongLoadError() {{
   clearTimeout(window.goongLoadTimeout);
@@ -490,6 +672,9 @@ function onGoongLoaded() {{
     map.on('load', function() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
+      setTimeout(function() {{
+        window.location.href = 'http://map/ready';
+      }}, 0);
     }});
     map.on('error', function(e) {{
       document.getElementById('loading').classList.add('hide');
@@ -501,8 +686,22 @@ function onGoongLoaded() {{
 
 function addMarkers(poiList) {{
   if (!map) return;
+  poiMarkers.forEach(function(marker) {{ marker.remove(); }});
+  poiMarkers = [];
 
   poiList.forEach(function(poi) {{
+    var latitude = poi.Latitude;
+    if (latitude === undefined || latitude === null) latitude = poi.latitude;
+    var longitude = poi.Longitude;
+    if (longitude === undefined || longitude === null) longitude = poi.longitude;
+    var lat = Number(latitude);
+    var lng = Number(longitude);
+
+    if (!isFinite(lat) || !isFinite(lng)) {{
+      console.log('[Marker Skipped] Invalid coordinates');
+      return;
+    }}
+
     // JSON from C# uses lowercase property names due to [JsonPropertyName(""id"")]
     var poiId = poi.id || poi.poiId || poi.PoiId || poi.Id || 0;
     var poiName = poi.name || poi.PoiName || poi.Name || 'Địa điểm';
@@ -516,8 +715,9 @@ function addMarkers(poiList) {{
 
     // Create marker with Goong
     var marker = new goongjs.Marker(el)
-      .setLngLat([poi.Longitude, poi.Latitude])
+      .setLngLat([lng, lat])
       .addTo(map);
+    poiMarkers.push(marker);
 
     // Log for debugging
     console.log('[Marker Created] POI ID: ' + poiId + ', Name: ' + poiName);
@@ -526,9 +726,8 @@ function addMarkers(poiList) {{
     el.addEventListener('click', function(e) {{
       console.log('[Marker Click Event Fired] POI ID: ' + poiId);
       e.stopPropagation();
-      e.preventDefault();
-      // Navigate using custom scheme
-      window.location.href = 'poi://selected?id=' + poiId;
+      // Navigate using standard scheme to ensure WebView catches it
+      window.location.href = 'http://poi/selected?id=' + poiId;
     }}, false);
 
     // Make element explicitly clickable
@@ -548,7 +747,6 @@ function updateUserLocation(lng, lat) {{
     var el = document.createElement('div');
     el.id = 'user-marker';
     userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
-    map.flyTo({{center: [lng, lat], zoom: 16}});
   }} else {{
     userMarker.setLngLat([lng, lat]);
   }}

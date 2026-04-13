@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:TourApp.Mobile.Models"
+             x:Class="TourApp.Mobile.Views.TourPage"
+             BackgroundColor="#F5F6F8"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header Content -->
+        <VerticalStackLayout Grid.Row="0">
+            <Grid>
+                <!-- Orange Header -->
+                <BoxView Color="#FF3D00" HeightRequest="150" VerticalOptions="Start" />
+                
+                <VerticalStackLayout Padding="20,40,20,20">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+                            <Label Text="🚩" FontSize="24" />
+                            <Label Text="Khám Phá Tour" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+
+                        <!-- QR Scanner button -->
+                        <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
+                            <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </Grid>
+
+                    <!-- Search Bar -->
+                    <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
+                        <Grid ColumnDefinitions="30,*">
+                            <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
+                            <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm tour..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- Main Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
+                <CollectionView x:Name="TourCollectionView" SelectionMode="Single" SelectionChanged="OnTourSelected">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:Tour">
+                            <Border StrokeThickness="0" Padding="0" Margin="0,0,0,20" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                <Border.Shadow>
+                                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                </Border.Shadow>
+                                <VerticalStackLayout>
+                                    <Image Source="media__1775454533773.jpg" HeightRequest="150" Aspect="AspectFill"/>
+                                    <VerticalStackLayout Padding="20" Spacing="10">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="18" TextColor="Black"/>
+                                        <Label Text="{Binding Description}" FontSize="13" TextColor="#888" LineBreakMode="WordWrap" MaxLines="2"/>
+                                        
+                                        <!-- Stats -->
+                                        <Grid ColumnDefinitions="*,*,*" Margin="0,5,0,15">
+                                            <HorizontalStackLayout Grid.Column="0" Spacing="5">
+                                                <Label Text="📍" FontSize="12"/><Label Text="{Binding PoiCount, StringFormat='{0} điểm'}" FontSize="12" TextColor="#444"/>
+                                            </HorizontalStackLayout>
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="5">
+                                                <Label Text="🚩" FontSize="12"/><Label Text="{Binding Distance, StringFormat='{0:F1}km'}" FontSize="12" TextColor="#444"/>
+                                            </HorizontalStackLayout>
+                                            <HorizontalStackLayout Grid.Column="2" Spacing="5">
+                                                <Label Text="⏰" FontSize="12"/><Label Text="{Binding Duration}" FontSize="12" TextColor="#444"/>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+
+                                        <Button Text="Bắt đầu Tour" BackgroundColor="#FF3D00" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="45" Clicked="OnStartTourClicked" CommandParameter="{Binding .}"/>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

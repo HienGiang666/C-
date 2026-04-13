@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TourApp.CMS.Helpers;
 using TourApp.CMS.Models;
 using TourApp.CMS.Services;
 
@@ -15,6 +16,24 @@ public class BookingController : Controller
         _activityLogger = activityLogger;
     }
 
+    private static async Task<Dictionary<int, string>> LoadUserCodeMapAsync(HttpClient client)
+    {
+        var map = new Dictionary<int, string>();
+        try
+        {
+            var response = await client.GetAsync("api/user");
+            if (!response.IsSuccessStatusCode)
+                return map;
+            var users = await response.Content.ReadFromJsonAsync<List<User>>();
+            if (users == null)
+                return map;
+            foreach (var u in users)
+                map[u.Id] = u.DisplayCode;
+        }
+        catch { }
+        return map;
+    }
+
     public async Task<IActionResult> Index()
     {
         ViewData["Title"] = "Quản lý Booking";
@@ -26,10 +45,19 @@ public class BookingController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var bookings = await response.Content.ReadFromJsonAsync<List<Booking>>();
+                ViewBag.UserCodeByUserId = await LoadUserCodeMapAsync(client);
+                var toursResp = await client.GetAsync("api/tour");
+                var tours = toursResp.IsSuccessStatusCode
+                    ? await toursResp.Content.ReadFromJsonAsync<List<Tour>>()
+                    : null;
+                ViewBag.TourCodeByTourId = (tours ?? new List<Tour>())
+                    .ToDictionary(t => t.Id, t => t.DisplayCode);
                 return View(bookings ?? new List<Booking>());
             }
         }
         catch { }
+        ViewBag.UserCodeByUserId = new Dictionary<int, string>();
+        ViewBag.TourCodeByTourId = new Dictionary<int, string>();
         return View(new List<Booking>());
     }
 
@@ -43,6 +71,25 @@ public class BookingController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var booking = await response.Content.ReadFromJsonAsync<Booking>();
+                if (booking == null)
+                    return RedirectToAction(nameof(Index));
+
+                var userResp = await client.GetAsync($"api/user/{booking.UserId}");
+                if (userResp.IsSuccessStatusCode)
+                {
+                    var user = await userResp.Content.ReadFromJsonAsync<User>();
+                    if (user != null)
+                        ViewBag.UserBadge = DisplayIdHelper.UserBadge(user);
+                }
+
+                var tourResp = await client.GetAsync($"api/tour/{booking.TourId}");
+                if (tourResp.IsSuccessStatusCode)
+                {
+                    var tr = await tourResp.Content.ReadFromJsonAsync<Tour>();
+                    if (tr != null)
+                        ViewBag.TourCode = tr.DisplayCode;
+                }
+
                 return View(booking);
             }
         }
@@ -94,7 +141,7 @@ public class BookingController : Controller
                     var response = await client.PutAsJsonAsync($"api/booking/{id}", booking);
                     if (response.IsSuccessStatusCode)
                     {
-                        _activityLogger.LogActivity(HttpContext, "Update", "Booking", $"#BK-{id}: {oldStatus}", status);
+                        _activityLogger.LogActivity(HttpContext, "Update", "Booking", $"{DisplayIdHelper.BookingRef(id)}: {oldStatus}", status);
                         TempData["success"] = "Cập nhật trạng thái thành công!";
                     }
                 }
@@ -112,7 +159,7 @@ public class BookingController : Controller
             var response = await client.DeleteAsync($"api/booking/{id}");
             if (response.IsSuccessStatusCode)
             {
-                _activityLogger.LogActivity(HttpContext, "Delete", "Booking", $"#BK-{id}", null);
+                _activityLogger.LogActivity(HttpContext, "Delete", "Booking", DisplayIdHelper.BookingRef(id), null);
                 TempData["success"] = "Xóa booking thành công!";
             }
         }

@@ -9,10 +9,17 @@ namespace TourApp.CMS.Models
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
-        public DateTime DateOfBirth { get; set; }
-        public string Role { get; set; } = "Customer";
+        public DateTime? DateOfBirth { get; set; }
+        public string? Role { get; set; } = "Customer";
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>Mã nghiệp vụ #U1, #U2... (Business Key, VARCHAR).</summary>
+        public string? Code { get; set; }
+
+        /// <summary>Mã hiển thị đầy đủ (VD: #U1).</summary>
+        public string DisplayCode => string.IsNullOrEmpty(Code) ? $"#U{Id}" : Code;
+
         public DateTime? LastLoginAt { get; set; }
     }
 }

@@ -1,16 +1,24 @@
 @model IEnumerable<TourApp.CMS.Models.POI>
 
 @{
-    ViewData["Title"] = "Quản lý Điểm Tham Quan (POI)";
-    int stt = 0;
+    ViewData["Title"] = "Quản lý địa điểm";
+    var ownerNames = ViewBag.OwnerNames as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
+    int stt = (currentPage - 1) * 10;
+    var cmsRole = Context.Session.GetString("Role") ?? "";
+    var isAdminPoi = cmsRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="card border-0 mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Danh sách Địa điểm</h5>
-        <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
-            <i class="fa-solid fa-plus me-2"></i> Thêm mới
-        </a>
+        @if (!isAdminPoi)
+        {
+            <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
+                <i class="fa-solid fa-plus me-2"></i> Thêm mới
+            </a>
+        }
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -21,34 +29,63 @@
                         <th>ID</th>
                         <th>Ảnh</th>
                         <th>Tên địa điểm</th>
+                        <th>Chủ sở hữu</th>
                         <th>Mô tả</th>
-                        <th>Tọa độ &amp; Trạng thái</th>
+                        <th>Tọa độ</th>
+                        <th>Trạng thái</th>
                         <th class="text-end">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (Model != null && Model.Any())
                     {
-                        foreach (var item in Model)
+                        @foreach (var item in Model)
                         {
                             stt++;
                             <tr>
                                 <td class="text-center text-muted align-middle">
                                     <small>@stt</small>
                                 </td>
-                                <td><span class="badge bg-secondary">#@item.Id</span></td>
+                                <td><span class="badge bg-secondary">@item.DisplayCode</span></td>
                                 <td>
                                     <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/50" : item.ImageUrl)"
                                          class="img-thumbnail rounded" style="width: 50px; height: 50px; object-fit: cover;" />
                                 </td>
                                 <td class="fw-bold text-primary">@item.Name</td>
+                                <td>
+                                    @if (item.OwnerUserId.HasValue && ownerNames.TryGetValue(item.OwnerUserId.Value, out var oname))
+                                    {
+                                        <span class="fw-medium">@oname</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
                                 <td class="text-truncate" style="max-width: 200px;" title="@item.Description">
                                     <small>@item.Description</small>
                                 </td>
                                 <td>
                                     <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-danger"></i> @item.Latitude</small></div>
                                     <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-primary"></i> @item.Longitude</small></div>
-                                    @if(item.IsActive) { <span class="badge bg-success" style="font-size: 0.65em;">Hoạt động</span> } else { <span class="badge bg-warning" style="font-size: 0.65em;">Đang ẩn</span> }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">đã khóa</span>
+                                    }
+                                    @if (item.ApprovalStatus == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">Chờ duyệt</span>
+                                    }
+                                    else if (item.ApprovalStatus == "Rejected")
+                                    {
+                                        <span class="badge bg-danger ms-1">Từ chối</span>
+                                    }
                                 </td>
                                 <td class="text-end">
                                     <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1" title="Quản lý Audio">
@@ -67,7 +104,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
+                            <td colspan="9" class="text-center py-4 text-muted">
                                 <i class="fa-solid fa-box-open fs-2 mb-2"></i><br />
                                 Không có dữ liệu
                             </td>
@@ -77,4 +114,13 @@
             </table>
         </div>
     </div>
+    @if (totalPages > 1)
+    {
+        <div class="card-footer bg-white d-flex justify-content-center flex-wrap gap-1">
+            @for (var p = 1; p <= totalPages; p++)
+            {
+                <a class="btn btn-sm @(p == currentPage ? "btn-primary" : "btn-outline-secondary")" asp-action="Index" asp-route-page="@p">@p</a>
+            }
+        </div>
+    }
 </div>

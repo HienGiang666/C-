@@ -1,8 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
+using TourApp.Mobile.Services;
 
 namespace TourApp.Mobile
 {
-    public partial class App : Application
+    public partial class App : Microsoft.Maui.Controls.Application
     {
         public App()
         {
@@ -29,7 +29,14 @@ namespace TourApp.Mobile
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            AuthService.LoadSavedSession();
+
+            Page startPage =
+                AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username)
+                    ? new AppShell()
+                    : new NavigationPage(new Views.Auth.LoginPage());
+
+            return new Window(startPage);
         }
     }
 }

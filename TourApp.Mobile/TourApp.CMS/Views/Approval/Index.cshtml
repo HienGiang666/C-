@@ -1,0 +1,73 @@
+@model IEnumerable<TourApp.CMS.Models.POI>
+@{
+    ViewData["Title"] = "Phê duyệt địa điểm";
+    var stt = 0;
+    var ownerLabels = ViewBag.OwnerDisplayLabels as Dictionary<int, string> ?? new Dictionary<int, string>();
+}
+
+<div class="card border-0 mb-4">
+    <div class="card-header">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-check me-2 text-warning"></i> Yêu cầu chờ phê duyệt</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center" style="width:48px">#</th>
+                        <th>ID</th>
+                        <th>Tên</th>
+                        <th>Địa chỉ</th>
+                        <th>Chủ sở hữu (UserId)</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var p in Model)
+                    {
+                        stt++;
+                        <tr>
+                            <td class="text-center text-muted">@stt</td>
+                            <td><span class="badge bg-secondary">#@p.Id</span></td>
+                            <td class="fw-medium">@p.Name</td>
+                            <td><small>@p.Address</small></td>
+                            <td>
+                                @if (p.OwnerUserId.HasValue && ownerLabels.TryGetValue(p.OwnerUserId.Value, out var ownerLbl))
+                                {
+                                    <span class="fw-medium">@ownerLbl</span>
+                                }
+                                else if (p.OwnerUserId.HasValue)
+                                {
+                                    <span class="text-muted">UserId @p.OwnerUserId</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <form asp-action="Approve" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@p.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success">Duyệt</button>
+                                </form>
+                                <form asp-action="Reject" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@p.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Từ chối POI này?');">Từ chối</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Không có yêu cầu chờ duyệt.</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

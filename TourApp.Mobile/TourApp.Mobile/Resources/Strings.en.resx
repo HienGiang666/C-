@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- AppShell / Navigation -->
+  <data name="TabHome" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="TabFood" xml:space="preserve">
+    <value>Food</value>
+  </data>
+  <data name="TabMap" xml:space="preserve">
+    <value>Map</value>
+  </data>
+  <data name="TabTour" xml:space="preserve">
+    <value>Tour</value>
+  </data>
+  <data name="TabProfile" xml:space="preserve">
+    <value>Me</value>
+  </data>
+  <!-- Common -->
+  <data name="AppName" xml:space="preserve">
+    <value>District 4 Tour</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <!-- HomePage -->
+  <data name="HomeTitle" xml:space="preserve">
+    <value>Discover District 4 Cuisine</value>
+  </data>
+  <data name="HomeSubtitle" xml:space="preserve">
+    <value>Find delicious food, experience unique tours</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>Search restaurants, places...</value>
+  </data>
+  <data name="Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="CategoryGrill" xml:space="preserve">
+    <value>Grill</value>
+  </data>
+  <data name="CategoryHotpot" xml:space="preserve">
+    <value>Hotpot</value>
+  </data>
+  <data name="CategorySeafood" xml:space="preserve">
+    <value>Seafood</value>
+  </data>
+  <data name="CategorySnacks" xml:space="preserve">
+    <value>Snacks</value>
+  </data>
+  <data name="PopularPOIs" xml:space="preserve">
+    <value>Popular Places</value>
+  </data>
+  <data name="ViewAll" xml:space="preserve">
+    <value>View All</value>
+  </data>
+  <data name="Tours" xml:space="preserve">
+    <value>Suggested Tours</value>
+  </data>
+  <data name="ScanQR" xml:space="preserve">
+    <value>Scan QR</value>
+  </data>
+  <!-- POIPage -->
+  <data name="POITitle" xml:space="preserve">
+    <value>Restaurants</value>
+  </data>
+  <data name="POISearchPlaceholder" xml:space="preserve">
+    <value>Search restaurants...</value>
+  </data>
+  <data name="NoPOIFound" xml:space="preserve">
+    <value>No restaurants found</value>
+  </data>
+  <data name="Rating" xml:space="preserve">
+    <value>Rating</value>
+  </data>
+  <!-- MapPage -->
+  <data name="MapLoading" xml:space="preserve">
+    <value>Loading map...</value>
+  </data>
+  <data name="MapNeedInternet" xml:space="preserve">
+    <value>Internet connection required</value>
+  </data>
+  <data name="MapLoadError" xml:space="preserve">
+    <value>Could not load map</value>
+  </data>
+  <data name="MapCheckInternet" xml:space="preserve">
+    <value>Goong Maps requires internet. Check WiFi and try again.</value>
+  </data>
+  <data name="Radius" xml:space="preserve">
+    <value>radius</value>
+  </data>
+  <data name="Distance" xml:space="preserve">
+    <value>from you</value>
+  </data>
+  <data name="Meters" xml:space="preserve">
+    <value>m</value>
+  </data>
+  <data name="Kilometers" xml:space="preserve">
+    <value>km</value>
+  </data>
+  <data name="Listen" xml:space="preserve">
+    <value>Listen to narration</value>
+  </data>
+  <data name="Directions" xml:space="preserve">
+    <value>Directions</value>
+  </data>
+  <data name="Favorite" xml:space="preserve">
+    <value>Favorite</value>
+  </data>
+  <data name="CloseDetail" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SearchLocation" xml:space="preserve">
+    <value>Search location...</value>
+  </data>
+  <data name="ServerSettings" xml:space="preserve">
+    <value>Server Settings</value>
+  </data>
+  <data name="ServerAddressHint" xml:space="preserve">
+    <value>Enter API server address (e.g., http://192.168.1.7:5254)</value>
+  </data>
+  <data name="AddressRequired" xml:space="preserve">
+    <value>Address must start with http:// or https://</value>
+  </data>
+  <data name="ConnectedSuccess" xml:space="preserve">
+    <value>Connected successfully</value>
+  </data>
+  <data name="ConnectedLocations" xml:space="preserve">
+    <value>Loaded {0} locations</value>
+  </data>
+  <data name="ConnectionFailed" xml:space="preserve">
+    <value>Connection failed</value>
+  </data>
+  <data name="ConnectionCheck" xml:space="preserve">
+    <value>Cannot connect. Check: Is API running? Same WiFi? Correct IP? Firewall?</value>
+  </data>
+  <data name="SearchNotFound" xml:space="preserve">
+    <value>Could not find '{0}' in locations list</value>
+  </data>
+  <data name="Recenter" xml:space="preserve">
+    <value>Current location</value>
+  </data>
+  <!-- TourPage -->
+  <data name="TourTitle" xml:space="preserve">
+    <value>Tour List</value>
+  </data>
+  <data name="TourSearchPlaceholder" xml:space="preserve">
+    <value>Search tours...</value>
+  </data>
+  <data name="NoTourFound" xml:space="preserve">
+    <value>No tours found</value>
+  </data>
+  <data name="Price" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="StartTour" xml:space="preserve">
+    <value>Start Tour</value>
+  </data>
+  <!-- ProfilePage -->
+  <data name="ProfileTitle" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="NoEmail" xml:space="preserve">
+    <value>No email provided</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SelectLanguage" xml:space="preserve">
+    <value>Select Language</value>
+  </data>
+  <data name="LanguageCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="LanguageChanged" xml:space="preserve">
+    <value>Language Changed</value>
+  </data>
+  <data name="LanguageChangedMessage" xml:space="preserve">
+    <value>Switched to: {0}
+
+✓ All UI will update when you change pages
+✓ Audio narration/TTS will use {1}</value>
+  </data>
+  <data name="TourHistory" xml:space="preserve">
+    <value>Tour History</value>
+  </data>
+  <data name="TourHistoryDesc" xml:space="preserve">
+    <value>This feature will display tours you have booked and completed.
+
+No data available yet. Please book tours and experience them to update history.</value>
+  </data>
+  <data name="Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="FavoritePOIs" xml:space="preserve">
+    <value>Favorite Restaurants</value>
+  </data>
+  <data name="FavoriteTours" xml:space="preserve">
+    <value>Favorite Tours</value>
+  </data>
+  <data name="FavoritesDesc" xml:space="preserve">
+    <value>This feature will save places and tours you love to view later.
+
+No data available yet. Add favorites when viewing POI or Tour details.</value>
+  </data>
+  <data name="ChangeServerIP" xml:space="preserve">
+    <value>Change Server IP</value>
+  </data>
+  <data name="ServerIPHint" xml:space="preserve">
+    <value>Enter server address (e.g., http://192.168.1.5:5254)</value>
+  </data>
+  <data name="ServerIPUpdated" xml:space="preserve">
+    <value>Server address updated</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="ClearCacheConfirm" xml:space="preserve">
+    <value>Do you want to clear application cache?</value>
+  </data>
+  <data name="CacheCleared" xml:space="preserve">
+    <value>Cache cleared</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="LogoutConfirm" xml:space="preserve">
+    <value>Are you sure you want to logout?</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <!-- Auth -->
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="UsernamePlaceholder" xml:space="preserve">
+    <value>Enter username</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="PasswordPlaceholder" xml:space="preserve">
+    <value>Enter password</value>
+  </data>
+  <data name="ShowPassword" xml:space="preserve">
+    <value>Show password</value>
+  </data>
+  <data name="HidePassword" xml:space="preserve">
+    <value>Hide password</value>
+  </data>
+  <data name="LoginButton" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="NoAccount" xml:space="preserve">
+    <value>Don't have an account?</value>
+  </data>
+  <data name="RegisterNow" xml:space="preserve">
+    <value>Register now</value>
+  </data>
+  <data name="ForgotPassword" xml:space="preserve">
+    <value>Forgot password?</value>
+  </data>
+  <data name="LoginSuccess" xml:space="preserve">
+    <value>Login successful!</value>
+  </data>
+  <data name="LoginFailed" xml:space="preserve">
+    <value>Invalid username or password!</value>
+  </data>
+  <data name="ServerError" xml:space="preserve">
+    <value>Cannot connect to server</value>
+  </data>
+  <data name="RegisterTitle" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="FullName" xml:space="preserve">
+    <value>Full Name</value>
+  </data>
+  <data name="FullNamePlaceholder" xml:space="preserve">
+    <value>Enter full name</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="EmailPlaceholder" xml:space="preserve">
+    <value>Enter email</value>
+  </data>
+  <data name="ConfirmPassword" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="ConfirmPasswordPlaceholder" xml:space="preserve">
+    <value>Re-enter password</value>
+  </data>
+  <data name="RegisterButton" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="HasAccount" xml:space="preserve">
+    <value>Already have an account?</value>
+  </data>
+  <data name="LoginNow" xml:space="preserve">
+    <value>Login now</value>
+  </data>
+  <data name="RegisterSuccess" xml:space="preserve">
+    <value>Registration successful!</value>
+  </data>
+  <data name="RegisterFailed" xml:space="preserve">
+    <value>Registration failed</value>
+  </data>
+  <data name="PasswordMismatch" xml:space="preserve">
+    <value>Passwords do not match</value>
+  </data>
+  <!-- QR Scanner -->
+  <data name="QRScannerTitle" xml:space="preserve">
+    <value>Scan QR Code</value>
+  </data>
+  <data name="QRInstruction" xml:space="preserve">
+    <value>Point camera at QR code to scan</value>
+  </data>
+  <data name="QRScanning" xml:space="preserve">
+    <value>Scanning...</value>
+  </data>
+  <data name="QRSuccess" xml:space="preserve">
+    <value>Scan successful</value>
+  </data>
+  <data name="QRInvalid" xml:space="preserve">
+    <value>Invalid QR code</value>
+  </data>
+</root>

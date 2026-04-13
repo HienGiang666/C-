@@ -23,7 +23,7 @@
                        BackgroundColor="Transparent"
                        ReturnType="Search"
                        Completed="OnSearchCompleted"/>
-                <Button Text="Tìm" BackgroundColor="#4F46E5" TextColor="White" CornerRadius="16"
+                <Button Text="Tìm" BackgroundColor="#FF3D00" TextColor="White" CornerRadius="16"
                         HeightRequest="36" Padding="12,0" FontSize="13" Clicked="OnSearchClicked"/>
             </HorizontalStackLayout>
         </Border>
@@ -46,7 +46,15 @@
                     Clicked="OnSettingsClicked"/>
         </Border>
 
-        <!-- Bottom Sheet Overlay -->
+        <!-- QR Scanner button -->
+        <Border WidthRequest="48" HeightRequest="48" StrokeShape="RoundRectangle 24"
+                BackgroundColor="#FF3D00" StrokeThickness="0" HorizontalOptions="End"
+                VerticalOptions="Start" Margin="0,200,15,0"
+                Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.2, Radius=8}">
+            <Button Text="📷" BackgroundColor="Transparent" FontSize="20" Padding="0"
+                    Clicked="OnQRScanClicked"/>
+        </Border>
+
         <ContentView x:Name="BottomSheetView" IsVisible="False" VerticalOptions="End">
             <Border BackgroundColor="White" StrokeShape="RoundRectangle 24, 24, 0, 0" StrokeThickness="0"
                     Shadow="{Shadow Brush=Black, Offset='0,-5', Opacity=0.15, Radius=15}">
@@ -83,11 +91,11 @@
 
                         <!-- Action Buttons -->
                         <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-                            <Button Grid.Column="0" Text="🔊 Nghe" BackgroundColor="#4F46E5"
+                            <Button Grid.Column="0" Text="🔊 Nghe" BackgroundColor="#FF3D00"
                                     TextColor="White" CornerRadius="12" FontAttributes="Bold"
                                     Clicked="OnPlayAudioClicked"/>
-                            <Button Grid.Column="1" Text="🗺️ Đường đi" BackgroundColor="#E0E7FF"
-                                    TextColor="#4F46E5" CornerRadius="12" FontAttributes="Bold"
+                            <Button Grid.Column="1" Text="🗺️ Đường đi" BackgroundColor="#FFF1E6"
+                                    TextColor="#FF3D00" CornerRadius="12" FontAttributes="Bold"
                                     Clicked="OnDirectionsClicked"/>
                             <Button Grid.Column="2" Text="❌ Đóng" BackgroundColor="#F1F5F9"
                                     TextColor="#64748B" CornerRadius="12"

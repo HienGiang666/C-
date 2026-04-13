@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using TourApp.CMS.Models;
 using TourApp.CMS.Services;
@@ -15,8 +16,9 @@ public class UserController : Controller
         _activityLogger = activityLogger;
     }
 
-    public async Task<IActionResult> Index(string search = "")
+    public async Task<IActionResult> Index(string search = "", int page = 1)
     {
+        const int pageSize = 10;
         ViewData["Title"] = "Quản lý User";
         try
         {
@@ -25,18 +27,29 @@ public class UserController : Controller
 
             if (response.IsSuccessStatusCode)
             {
-                var users = await response.Content.ReadFromJsonAsync<List<User>>();
+                var users = await response.Content.ReadFromJsonAsync<List<User>>() ?? new List<User>();
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    users = users?.Where(u => u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                              u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList() ?? new List<User>();
+                    users = users.Where(u => u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                              u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
                     ViewBag.SearchTerm = search;
                 }
-                return View(users ?? new List<User>());
+
+                users = users.OrderBy(u => u.Code).ThenBy(u => u.Id).ToList();
+                page = Math.Max(1, page);
+                var total = users.Count;
+                var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+                if (page > totalPages) page = totalPages;
+                var slice = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                return View(slice);
             }
         }
         catch { }
+        ViewBag.CurrentPage = 1;
+        ViewBag.TotalPages = 1;
         return View(new List<User>());
     }
 
@@ -66,6 +79,37 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(User user)
     {
+        if (user.Role.Equals("Customer", StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.AddModelError(nameof(user.Role), "Khách hàng chỉ đăng ký qua app mobile, không tạo từ CMS.");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.FullName))
+            ModelState.AddModelError(nameof(user.FullName), "Vui lòng nhập họ và tên.");
+        if (string.IsNullOrWhiteSpace(user.Username))
+            ModelState.AddModelError(nameof(user.Username), "Vui lòng nhập tên đăng nhập.");
+        if (string.IsNullOrWhiteSpace(user.PasswordHash))
+            ModelState.AddModelError(nameof(user.PasswordHash), "Vui lòng nhập mật khẩu.");
+        if (string.IsNullOrWhiteSpace(user.Email))
+            ModelState.AddModelError(nameof(user.Email), "Vui lòng nhập email.");
+        else if (!user.Email.Contains('@', StringComparison.Ordinal) || user.Email.Length < 5)
+            ModelState.AddModelError(nameof(user.Email), "Email không hợp lệ.");
+
+        var phone = (user.PhoneNumber ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(phone))
+            ModelState.AddModelError(nameof(user.PhoneNumber), "Vui lòng nhập số điện thoại.");
+        else if (!Regex.IsMatch(phone, @"^\d{10}$"))
+            ModelState.AddModelError(nameof(user.PhoneNumber), "Số điện thoại phải đúng 10 chữ số.");
+
+        if (string.IsNullOrWhiteSpace(user.Address))
+            ModelState.AddModelError(nameof(user.Address), "Vui lòng nhập địa chỉ liên hệ.");
+
+        if (!user.DateOfBirth.HasValue || user.DateOfBirth.Value.Year < 1900 || user.DateOfBirth.Value.Date > DateTime.Today)
+            ModelState.AddModelError(nameof(user.DateOfBirth), "Vui lòng chọn ngày sinh hợp lệ.");
+
+        if (!ModelState.IsValid)
+            return View(user);
+
         try
         {
             var client = _clientFactory.CreateClient("TourApi");
@@ -93,6 +137,8 @@ public class UserController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var user = await response.Content.ReadFromJsonAsync<User>();
+                if (user != null && user.Role?.Equals("Staff", StringComparison.OrdinalIgnoreCase) == true)
+                    user.Role = "RestaurantOwner";
                 return View(user);
             }
         }
@@ -103,6 +149,9 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(int id, User user)
     {
+        if (user.Role?.Equals("Staff", StringComparison.OrdinalIgnoreCase) == true)
+            user.Role = "RestaurantOwner";
+
         try
         {
             var client = _clientFactory.CreateClient("TourApi");

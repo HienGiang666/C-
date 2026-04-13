@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 using TourApp.Mobile.Services;
+using ZXing.Net.Maui.Controls;
 
 namespace TourApp.Mobile
 {
@@ -17,7 +18,8 @@ namespace TourApp.Mobile
                     handler.PlatformView.Settings.JavaScriptEnabled = true;
                     handler.PlatformView.Settings.DomStorageEnabled = true;
                     handler.PlatformView.Settings.MixedContentMode = Android.Webkit.MixedContentHandling.AlwaysAllow;
-                    handler.PlatformView.SetLayerType(Android.Views.LayerType.Hardware, null);
+                    // Bỏ ép phần cứng (Hardware Layer) vì gây crash native (văng app tắp lự) trên Android 9 (Oppo A31)
+                    // handler.PlatformView.SetLayerType(Android.Views.LayerType.Hardware, null);
                 }
             });
 #endif
@@ -25,6 +27,7 @@ namespace TourApp.Mobile
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -36,6 +39,18 @@ namespace TourApp.Mobile
             builder.Services.AddSingleton<GeofenceService>();
             
             builder.Services.AddTransient<Views.MapPage>();
+            builder.Services.AddTransient<Views.HomePage>();
+            builder.Services.AddTransient<Views.POIPage>();
+            builder.Services.AddTransient<Views.TourPage>();
+            builder.Services.AddTransient<Views.ProfilePage>();
+            
+            builder.Services.AddTransient<Views.Auth.LoginPage>();
+            builder.Services.AddTransient<Views.Auth.SignUpPage>();
+            builder.Services.AddTransient<Views.Auth.ForgotPasswordPage>();
+            builder.Services.AddTransient<Views.Auth.VerificationPage>();
+
+            // Initialize LanguageService for localization
+            LanguageService.Initialize();
 
 #if DEBUG
             builder.Logging.AddDebug();

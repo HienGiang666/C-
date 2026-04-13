@@ -13,11 +13,29 @@
             <div class="card-body p-4">
                 <form asp-action="Create" method="post">
                     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                    
+
                     <div class="mb-3">
                         <label asp-for="FullName" class="form-label fw-medium">Họ và Tên <span class="text-danger">*</span></label>
                         <input asp-for="FullName" class="form-control form-control-lg" placeholder="Nhập họ và tên đầy đủ..." required />
                         <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Username" class="form-label fw-medium">Tên đăng nhập <span class="text-danger">*</span></label>
+                            <input asp-for="Username" class="form-control" required autocomplete="username" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Mật khẩu <span class="text-danger">*</span></label>
+                            <div class="input-group position-relative">
+                                <input asp-for="PasswordHash" type="password" class="form-control pe-5" id="passwordField" required autocomplete="new-password" />
+                                <span class="position-absolute end-0 top-50 translate-middle-y me-3 cursor-pointer" style="z-index: 10;" id="togglePassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </span>
+                            </div>
+                            <span asp-validation-for="PasswordHash" class="text-danger"></span>
+                        </div>
                     </div>
 
                     <div class="row mb-3">
@@ -27,29 +45,31 @@
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="PhoneNumber" class="form-label fw-medium">Số điện thoại</label>
-                            <input asp-for="PhoneNumber" class="form-control" placeholder="09xxxxxxxxx" />
+                            <label asp-for="PhoneNumber" class="form-label fw-medium">Số điện thoại <span class="text-danger">*</span></label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="10 chữ số, VD: 0912345678" required maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" title="Đúng 10 chữ số" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label asp-for="Role" class="form-label fw-medium">Quyền hạn</label>
-                            <select asp-for="Role" class="form-select">
-                                <option value="Customer">Khách hàng</option>
-                                <option value="Staff">Nhân viên phục vụ</option>
-                                <option value="Admin">Quản trị viên (Admin)</option>
+                            <label asp-for="Role" class="form-label fw-medium">Quyền hạn <span class="text-danger">*</span></label>
+                            <select asp-for="Role" class="form-select" required>
+                                <option value="Admin">Quản trị viên (admin)</option>
+                                <option value="RestaurantOwner">Chủ quán ăn</option>
                             </select>
+                            <small class="text-muted">Khách hàng chỉ tạo qua app mobile.</small>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="DateOfBirth" class="form-label fw-medium">Ngày sinh</label>
-                            <input asp-for="DateOfBirth" type="date" class="form-control" />
+                            <label asp-for="DateOfBirth" class="form-label fw-medium">Ngày sinh <span class="text-danger">*</span></label>
+                            <input asp-for="DateOfBirth" type="date" class="form-control" required />
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Address" class="form-label fw-medium">Địa chỉ liên hệ</label>
-                        <textarea asp-for="Address" class="form-control" rows="2" placeholder="Số nhà, Tên đường..."></textarea>
+                        <label asp-for="Address" class="form-label fw-medium">Địa chỉ liên hệ <span class="text-danger">*</span></label>
+                        <textarea asp-for="Address" class="form-control" rows="2" placeholder="Số nhà, Tên đường..." required></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
                     </div>
 
                     <hr />
@@ -62,3 +82,21 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('passwordField');
+            const icon = this.querySelector('i');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    </script>
+}

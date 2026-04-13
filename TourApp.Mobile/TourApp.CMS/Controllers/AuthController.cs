@@ -32,12 +32,12 @@ public class AuthController : Controller
                 if (response.IsSuccessStatusCode)
                 {
                     var user = await response.Content.ReadFromJsonAsync<AdminUser>();
-                    if (user != null && user.Role == "Admin")
+                    if (user != null && IsCmsAllowedRole(user.Role))
                     {
                         HttpContext.Session.SetString("UserId", user.Id.ToString());
                         HttpContext.Session.SetString("Username", user.Username);
                         HttpContext.Session.SetString("FullName", user.FullName);
-                        HttpContext.Session.SetString("Role", user.Role);
+                        HttpContext.Session.SetString("Role", NormalizeCmsRole(user.Role));
                         HttpContext.Session.SetString("Email", user.Email);
                         return RedirectToAction("Index", "Home");
                     }
@@ -66,27 +66,31 @@ public class AuthController : Controller
 
             if (response.IsSuccessStatusCode)
             {
-                var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                
-                var role = root.GetProperty("role").GetString() ?? "";
-                if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(options);
+                if (loginResponse == null)
                 {
-                    ModelState.AddModelError(string.Empty, "Chỉ dành cho Admin. Bạn không có quyền truy cập!");
+                    ModelState.AddModelError(string.Empty, "Dữ liệu trả về từ API không hợp lệ!");
                     return View(model);
                 }
 
-                HttpContext.Session.SetString("UserId", root.GetProperty("id").GetInt32().ToString());
-                HttpContext.Session.SetString("Username", root.GetProperty("username").GetString() ?? "");
-                HttpContext.Session.SetString("FullName", root.GetProperty("fullName").GetString() ?? "");
-                HttpContext.Session.SetString("Role", role);
-                HttpContext.Session.SetString("Email", root.GetProperty("email").GetString() ?? "");
+                var role = loginResponse.Role ?? "";
+                if (!IsCmsAllowedRole(role))
+                {
+                    ModelState.AddModelError(string.Empty, "Chỉ dành cho Quản trị viên hoặc Chủ quán ăn. Khách hàng không đăng nhập CMS được.");
+                    return View(model);
+                }
+
+                HttpContext.Session.SetString("UserId", loginResponse.Id.ToString());
+                HttpContext.Session.SetString("Username", loginResponse.Username ?? "");
+                HttpContext.Session.SetString("FullName", loginResponse.FullName ?? "");
+                HttpContext.Session.SetString("Role", NormalizeCmsRole(role));
+                HttpContext.Session.SetString("Email", loginResponse.Email ?? "");
 
                 if (model.RememberMe)
                 {
                     var cookieOptions = new CookieOptions { Expires = DateTime.Now.AddDays(30), HttpOnly = true };
-                    Response.Cookies.Append("AuthToken", root.GetProperty("id").GetInt32().ToString(), cookieOptions);
+                    Response.Cookies.Append("AuthToken", loginResponse.Id.ToString(), cookieOptions);
                 }
 
                 _activityLogger.LogActivity(HttpContext, "Login", "Auth", null, model.Username);
@@ -133,7 +137,8 @@ public class AuthController : Controller
             var response = await client.GetAsync($"api/user/{userId}");
             if (response.IsSuccessStatusCode)
             {
-                var user = await response.Content.ReadFromJsonAsync<AdminUser>();
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var user = await response.Content.ReadFromJsonAsync<User>(options);
                 ViewData["Title"] = "Hồ sơ cá nhân";
                 return View(user);
             }
@@ -143,4 +148,84 @@ public class AuthController : Controller
         TempData["error"] = "Không thể tải thông tin hồ sơ từ máy chủ.";
         return RedirectToAction("Index", "Home");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> ChangePassword(string newPassword, string confirmPassword)
+    { 
+        if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+        { 
+            TempData["error"] = "Mật khẩu xác nhận không khớp!";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var userId = HttpContext.Session.GetString("UserId");
+        var username = HttpContext.Session.GetString("Username");
+
+        if (username?.ToLower() == "admin")
+        { 
+            TempData["error"] = "Không được phép đổi mật khẩu Admin!";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        try
+        { 
+            var client = _clientFactory.CreateClient("TourApi");
+            var userResponse = await client.GetAsync($"api/user/{userId}");
+            if (!userResponse.IsSuccessStatusCode)
+            { 
+                TempData["error"] = "Lỗi kết nối!";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            var user = await userResponse.Content.ReadFromJsonAsync<AdminUser>();
+            if (user == null) return RedirectToAction(nameof(Profile));
+
+            // Chỉ gửi password mới (plain text), API sẽ hash
+            user.PasswordHash = newPassword;
+
+            var updateResponse = await client.PutAsJsonAsync($"api/user/{userId}", user);
+            if (updateResponse.IsSuccessStatusCode)
+            { 
+                TempData["success"] = "Đổi mật khẩu thành công!";
+            }
+            else
+            { 
+                TempData["error"] = "Cập nhật thất bại!";
+            }
+        }
+        catch (Exception ex)
+        { 
+            TempData["error"] = "Lỗi: " + ex.Message;
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
+
+    private bool IsCmsAllowedRole(string role)
+    { 
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var r = role.ToLower();
+        return r == "admin" || r == "restaurantowner" || r == "staff";
+    }
+
+    private string NormalizeCmsRole(string role)
+    { 
+        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase)) return "Chủ quán ăn";
+        if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase)) return "Nhân viên";
+        return role;
+    }
 }
+
+public class AdminUser
+{ 
+    public int Id { get; set; }
+    public string? Username { get; set; }
+    public string? FullName { get; set; }
+    public string? Email { get; set; }
+    public string? Role { get; set; }
+    public string? PasswordHash { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+public record LoginResponse(int Id, string? Username, string? FullName, string? Email, string? Role);

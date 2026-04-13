@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Korean -->
+  <data name="TabHome" xml:space="preserve"><value>홈</value></data>
+  <data name="TabFood" xml:space="preserve"><value>음식점</value></data>
+  <data name="TabMap" xml:space="preserve"><value>지도</value></data>
+  <data name="TabTour" xml:space="preserve"><value>투어</value></data>
+  <data name="TabProfile" xml:space="preserve"><value>내 정보</value></data>
+  <data name="AppName" xml:space="preserve"><value>4구 투어</value></data>
+  <data name="OK" xml:space="preserve"><value>확인</value></data>
+  <data name="Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="Close" xml:space="preserve"><value>닫기</value></data>
+  <data name="Save" xml:space="preserve"><value>저장</value></data>
+  <data name="Search" xml:space="preserve"><value>검색</value></data>
+  <data name="Loading" xml:space="preserve"><value>로딩 중...</value></data>
+  <data name="Error" xml:space="preserve"><value>오류</value></data>
+  <data name="Success" xml:space="preserve"><value>성공</value></data>
+  <data name="HomeTitle" xml:space="preserve"><value>4구 미식 탐험</value></data>
+  <data name="HomeSubtitle" xml:space="preserve"><value>맛있는 음식점을 찾고, 독특한 투어를 경험하세요</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>음식점, 장소 검색...</value></data>
+  <data name="Categories" xml:space="preserve"><value>카테고리</value></data>
+  <data name="CategoryGrill" xml:space="preserve"><value>구이</value></data>
+  <data name="CategoryHotpot" xml:space="preserve"><value>샤브샤브</value></data>
+  <data name="CategorySeafood" xml:space="preserve"><value>해산물</value></data>
+  <data name="CategorySnacks" xml:space="preserve"><value>간식</value></data>
+  <data name="PopularPOIs" xml:space="preserve"><value>인기 음식점</value></data>
+  <data name="ViewAll" xml:space="preserve"><value>모두 보기</value></data>
+  <data name="Tours" xml:space="preserve"><value>추천 투어</value></data>
+  <data name="ScanQR" xml:space="preserve"><value>QR 스캔</value></data>
+  <data name="POITitle" xml:space="preserve"><value>음식점</value></data>
+  <data name="POISearchPlaceholder" xml:space="preserve"><value>음식점 검색...</value></data>
+  <data name="NoPOIFound" xml:space="preserve"><value>음식점을 찾을 수 없습니다</value></data>
+  <data name="Rating" xml:space="preserve"><value>평점</value></data>
+  <data name="MapLoading" xml:space="preserve"><value>지도 로딩 중...</value></data>
+  <data name="MapNeedInternet" xml:space="preserve"><value>인터넷 연결 필요</value></data>
+  <data name="MapLoadError" xml:space="preserve"><value>지도를 로드할 수 없습니다</value></data>
+  <data name="MapCheckInternet" xml:space="preserve"><value>Goong 지도는 인터넷 연결이 필요합니다. WiFi를 확인하고 다시 시도하세요.</value></data>
+  <data name="Radius" xml:space="preserve"><value>반경</value></data>
+  <data name="Distance" xml:space="preserve"><value>거리</value></data>
+  <data name="Meters" xml:space="preserve"><value>미터</value></data>
+  <data name="Kilometers" xml:space="preserve"><value>킬로미터</value></data>
+  <data name="Listen" xml:space="preserve"><value>오디오 가이드 듣기</value></data>
+  <data name="Directions" xml:space="preserve"><value>길찾기</value></data>
+  <data name="Favorite" xml:space="preserve"><value>즐겨찾기</value></data>
+  <data name="CloseDetail" xml:space="preserve"><value>닫기</value></data>
+  <data name="SearchLocation" xml:space="preserve"><value>장소 검색...</value></data>
+  <data name="ServerSettings" xml:space="preserve"><value>서버 설정</value></data>
+  <data name="ServerAddressHint" xml:space="preserve"><value>API 서버 주소 입력 (예: http://192.168.1.7:5254)</value></data>
+  <data name="AddressRequired" xml:space="preserve"><value>주소는 http:// 또는 https://로 시작해야 합니다</value></data>
+  <data name="ConnectedSuccess" xml:space="preserve"><value>연결 성공</value></data>
+  <data name="ConnectedLocations" xml:space="preserve"><value>{0}개 장소 로드됨</value></data>
+  <data name="ConnectionFailed" xml:space="preserve"><value>연결 실패</value></data>
+  <data name="ConnectionCheck" xml:space="preserve"><value>연결할 수 없습니다. 확인: API 실행 중? 같은 WiFi? 올바른 IP? 방화벽?</value></data>
+  <data name="SearchNotFound" xml:space="preserve"><value>'{0}'을(를) 찾을 수 없습니다</value></data>
+  <data name="Recenter" xml:space="preserve"><value>현재 위치</value></data>
+  <data name="TourTitle" xml:space="preserve"><value>투어 목록</value></data>
+  <data name="TourSearchPlaceholder" xml:space="preserve"><value>투어 검색...</value></data>
+  <data name="NoTourFound" xml:space="preserve"><value>투어를 찾을 수 없습니다</value></data>
+  <data name="Price" xml:space="preserve"><value>가격</value></data>
+  <data name="Duration" xml:space="preserve"><value>소요 시간</value></data>
+  <data name="StartTour" xml:space="preserve"><value>투어 시작</value></data>
+  <data name="ProfileTitle" xml:space="preserve"><value>계정</value></data>
+  <data name="NoEmail" xml:space="preserve"><value>이메일 없음</value></data>
+  <data name="Language" xml:space="preserve"><value>언어</value></data>
+  <data name="SelectLanguage" xml:space="preserve"><value>언어 선택</value></data>
+  <data name="LanguageCancel" xml:space="preserve"><value>취소</value></data>
+  <data name="LanguageChanged" xml:space="preserve"><value>언어가 변경되었습니다</value></data>
+  <data name="LanguageChangedMessage" xml:space="preserve"><value>{0}(으)로 변경되었습니다
+
+✓ 페이지 이동 시 UI가 업데이트됩니다
+✓ 오디오 가이드/TTS는 {1}를 사용합니다</value></data>
+  <data name="TourHistory" xml:space="preserve"><value>투어 기록</value></data>
+  <data name="TourHistoryDesc" xml:space="preserve"><value>예약하고 완료한 투어를 표시합니다.
+
+데이터가 없습니다. 투어를 예약하고 경험하여 기록을 업데이트하세요.</value></data>
+  <data name="Favorites" xml:space="preserve"><value>즐겨찾기</value></data>
+  <data name="FavoritePOIs" xml:space="preserve"><value>즐겨찾는 음식점</value></data>
+  <data name="FavoriteTours" xml:space="preserve"><value>즐겨찾는 투어</value></data>
+  <data name="FavoritesDesc" xml:space="preserve"><value>나중에 볼 수 있도록 좋아하는 장소와 투어를 저장합니다.
+
+데이터가 없습니다. POI 또는 투어 상세 정보를 볼 때 즐겨찾기를 추가하세요.</value></data>
+  <data name="ChangeServerIP" xml:space="preserve"><value>서버 IP 변경</value></data>
+  <data name="ServerIPHint" xml:space="preserve"><value>서버 주소 입력 (예: http://192.168.1.5:5254)</value></data>
+  <data name="ServerIPUpdated" xml:space="preserve"><value>서버 주소가 업데이트되었습니다</value></data>
+  <data name="Settings" xml:space="preserve"><value>설정</value></data>
+  <data name="ClearCacheConfirm" xml:space="preserve"><value>앱 캐시를 지우시겠습니까?</value></data>
+  <data name="CacheCleared" xml:space="preserve"><value>캐시가 지워졌습니다</value></data>
+  <data name="Logout" xml:space="preserve"><value>로그아웃</value></data>
+  <data name="LogoutConfirm" xml:space="preserve"><value>로그아웃하시겠습니까?</value></data>
+  <data name="Version" xml:space="preserve"><value>버전</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>로그인</value></data>
+  <data name="Username" xml:space="preserve"><value>사용자 이름</value></data>
+  <data name="UsernamePlaceholder" xml:space="preserve"><value>사용자 이름 입력</value></data>
+  <data name="Password" xml:space="preserve"><value>비밀번호</value></data>
+  <data name="PasswordPlaceholder" xml:space="preserve"><value>비밀번호 입력</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>비밀번호 표시</value></data>
+  <data name="HidePassword" xml:space="preserve"><value>비밀번호 숨기기</value></data>
+  <data name="LoginButton" xml:space="preserve"><value>로그인</value></data>
+  <data name="NoAccount" xml:space="preserve"><value>계정이 없으신가요?</value></data>
+  <data name="RegisterNow" xml:space="preserve"><value>지금 가입</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>비밀번호를 잊으셨나요?</value></data>
+  <data name="LoginSuccess" xml:space="preserve"><value>로그인 성공!</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>잘못된 사용자 이름 또는 비밀번호입니다!</value></data>
+  <data name="ServerError" xml:space="preserve"><value>서버에 연결할 수 없습니다</value></data>
+  <data name="RegisterTitle" xml:space="preserve"><value>가입</value></data>
+  <data name="FullName" xml:space="preserve"><value>성명</value></data>
+  <data name="FullNamePlaceholder" xml:space="preserve"><value>성명 입력</value></data>
+  <data name="Email" xml:space="preserve"><value>이메일</value></data>
+  <data name="EmailPlaceholder" xml:space="preserve"><value>이메일 입력</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>비밀번호 확인</value></data>
+  <data name="ConfirmPasswordPlaceholder" xml:space="preserve"><value>비밀번호 다시 입력</value></data>
+  <data name="RegisterButton" xml:space="preserve"><value>가입</value></data>
+  <data name="HasAccount" xml:space="preserve"><value>이미 계정이 있으신가요?</value></data>
+  <data name="LoginNow" xml:space="preserve"><value>지금 로그인</value></data>
+  <data name="RegisterSuccess" xml:space="preserve"><value>가입 성공!</value></data>
+  <data name="RegisterFailed" xml:space="preserve"><value>가입 실패</value></data>
+  <data name="PasswordMismatch" xml:space="preserve"><value>비밀번호가 일치하지 않습니다</value></data>
+  <data name="PasswordTooShort" xml:space="preserve"><value>비밀번호는 6자 이상이어야 합니다</value></data>
+  <data name="FullNameRequired" xml:space="preserve"><value>성명을 입력해주세요</value></data>
+  <data name="EmailRequired" xml:space="preserve"><value>이메일을 입력해주세요</value></data>
+  <data name="QRScannerTitle" xml:space="preserve"><value>QR 코드 스캔</value></data>
+  <data name="QRInstruction" xml:space="preserve"><value>카메라를 QR 코드에 대주세요</value></data>
+  <data name="QRScanning" xml:space="preserve"><value>스캔 중...</value></data>
+  <data name="QRSuccess" xml:space="preserve"><value>스캔 성공</value></data>
+  <data name="QRInvalid" xml:space="preserve"><value>유효하지 않은 QR 코드</value></data>
+  <data name="SearchResults" xml:space="preserve"><value>검색 결과</value></data>
+  <data name="ViewRestaurants" xml:space="preserve"><value>음식점 보기</value></data>
+  <data name="ViewTours" xml:space="preserve"><value>투어 보기</value></data>
+  <data name="NoResults" xml:space="preserve"><value>'{0}'에 대한 결과가 없습니다</value></data>
+  <data name="RestaurantsFound" xml:space="preserve"><value>{0}개의 {1} 음식점을 찾았습니다</value></data>
+  <data name="ViewAllRestaurants" xml:space="preserve"><value>모두 보기</value></data>
+</root>

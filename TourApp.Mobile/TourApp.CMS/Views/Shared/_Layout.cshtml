@@ -14,6 +14,10 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="bg-light">
+@{
+    var cmsRole = Context.Session.GetString("Role") ?? "";
+    var isAdmin = cmsRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+}
 
     <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
@@ -26,11 +30,13 @@
                     <i class="fa-solid fa-gauge me-3 fs-5 width-20"></i> Dashboard
                 </a>
                 <a asp-controller="POI" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
-                    <i class="fa-solid fa-map-location-dot me-3 fs-5 width-20"></i> Quản lý Địa điểm
+                    <i class="fa-solid fa-map-location-dot me-3 fs-5 width-20"></i> Quản lý địa điểm
                 </a>
                 <a asp-controller="Audio" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
                     <i class="fa-solid fa-headphones me-3 fs-5 width-20"></i> Thuyết minh (Audio)
                 </a>
+                @if (isAdmin)
+                {
                 <a asp-controller="Tour" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
                     <i class="fa-solid fa-suitcase-rolling me-3 fs-5 width-20"></i> Quản lý Tour
                 </a>
@@ -40,14 +46,18 @@
                 <a asp-controller="User" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
                     <i class="fa-solid fa-users me-3 fs-5 width-20"></i> Thành viên
                 </a>
+                <a asp-controller="Approval" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
+                    <i class="fa-solid fa-clipboard-check me-3 fs-5 width-20"></i> Phê duyệt
+                </a>
+                }
                 <a asp-controller="Activity" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
                     <i class="fa-solid fa-clipboard-list me-3 fs-5 width-20"></i> Lịch sử hoạt động
                 </a>
             </div>
         </div>
 
-        <!-- Page Content -->
-        <div id="page-content-wrapper" class="w-100 p-0">
+        <!-- Page Content: flex để footer nằm cuối viewport khi ít nội dung; khi bảng dài, footer sau hết dữ liệu (kéo xuống mới thấy). -->
+        <div id="page-content-wrapper" class="w-100 p-0 d-flex flex-column min-vh-100">
             <!-- Top Navigation -->
             <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm mb-4 px-4 sticky-top">
                 <div class="d-flex align-items-center">
@@ -67,7 +77,10 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 rounded-3" aria-labelledby="userDropdown">
                                 <li><h6 class="dropdown-header text-uppercase text-muted">@Context.Session.GetString("Role")</h6></li>
                                 <li><a class="dropdown-item py-2" asp-controller="Auth" asp-action="Profile"><i class="fa-regular fa-user me-2"></i> Hồ sơ cá nhân</a></li>
-                                <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="alert('Tính năng đang trong quá trình phát triển!');"><i class="fa-solid fa-gear me-2"></i> Cài đặt</a></li>
+                                @if (isAdmin)
+                                {
+                                <li><a class="dropdown-item py-2" asp-controller="Settings" asp-action="Index"><i class="fa-solid fa-gear me-2"></i> Cài đặt</a></li>
+                                }
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</a></li>
                             </ul>
@@ -81,7 +94,7 @@
             </nav>
 
             <!-- Main Container -->
-            <div class="container-fluid px-4 pb-5 content-area">
+            <div class="container-fluid px-4 pb-5 content-area flex-grow-1">
                 
                 @if (TempData["success"] != null)
                 {

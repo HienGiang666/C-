@@ -14,12 +14,14 @@
                 <form asp-action="Create" method="post">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label asp-for="TourId" class="form-label fw-medium">Mã Tour (ID) <span class="text-danger">*</span></label>
-                            <input asp-for="TourId" type="number" class="form-control" required min="1" placeholder="Nhập ID tour..." />
+                            <label asp-for="TourId" class="form-label fw-medium">ID Tour trong hệ thống <span class="text-danger">*</span></label>
+                            <input asp-for="TourId" type="number" class="form-control" required min="1" placeholder="Số sau TR- (vd: TR-3 → 3)" />
+                            <small class="text-muted">Dùng cùng số với cột mã tour (TR-…) trên danh sách tour.</small>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="UserId" class="form-label fw-medium">Mã Khách hàng (ID) <span class="text-danger">*</span></label>
-                            <input asp-for="UserId" type="number" class="form-control" required min="1" placeholder="Nhập ID user..." />
+                            <label asp-for="UserId" class="form-label fw-medium">ID người dùng (khóa DB) <span class="text-danger">*</span></label>
+                            <input asp-for="UserId" type="number" class="form-control" required min="1" placeholder="ID trong URL chi tiết thành viên" />
+                            <small class="text-muted">Không phải số sau #U; mở chi tiết thành viên trên CMS để xem ID thật.</small>
                         </div>
                     </div>
 

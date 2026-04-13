@@ -1,7 +1,7 @@
 @model TourApp.CMS.Models.POI
-
 @{
-    ViewData["Title"] = "Cập nhật Điểm Tham Quan";
+    ViewData["Title"] = "Cập nhật địa điểm";
+    var isAdmin = ViewBag.IsAdminPoiEdit as bool? == true;
 }
 
 <div class="row justify-content-center">
@@ -14,64 +14,122 @@
                 <form asp-action="Edit" method="post" enctype="multipart/form-data">
                     <input type="hidden" asp-for="Id" />
                     <input type="hidden" asp-for="ImageUrl" />
-                    
-                    <div class="mb-3">
-                        <label asp-for="Name" class="form-label fw-medium">Tên địa điểm <span class="text-danger">*</span></label>
-                        <input asp-for="Name" class="form-control" required />
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Address" class="form-label fw-medium">Địa chỉ góc</label>
-                        <input asp-for="Address" class="form-control" />
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label asp-for="Latitude" class="form-label fw-medium">Vĩ độ (Latitude) <span class="text-danger">*</span></label>
-                            <input asp-for="Latitude" class="form-control" type="number" step="any" required />
+
+                    @if (isAdmin)
+                    {
+                        <div class="alert alert-info small">
+                            <strong>Quản trị viên:</strong> chỉ được khóa/mở (hoạt động), và chỉnh bán kính quét, độ ưu tiên, đánh giá.
                         </div>
-                        <div class="col-md-6">
-                            <label asp-for="Longitude" class="form-label fw-medium">Kinh độ (Longitude) <span class="text-danger">*</span></label>
-                            <input asp-for="Longitude" class="form-control" type="number" step="any" required />
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Tên địa điểm</label>
+                            <input class="form-control" value="@Model.Name" readonly />
                         </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <label asp-for="Radius" class="form-label fw-medium">Bán kính quét (m)</label>
-                            <input asp-for="Radius" class="form-control" type="number" required />
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Địa chỉ</label>
+                            <input class="form-control" value="@Model.Address" readonly />
                         </div>
-                        <div class="col-md-3">
-                            <label asp-for="Priority" class="form-label fw-medium">Độ ưu tiên</label>
-                            <input asp-for="Priority" class="form-control" type="number" required />
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Vĩ độ</label>
+                                <input class="form-control" value="@Model.Latitude" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Kinh độ</label>
+                                <input class="form-control" value="@Model.Longitude" readonly />
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label asp-for="Rating" class="form-label fw-medium">Đánh giá (1-5)</label>
-                            <input asp-for="Rating" class="form-control" type="number" step="0.1" required />
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Giờ mở cửa</label>
+                            <input class="form-control" value="@Model.OpenTime" readonly />
                         </div>
-                        <div class="col-md-3">
-                            <label asp-for="OpenTime" class="form-label fw-medium">Giờ mở cửa</label>
-                            <input asp-for="OpenTime" class="form-control" />
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Mô tả</label>
+                            <textarea class="form-control" rows="3" readonly>@Model.Description</textarea>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-medium">Ảnh đại diện</label>
                         @if (!string.IsNullOrEmpty(Model.ImageUrl))
                         {
-                            <div class="mb-2">
-                                <img src="@Model.ImageUrl" alt="Current Image" class="img-thumbnail" style="max-height: 100px" />
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Ảnh hiện tại</label>
+                                <div><img src="@Model.ImageUrl" alt="" class="img-thumbnail" style="max-height: 100px" /></div>
                             </div>
                         }
-                        <input type="file" name="uploadImage" class="form-control" accept="image/*" />
-                        <small class="text-muted">Bỏ trống nếu muốn giữ nguyên ảnh hiện tại.</small>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" asp-for="IsActive">
-                            <label class="form-check-label" asp-for="IsActive">Đang hoạt động trên App</label>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="Radius" class="form-label fw-medium">Bán kính quét (m) <span class="text-danger">*</span></label>
+                                <input asp-for="Radius" class="form-control" type="number" min="1" step="1" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Priority" class="form-label fw-medium">Độ ưu tiên <span class="text-danger">*</span></label>
+                                <input asp-for="Priority" class="form-control" type="number" min="1" step="1" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Rating" class="form-label fw-medium">Đánh giá <span class="text-danger">*</span></label>
+                                <input asp-for="Rating" class="form-control" type="number" step="any" min="0.01" required />
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-4">
-                        <label asp-for="Description" class="form-label fw-medium">Mô tả chi tiết</label>
-                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
-                    </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive">
+                                <label class="form-check-label" asp-for="IsActive">Đang hoạt động trên App</label>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-medium">Tên địa điểm <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label fw-medium">Địa chỉ <span class="text-danger">*</span></label>
+                            <input asp-for="Address" class="form-control" required />
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Latitude" class="form-label fw-medium">Vĩ độ (Latitude) <span class="text-danger">*</span></label>
+                                <input asp-for="Latitude" class="form-control" type="number" step="any" min="0.000001" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Longitude" class="form-label fw-medium">Kinh độ (Longitude) <span class="text-danger">*</span></label>
+                                <input asp-for="Longitude" class="form-control" type="number" step="any" min="0.000001" required />
+                            </div>
+                        </div>
+                        <input type="hidden" asp-for="Radius" value="20" />
+                        <input type="hidden" asp-for="Priority" value="1" />
+                        <p class="small text-muted">Bán kính <strong>20 m</strong> và độ ưu tiên <strong>1</strong> do hệ thống cố định cho chủ quán.</p>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Rating" class="form-label fw-medium">Đánh giá <span class="text-danger">*</span></label>
+                                <input asp-for="Rating" class="form-control" type="number" step="any" min="0.01" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="OpenTime" class="form-label fw-medium">Giờ mở cửa <span class="text-danger">*</span></label>
+                                <input asp-for="OpenTime" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Ảnh đại diện</label>
+                            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                            {
+                                <div class="mb-2">
+                                    <img src="@Model.ImageUrl" alt="Current Image" class="img-thumbnail" style="max-height: 100px" />
+                                </div>
+                            }
+                            <input type="file" name="uploadImage" class="form-control" accept="image/*" />
+                            <small class="text-muted">Bỏ trống nếu muốn giữ nguyên ảnh hiện tại.</small>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive">
+                                <label class="form-check-label" asp-for="IsActive">Đang hoạt động trên App</label>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-medium">Mô tả chi tiết <span class="text-danger">*</span></label>
+                            <textarea asp-for="Description" class="form-control" rows="4" required></textarea>
+                        </div>
+                    }
+
                     <hr />
                     <div class="d-flex gap-2 justify-content-end">
                         <a asp-action="Index" class="btn btn-light border">Hủy bỏ</a>

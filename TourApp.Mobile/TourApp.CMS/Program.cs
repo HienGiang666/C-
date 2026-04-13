@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<AuthFilter>();
+    options.Filters.Add<CmsAccessFilter>();
 });
 
 builder.Services.AddHttpClient("TourApi", client =>
@@ -27,6 +28,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IActivityLogger, ActivityLogger>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddSingleton<ILanguageSettingsService, LanguageSettingsService>();
 
 var app = builder.Build();
 

@@ -9,31 +9,153 @@ namespace TourApp.Mobile.Services
         // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
         private const string DefaultUrl = "http://192.168.1.5:5254";
 
+        private static readonly JsonSerializerOptions JsonOpts = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        private static readonly object ClientLock = new();
+        private static HttpClient? _client;
+
         public static string BaseUrl
         {
             get => Preferences.Default.Get("api_base_url", DefaultUrl);
-            set => Preferences.Default.Set("api_base_url", value);
+            set
+            {
+                var normalized = value.TrimEnd('/');
+                Preferences.Default.Set("api_base_url", normalized);
+                // Recreate client with new base address to avoid stale DNS/port
+                lock (ClientLock)
+                {
+                    _client?.Dispose();
+                    _client = CreateClient(normalized);
+                }
+            }
         }
 
-        public static void UpdateBaseUrl(string newUrl) =>
-            BaseUrl = newUrl.TrimEnd('/');
+        public static void UpdateBaseUrl(string newUrl) => BaseUrl = newUrl;
 
-        /// <summary>
-        /// Gọi 1 lần sau khi app khởi động xong để reset IP cũ nếu cần.
-        /// KHÔNG gọi trong static constructor — Preferences chưa sẵn sàng lúc đó.
-        /// </summary>
-        public static void ResetCachedUrlIfNeeded()
+        [DebuggerNonUserCode]
+        public static async Task AutoDiscoverApiAsync()
+        {
+            // Timeout 5s cho toàn bộ discovery để tránh treo login
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            try
+            {
+                await AutoDiscoverInternalAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("[ApiService] Auto-Discovery timeout (5s), using default URL");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Auto-Discovery error: {ex.Message}");
+            }
+        }
+
+        [DebuggerNonUserCode]
+        private static async Task AutoDiscoverInternalAsync(CancellationToken ct)
+        {
+            // Ưu tiên thử DefaultUrl trước (nhanh nhất)
+            if (await TestUrlAsync(DefaultUrl) != null)
+            {
+                BaseUrl = DefaultUrl;
+                Debug.WriteLine($"[ApiService] Using default URL: {DefaultUrl}");
+                return;
+            }
+
+            // Nếu URL hiện tại khác default và còn sống thì giữ nguyên
+            if (BaseUrl != DefaultUrl && await new ApiService().TestConnectionAsync())
+                return;
+
+            Debug.WriteLine("[ApiService] Start Auto Discovery...");
+            var subnet = GetLocalSubnet();
+            var ipsToTest = new List<string>();
+            
+            // 1. Emulator
+            if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
+            {
+                ipsToTest.Add("http://10.0.2.2:5254");
+                ipsToTest.Add("http://10.0.2.2:7244");
+            }
+
+            // 2. Local network (giảm xuống 10 IP để nhanh hơn) 
+            for (int i = 1; i <= 10; i++)
+            {
+                ipsToTest.Add($"http://{subnet}.{i}:5254");
+            }
+
+            // Batch testing (5 at a time) với timeout ngắn hơn (1.5s)
+            for (int i = 0; i < ipsToTest.Count; i += 5)
+            {
+                ct.ThrowIfCancellationRequested();
+                
+                var batch = ipsToTest.Skip(i).Take(5).Select(url => TestUrlQuickAsync(url, ct)).ToList();
+                
+                while (batch.Count > 0)
+                {
+                    var finished = await Task.WhenAny(batch);
+                    batch.Remove(finished);
+                    var res = await finished;
+                    if (res != null)
+                    {
+                        BaseUrl = res;
+                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
+                        return;
+                    }
+                }
+            }
+        }
+
+        [DebuggerNonUserCode]
+        private static async Task<string?> TestUrlQuickAsync(string url, CancellationToken ct)
         {
             try
             {
-                var cached = Preferences.Default.Get("api_base_url", "");
-                if (!string.IsNullOrEmpty(cached) && cached != DefaultUrl)
-                {
-                    Preferences.Default.Remove("api_base_url");
-                    Debug.WriteLine($"[ApiService] Reset cached URL: {cached} → {DefaultUrl}");
-                }
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(1.5) };
+                var r = await client.GetAsync($"{url}/api/poi", ct);
+                if (r.IsSuccessStatusCode) return url;
             }
-            catch { /* Preferences chưa sẵn sàng — bỏ qua */ }
+            catch { }
+            return null;
+        }
+
+        [DebuggerNonUserCode]
+        private static async Task<string?> TestUrlAsync(string url)
+        {
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2.5) };
+                var r = await client.GetAsync($"{url}/api/poi");
+                if (r.IsSuccessStatusCode) return url;
+            }
+            catch { }
+            return null;
+        }
+
+        private static string GetLocalSubnet()
+        {
+            try {
+                foreach (var netInterface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (netInterface.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
+                    {
+                        foreach (var addrInfo in netInterface.GetIPProperties().UnicastAddresses)
+                        {
+                            if (addrInfo.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            {
+                                var ip = addrInfo.Address.ToString();
+                                if (ip.StartsWith("192.168.") || ip.StartsWith("10.") || ip.StartsWith("172."))
+                                {
+                                    return ip.Substring(0, ip.LastIndexOf('.'));
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch { }
+            return "192.168.1";
         }
 
         [DebuggerNonUserCode]
@@ -42,67 +164,112 @@ namespace TourApp.Mobile.Services
 
         [DebuggerNonUserCode]
         public Task<List<POI>> GetAllPOIsAsync() =>
-            TryFetch<List<POI>>(
-                "/api/poi",
-                body =>
-                {
-                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    return JsonSerializer.Deserialize<List<POI>>(body, opts) ?? new();
-                },
+            TryFetch(
+                "/api/poi?approvedOnly=true",
+                body => JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new(),
                 () => new List<POI>()
+            );
+
+        [DebuggerNonUserCode]
+        public Task<List<Tour>> GetAllToursAsync() =>
+            TryFetch(
+                "/api/tour",
+                body => JsonSerializer.Deserialize<List<Tour>>(body, JsonOpts) ?? new(),
+                () => new List<Tour>()
+            );
+
+        [DebuggerNonUserCode]
+        public Task<Tour?> GetTourByIdAsync(int tourId) =>
+            TryFetch(
+                $"/api/tour/{tourId}",
+                body => JsonSerializer.Deserialize<Tour>(body, JsonOpts),
+                () => null
+            );
+
+        [DebuggerNonUserCode]
+        public Task<List<Language>> GetLanguagesAsync() =>
+            TryFetch(
+                "/api/language",
+                body => JsonSerializer.Deserialize<List<Language>>(body, JsonOpts) ?? new(),
+                () => new List<Language>()
             );
 
         public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
             Task.FromResult<Audio?>(null);
 
-        public Task LogNarrationAsync(int poiId, int? audioId, string triggerType) =>
-            Task.CompletedTask;
+        public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
+        {
+            try
+            {
+                string deviceId = "Unknown";
+                try { deviceId = DeviceInfo.Current.Platform + "-" + DeviceInfo.Current.Idiom; } catch { }
+
+                var payload = new
+                {
+                    POIId = poiId,
+                    AudioId = audioId,
+                    TriggerType = triggerType,
+                    DeviceId = deviceId
+                };
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await GetClient().PostAsync("/api/NarrationLog", content, cts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"[ApiService] LogNarration [OK] Type: {triggerType}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] LogNarration error: {ex.Message}");
+            }
+        }
 
         [DebuggerNonUserCode]
-        private static Task<T> TryFetch<T>(
+        private static async Task<T> TryFetch<T>(
             string path,
             Func<string, T> parse,
             Func<T> fallback)
         {
-            return Task.Run(async () =>
+            try
             {
-                HttpClient? client = null;
-                try
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync(path, cts.Token).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    client = CreateClient();
-                    var getTask = client.GetAsync(path);
-                    var winner = await Task.WhenAny(getTask, Task.Delay(5000)).ConfigureAwait(false);
-
-                    if (winner != getTask || !getTask.IsCompletedSuccessfully)
-                    {
-                        Debug.WriteLine($"[ApiService] {path}: timeout/error");
-                        return fallback();
-                    }
-
-                    var response = getTask.Result;
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}");
-                        return fallback();
-                    }
-
-                    var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    return parse(body);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
+                    Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}");
                     return fallback();
                 }
-                finally
-                {
-                    client?.Dispose();
-                }
-            });
+
+                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                return parse(body);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine($"[ApiService] {path}: timeout");
+                return fallback();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
+                return fallback();
+            }
         }
 
         [DebuggerNonUserCode]
-        private static HttpClient CreateClient()
+        private static HttpClient GetClient()
+        {
+            lock (ClientLock)
+            {
+                return _client ??= CreateClient(BaseUrl);
+            }
+        }
+
+        private static HttpClient CreateClient(string baseUrl)
         {
             HttpMessageHandler handler;
 #if ANDROID
@@ -120,8 +287,8 @@ namespace TourApp.Mobile.Services
 #endif
             return new HttpClient(handler)
             {
-                BaseAddress = new Uri(BaseUrl),
-                Timeout = Timeout.InfiniteTimeSpan
+                BaseAddress = new Uri(baseUrl),
+                Timeout = TimeSpan.FromSeconds(8) // Oppo A31 dễ treo nếu timeout vô hạn
             };
         }
     }

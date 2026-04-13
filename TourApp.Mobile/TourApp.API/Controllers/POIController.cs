@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourApp.API.Data;
 using TourApp.API.Models;
+using TourApp.API.Services;
 
 namespace TourApp.API.Controllers;
 
@@ -10,17 +11,34 @@ namespace TourApp.API.Controllers;
 public class POIController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly BusinessKeyService _keyService;
 
-    public POIController(AppDbContext context)
+    public POIController(AppDbContext context, BusinessKeyService keyService)
     {
         _context = context;
+        _keyService = keyService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<POI>>> GetPOIs()
+    public async Task<ActionResult<IEnumerable<POI>>> GetPOIs([FromQuery] int? ownerUserId, [FromQuery] bool approvedOnly = false)
     {
-        return await _context.POIs.Include(p => p.Audios).ToListAsync();
+        var q = _context.POIs.Include(p => p.Audios).AsQueryable();
+        if (approvedOnly)
+            q = q.Where(p => p.ApprovalStatus == "Approved" && p.IsActive);
+        if (ownerUserId.HasValue)
+            q = q.Where(p => p.OwnerUserId == ownerUserId.Value);
+        return await q.OrderBy(p => p.Code).ThenBy(p => p.Id).ToListAsync();
     }
+
+    [HttpGet("pending")]
+    public async Task<ActionResult<IEnumerable<POI>>> GetPendingPOIs()
+    {
+        return await _context.POIs.Include(p => p.Audios)
+            .Where(p => p.ApprovalStatus == "Pending")
+            .OrderByDescending(p => p.Id) // Sắp xếp cái mới nhất (ID lớn nhất) lên đầu
+            .ToListAsync();
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<POI>> GetPOI(int id)
     {
@@ -34,9 +52,37 @@ public class POIController : ControllerBase
         return poi;
     }
 
+    [HttpPost("{id}/approve")]
+    public async Task<IActionResult> ApprovePoi(int id)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+        if (poi == null) return NotFound();
+        poi.ApprovalStatus = "Approved";
+        poi.IsActive = true;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPost("{id}/reject")]
+    public async Task<IActionResult> RejectPoi(int id)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+        if (poi == null) return NotFound();
+        poi.ApprovalStatus = "Rejected";
+        poi.IsActive = false;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpPost]
     public async Task<ActionResult<POI>> CreatePOI(POI poi)
     {
+        // Auto-generate Code nếu chưa có
+        if (string.IsNullOrEmpty(poi.Code))
+        {
+            poi.Code = await _keyService.GeneratePOICodeAsync();
+        }
+
         _context.POIs.Add(poi);
         await _context.SaveChangesAsync();
 
@@ -50,6 +96,10 @@ public class POIController : ControllerBase
         {
             return BadRequest("ID không khớp!");
         }
+
+        var existing = await _context.POIs.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+        if (existing != null)
+            poi.Code = existing.Code; // Giữ nguyên Code cũ
 
         _context.Entry(poi).State = EntityState.Modified;
 
@@ -75,6 +125,15 @@ public class POIController : ControllerBase
         {
             return NotFound("Không tìm thấy địa điểm để xóa!");
         }
+
+        var tourLinks = _context.TourPOIs.Where(t => t.POIId == id);
+        _context.TourPOIs.RemoveRange(tourLinks);
+        var audios = _context.Audios.Where(a => a.POIId == id);
+        _context.Audios.RemoveRange(audios);
+        var favs = _context.FavoritePOIs.Where(f => f.POIId == id);
+        _context.FavoritePOIs.RemoveRange(favs);
+        var narr = _context.NarrationLogs.Where(n => n.POIId == id);
+        _context.NarrationLogs.RemoveRange(narr);
 
         _context.POIs.Remove(poi);
         await _context.SaveChangesAsync();

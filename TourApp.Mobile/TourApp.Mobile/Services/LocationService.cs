@@ -63,7 +63,8 @@ namespace TourApp.Mobile.Services
                 {
                     try
                     {
-                        var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(2));
+                        // Oppo A31 CPU/RAM yếu: dùng accuracy thấp hơn, timeout dài hơn
+                        var request = new GeolocationRequest(GeolocationAccuracy.Low, TimeSpan.FromSeconds(5));
                         var location = await Geolocation.Default.GetLocationAsync(request).ConfigureAwait(false);
 
                         if (location != null)
@@ -84,7 +85,8 @@ namespace TourApp.Mobile.Services
                         // Không re-throw — loop tiếp tục chạy
                     }
 
-                    await Task.Delay(5000).ConfigureAwait(false);
+                    // Tăng chu kỳ polling lên 6s để tiết kiệm pin/CPU
+                    await Task.Delay(6000).ConfigureAwait(false);
                 }
             }).ContinueWith(t =>
             {

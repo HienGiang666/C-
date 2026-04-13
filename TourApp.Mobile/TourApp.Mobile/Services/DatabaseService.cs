@@ -14,7 +14,10 @@ namespace TourApp.Mobile.Services
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
-            _httpClient = new HttpClient(handler);
+            _httpClient = new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(8)
+            };
         }
 
         public async Task<bool> TestConnectionAsync()
@@ -26,7 +29,7 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Lỗi chi tiết", ex.Message, "OK");
+                await Shell.Current.DisplayAlert("Lỗi chi tiết", ex.Message, "OK");
                 return false;
             }
         }
@@ -44,7 +47,7 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Lỗi", ex.Message, "OK");
+                await Shell.Current.DisplayAlert("Lỗi", ex.Message, "OK");
                 return new List<POI>();
             }
         }
@@ -62,7 +65,7 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Lỗi", ex.Message, "OK");
+                await Shell.Current.DisplayAlert("Lỗi", ex.Message, "OK");
                 return null;
             }
         }
@@ -77,7 +80,7 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Lỗi", $"Failed to log narration: {ex.Message}", "OK");
+                await Shell.Current.DisplayAlert("Lỗi", $"Failed to log narration: {ex.Message}", "OK");
             }
         }
     }

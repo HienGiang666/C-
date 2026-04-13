@@ -15,12 +15,18 @@ namespace TourApp.CMS.Services
     public interface IActivityLogger
     {
         void LogActivity(HttpContext context, string action, string entity, string? oldValue = null, string? newValue = null);
-        List<ActivityLog> GetLogs(int limit = 100);
+        (IReadOnlyList<ActivityLog> Items, int TotalCount) GetLogsPaged(HttpContext? httpContext, int pageIndex0, int pageSize, string? usernameFilter);
+        void ClearVisibleHistory(HttpContext httpContext);
     }
 
     public class ActivityLogger : IActivityLogger
     {
-        private static List<ActivityLog> _logs = new List<ActivityLog>();
+        private static readonly List<ActivityLog> _logs = new();
+        private static int _nextLogId = 1;
+        private static readonly object _logLock = new();
+
+        private const string HiddenBeforeSessionKey = "ActivityLogHiddenBefore";
+
         private readonly ILogger<ActivityLogger> _logger;
 
         public ActivityLogger(ILogger<ActivityLogger> logger)
@@ -35,35 +41,65 @@ namespace TourApp.CMS.Services
                 var username = context.Session.GetString("Username") ?? "Anonymous";
                 var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 
-                var log = new ActivityLog
+                lock (_logLock)
                 {
-                    Id = _logs.Count + 1,
-                    Username = username,
-                    Action = action,
-                    Entity = entity,
-                    OldValue = oldValue,
-                    NewValue = newValue,
-                    Timestamp = DateTime.Now,
-                    IpAddress = ipAddress
-                };
+                    var log = new ActivityLog
+                    {
+                        Id = _nextLogId++,
+                        Username = username,
+                        Action = action,
+                        Entity = entity,
+                        OldValue = oldValue,
+                        NewValue = newValue,
+                        Timestamp = DateTime.Now,
+                        IpAddress = ipAddress
+                    };
+                    _logs.Add(log);
+                    while (_logs.Count > 1000)
+                        _logs.RemoveAt(0);
+                }
 
-                _logs.Insert(0, log); // Thêm vào đầu danh sách
-
-                // Giữ tối đa 1000 logs
-                if (_logs.Count > 1000)
-                    _logs = _logs.Take(1000).ToList();
-
-                _logger.LogInformation($"Activity logged: {username} - {action} - {entity}");
+                _logger.LogInformation("Activity logged: {Username} - {Action} - {Entity}", username, action, entity);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error logging activity: {ex.Message}");
+                _logger.LogError("Error logging activity: {Message}", ex.Message);
             }
         }
 
-        public List<ActivityLog> GetLogs(int limit = 100)
+        public void ClearVisibleHistory(HttpContext httpContext)
         {
-            return _logs.Take(limit).ToList();
+            httpContext.Session.SetString(HiddenBeforeSessionKey, DateTime.Now.ToString("o"));
+        }
+
+        private static DateTime? ReadHiddenBefore(HttpContext? httpContext)
+        {
+            if (httpContext?.Session == null)
+                return null;
+            var raw = httpContext.Session.GetString(HiddenBeforeSessionKey);
+            return DateTime.TryParse(raw, out var dt) ? dt : null;
+        }
+
+        public (IReadOnlyList<ActivityLog> Items, int TotalCount) GetLogsPaged(HttpContext? httpContext, int pageIndex0, int pageSize, string? usernameFilter)
+        {
+            pageIndex0 = Math.Max(0, pageIndex0);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
+            var hiddenBefore = ReadHiddenBefore(httpContext);
+            List<ActivityLog> ordered;
+            lock (_logLock)
+            {
+                IEnumerable<ActivityLog> q = _logs;
+                if (hiddenBefore.HasValue)
+                    q = q.Where(l => l.Timestamp > hiddenBefore.Value);
+                if (!string.IsNullOrWhiteSpace(usernameFilter))
+                    q = q.Where(l => l.Username.Trim().Equals(usernameFilter.Trim(), StringComparison.OrdinalIgnoreCase));
+                ordered = q.OrderByDescending(l => l.Timestamp).ToList();
+            }
+
+            var total = ordered.Count;
+            var page = ordered.Skip(pageIndex0 * pageSize).Take(pageSize).ToList();
+            return (page, total);
         }
     }
 }

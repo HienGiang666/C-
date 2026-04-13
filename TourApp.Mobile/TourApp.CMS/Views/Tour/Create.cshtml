@@ -1,7 +1,9 @@
-@model TourApp.CMS.Models.Tour
-
+@using System.Text.Json
+@model TourApp.CMS.Models.TourFormViewModel
 @{
     ViewData["Title"] = "Thêm Tour Mới";
+    var poisJson = ViewBag.PoisJson as string ?? "[]";
+    var initialStops = JsonSerializer.Serialize(Model.StopPoiIds ?? new List<int>());
 }
 
 <div class="row justify-content-center">
@@ -11,49 +13,56 @@
                 <h5 class="mb-0 fw-bold"><i class="fa-solid fa-fw fa-plus me-2 text-primary"></i> @ViewData["Title"]</h5>
             </div>
             <div class="card-body p-4">
-                <form asp-action="Create" method="post">
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label asp-for="Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
-                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Nhập tên chuyến đi..." required />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Destination" class="form-label fw-medium">Địa điểm đến</label>
-                            <input asp-for="Destination" class="form-control form-control-lg" />
-                        </div>
+                <form asp-action="Create" method="post" enctype="multipart/form-data" id="tourForm">
+                    <div class="mb-3">
+                        <label asp-for="Tour.Name" class="form-label fw-medium">Tên Tour <span class="text-danger">*</span></label>
+                        <input asp-for="Tour.Name" class="form-control form-control-lg" placeholder="Nhập tên chuyến đi..." required />
+                    </div>
+
+                    <div class="border rounded-3 p-3 mb-3 bg-light">
+                        <label asp-for="RestaurantCount" class="form-label fw-medium">Số quán / điểm dừng trong tour <span class="text-danger">*</span></label>
+                        <input asp-for="RestaurantCount" type="number" class="form-control" min="1" max="50" id="restaurantCount" required />
+                        <small class="text-muted">Nhập số lượng (≥ 1), hệ thống hiển thị đúng số dropdown để chọn POI theo thứ tự lộ trình (dùng cho mobile).</small>
+                        <div id="poiPickerContainer" class="mt-3"></div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <label asp-for="Price" class="form-label fw-medium">Giá vé (VNĐ) <span class="text-danger">*</span></label>
+                            <label asp-for="Tour.Price" class="form-label fw-medium">Giá vé (VNĐ) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input asp-for="Price" type="number" class="form-control" required min="0" />
+                                <input asp-for="Tour.Price" type="number" class="form-control" required min="0.01" step="0.01" />
                                 <span class="input-group-text">VNĐ</span>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="Duration" class="form-label fw-medium">Thời lượng (ngày)</label>
-                            <input asp-for="Duration" type="number" class="form-control" placeholder="1, 2, 3..." />
+                            <label asp-for="Tour.Duration" class="form-label fw-medium">Thời lượng (ngày) <span class="text-danger">*</span></label>
+                            <input asp-for="Tour.Duration" type="number" class="form-control" min="1" max="3" required />
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="MaxParticipants" class="form-label fw-medium">Số khách tối đa</label>
-                            <input asp-for="MaxParticipants" type="number" class="form-control" />
+                            <label asp-for="Tour.MaxParticipants" class="form-label fw-medium">Số khách tối đa <span class="text-danger">*</span></label>
+                            <input asp-for="Tour.MaxParticipants" type="number" class="form-control" min="1" step="1" required />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="ImageUrl" class="form-label fw-medium">Đường dẫn Hình ảnh Cover (URL)</label>
-                        <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
+                        <label class="form-label fw-medium">Ảnh cover tour <span class="text-danger">*</span></label>
+                        <input type="file" name="coverImage" class="form-control" accept="image/*" required />
+                        <small class="text-muted">Chọn file ảnh (JPG, PNG, …). Hệ thống lưu và gán URL tự động.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-muted">Từ khóa tìm kiếm</label>
+                        <div class="form-control bg-light text-muted small py-2">Tự động tạo từ <strong>tên tour</strong>, <strong>mô tả</strong> và <strong>tên các điểm dừng</strong> khi lưu.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Description" class="form-label fw-medium">Mô tả Tour</label>
-                        <textarea asp-for="Description" class="form-control" rows="5" placeholder="Lịch trình chi tiết, điểm đặc sắc..."></textarea>
+                        <label asp-for="Tour.Description" class="form-label fw-medium">Mô tả Tour <span class="text-danger">*</span></label>
+                        <textarea asp-for="Tour.Description" class="form-control" rows="5" placeholder="Lịch trình chi tiết..." required></textarea>
                     </div>
 
                     <div class="form-check form-switch mb-4">
-                        <input class="form-check-input mt-1" type="checkbox" role="switch" asp-for="IsActive" checked>
-                        <label class="form-check-label ms-2 fw-medium" asp-for="IsActive">Công khai Tour này trên ứng dụng</label>
+                        <input class="form-check-input mt-1" type="checkbox" role="switch" asp-for="Tour.IsActive" checked>
+                        <label class="form-check-label ms-2 fw-medium" asp-for="Tour.IsActive">Công khai Tour này trên ứng dụng</label>
                     </div>
 
                     <hr />
@@ -66,3 +75,65 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+const pois = @Html.Raw(poisJson);
+const initialStops = @Html.Raw(initialStops);
+
+function buildPickers() {
+    const raw = parseInt(document.getElementById('restaurantCount').value, 10);
+    const n = Math.max(1, isNaN(raw) ? 1 : raw);
+    const box = document.getElementById('poiPickerContainer');
+    box.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-2';
+        wrap.innerHTML = `<label class="form-label small text-muted">Điểm dừng thứ ${i + 1}</label>`;
+        const sel = document.createElement('select');
+        sel.className = 'form-select poi-select';
+        sel.name = 'StopPoiIds';
+        sel.required = true;
+        const o0 = document.createElement('option');
+        o0.value = '';
+        o0.textContent = '-- Chọn địa điểm --';
+        sel.appendChild(o0);
+        pois.forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.id;
+            o.textContent = p.name;
+            sel.appendChild(o);
+        });
+        const preset = initialStops[i];
+        if (preset) sel.value = String(preset);
+        wrap.appendChild(sel);
+        box.appendChild(wrap);
+
+        sel.addEventListener('change', function() {
+            checkDuplicatePOIs(this);
+        });
+    }
+}
+
+function checkDuplicatePOIs(currentSelect) {
+    const allSelects = document.querySelectorAll('.poi-select');
+    const currentVal = currentSelect.value;
+    if (!currentVal) return;
+
+    let duplicateFound = false;
+    allSelects.forEach(s => {
+        if (s !== currentSelect && s.value === currentVal) {
+            duplicateFound = true;
+        }
+    });
+
+    if (duplicateFound) {
+        alert('Địa điểm này đã được chọn trong tour. Vui lòng chọn địa điểm khác!');
+        currentSelect.value = '';
+    }
+}
+
+document.getElementById('restaurantCount').addEventListener('input', buildPickers);
+buildPickers();
+</script>
+}

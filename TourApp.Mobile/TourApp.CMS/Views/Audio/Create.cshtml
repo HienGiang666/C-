@@ -1,6 +1,8 @@
-@model TourApp.CMS.Models.Audio
+@using System.Text.Json
+@model TourApp.CMS.Models.AudioBulkCreateViewModel
 @{
     ViewData["Title"] = "Thêm Thuyết Minh Âm Thanh";
+    var languages = ViewBag.Languages as List<TourApp.CMS.Models.LanguageOption> ?? new List<TourApp.CMS.Models.LanguageOption>();
 }
 
 <style>
@@ -41,7 +43,6 @@
     #detectedLang { font-size:.78rem; color:#64748b; }
     .divider-row { display:flex; align-items:center; gap:10px; color:#94a3b8; font-size:.82rem; margin:8px 0; }
     .divider-row::before,.divider-row::after { content:''; flex:1; height:1px; background:#e2e8f0; }
-    #durationBadge { background:#d1fae5; color:#065f46; padding:4px 14px; border-radius:20px; font-weight:700; font-size:.85rem; display:none; }
 </style>
 
 <div class="row justify-content-center">
@@ -51,7 +52,7 @@
                 <h5 class="mb-0 fw-bold"><i class="fa-solid fa-waveform-lines me-2 text-info"></i> @ViewData["Title"]</h5>
             </div>
             <div class="card-body p-4">
-                <form asp-action="Create" method="post" enctype="multipart/form-data" id="audioForm">
+                <form asp-action="Create" method="post" id="audioForm">
 
                     @* POI *@
                     <div class="mb-4">
@@ -61,115 +62,47 @@
                         </select>
                     </div>
 
-                    @* Tabs *@
-                    <div class="d-flex gap-2 mb-3">
-                        <div class="tab-option active" id="tab-text" onclick="switchTab('text')">📝 Nhập Chữ (TTS)</div>
-                        <div class="tab-option" id="tab-mp3" onclick="switchTab('mp3')">🎵 Tải File MP3</div>
-                    </div>
-
-                    @* ============ OPTION 1: TTS ============ *@
-                    <div id="panel-text">
-                        @* Box Nguồn *@
-                        <div class="translate-box mb-1">
-                            <div class="box-header">
-                                <span class="fw-semibold text-secondary" style="font-size:.85rem">📤 Văn Bản Gốc</span>
-                                <span id="detectedLang">Đang nhận diện...</span>
+                    <div class="translate-box mb-3">
+                        <div class="box-header">
+                            <span class="fw-semibold text-secondary" style="font-size:.85rem">📤 Văn Bản Gốc</span>
+                            <span id="detectedLang">Đang nhận diện...</span>
+                            <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="speakSource()" title="Đọc thử văn bản gốc">🔊 Nghe thử</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Dừng">⏹</button>
                             </div>
-                            <textarea id="srcText" class="form-control" rows="5"
-                                placeholder="Gõ hoặc dán nội dung thuyết minh vào đây..."
-                                oninput="detectLang(this.value)"></textarea>
                         </div>
+                        <textarea id="srcText" asp-for="SourceText" class="form-control" rows="4"
+                                  placeholder="Gõ nội dung thuyết minh. Hệ thống sẽ tự dịch sang toàn bộ ngôn ngữ đã cấu hình..."
+                                  oninput="handleSourceInput(this.value)"></textarea>
+                    </div>
 
-                        <div class="text-center my-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="translateText()">
-                                🌐 Dịch sang ngôn ngữ đích ↕
-                            </button>
-                        </div>
-
-                        @* Box Đích *@
-                        <div class="translate-box mb-3">
-                            <div class="box-header">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-semibold text-secondary" style="font-size:.85rem">🌍 Ngôn Ngữ Đích</span>
-                                    <select id="targetLang" asp-for="Language" class="form-select form-select-sm" style="width:auto;"
-                                        onchange="speakTarget()">
-                                        <option value="vi">🇻🇳 Tiếng Việt</option>
-                                        <option value="en">🇺🇸 English</option>
-                                        <option value="zh">🇨🇳 中文</option>
-                                        <option value="ja">🇯🇵 日本語</option>
-                                        <option value="ko">🇰🇷 한국어</option>
-                                        <option value="fr">🇫🇷 Français</option>
-                                        <option value="es">🇪🇸 Español</option>
-                                        <option value="de">🇩🇪 Deutsch</option>
-                                        <option value="th">🇹🇭 ภาษาไทย</option>
-                                        <option value="ru">🇷🇺 Русский</option>
-                                    </select>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Bản dịch theo ngôn ngữ hiện có</label>
+                        <div id="translatedPanels" class="row g-3">
+                            @foreach (var lang in languages)
+                            {
+                                <div class="col-md-6">
+                                    <div class="translate-box h-100">
+                                        <div class="box-header">
+                                            <span class="fw-semibold text-secondary">@lang.Name (@lang.Code)</span>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-outline-info" onclick="speakTarget('@lang.Code')" title="Nghe thử">🔊</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Dừng">⏹</button>
+                                            </div>
+                                        </div>
+                                        <textarea id="dst-@lang.Code" name="Scripts[@lang.Code]" class="form-control" rows="4"
+                                                  placeholder="Nội dung @lang.Name"></textarea>
+                                    </div>
                                 </div>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <span id="durationBadge">⏱ <span id="durSec">0</span>s</span>
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="speakTarget()" title="Đọc thử bản dịch">🔊 Nghe thử</button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Dừng">⏹</button>
-                                </div>
-                            </div>
-                            <textarea id="dstText" asp-for="ScriptText" class="form-control" rows="5"
-                                placeholder="Bản dịch sẽ hiển thị ở đây (hoặc gõ thẳng)..."
-                                oninput="estimateDuration(this.value)"></textarea>
+                            }
                         </div>
                     </div>
-
-                    @* ============ OPTION 2: MP3 ============ *@
-                    <div id="panel-mp3" style="display:none">
-                        <div class="p-4 rounded-3 border border-dashed border-info bg-light text-center mb-3">
-                            <i class="fa-solid fa-file-audio fa-3x text-info mb-2"></i>
-                            <p class="mb-2 text-muted">Chọn hoặc kéo thả file MP3/WAV vào đây</p>
-                            <input type="file" id="mp3File" name="uploadAudio" class="form-control" accept="audio/*" onchange="loadMp3(this)" />
-                        </div>
-
-                        <div id="mp3Player" style="display:none" class="mb-3">
-                            <audio id="audioPreview" controls class="w-100 mb-2"></audio>
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="text-muted small">Thời lượng:</span>
-                                <span id="mp3Duration" class="fw-bold text-success">---</span>
-                                <span class="text-muted small ms-3">Ngôn ngữ file:</span>
-                                <select id="mp3Lang" asp-for="Language" class="form-select form-select-sm" style="width:auto;">
-                                    <option value="vi">🇻🇳 Tiếng Việt</option>
-                                    <option value="en">🇺🇸 English</option>
-                                    <option value="zh">🇨🇳 中文</option>
-                                    <option value="ja">🇯🇵 日本語</option>
-                                    <option value="ko">🇰🇷 한국어</option>
-                                    <option value="fr">🇫🇷 Français</option>
-                                    <option value="es">🇪🇸 Español</option>
-                                    <option value="de">🇩🇪 Deutsch</option>
-                                    <option value="th">🇹🇭 ภาษาไทย</option>
-                                    <option value="ru">🇷🇺 Русский</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        @* Script text cho file mp3 (tùy chọn) *@
-                        <div class="mb-3">
-                            <label class="form-label fw-medium">Nội dung thuyết minh (Subtitle hiển thị khi phát) <span class="text-muted small">- Không bắt buộc</span></label>
-                            <textarea asp-for="ScriptText" id="mp3Script" class="form-control" rows="3"
-                                placeholder="Copy nội dung script của file audio vào đây..."></textarea>
-                        </div>
-                    </div>
-
-                    @* hidden nhận Duration *@
-                    <input type="hidden" asp-for="Duration" id="hidDuration" value="0" />
-                    <input type="hidden" asp-for="IsActive" value="true" />
-
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="isActiveToggle" checked onchange="document.getElementById('hidActive').value=this.checked">
-                        <label class="form-check-label" for="isActiveToggle">Kích hoạt phát trên App ngay khi lưu</label>
-                    </div>
-                    <input type="hidden" id="hidActive" asp-for="IsActive" value="true" />
 
                     <hr />
                     <div class="d-flex gap-2 justify-content-end">
                         <a href="javascript:history.back()" class="btn btn-light border">Hủy bỏ</a>
                         <button type="submit" class="btn btn-info text-white px-4">
-                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên Server
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Lưu thuyết minh
                         </button>
                     </div>
                 </form>
@@ -179,32 +112,18 @@
 </div>
 
 @section Scripts {
+<script src="~/js/cms-tts.js" asp-append-version="true"></script>
 <script>
 let synth = window.speechSynthesis;
 let currentUtterance = null;
-let isPlaying = false;
-
-/* ===== TAB SWITCH ===== */
-function switchTab(tab) {
-    document.getElementById('tab-text').classList.toggle('active', tab === 'text');
-    document.getElementById('tab-mp3').classList.toggle('active', tab === 'mp3');
-    document.getElementById('panel-text').style.display = tab === 'text' ? '' : 'none';
-    document.getElementById('panel-mp3').style.display = tab === 'mp3' ? '' : 'none';
-}
+const languages = @Html.Raw(JsonSerializer.Serialize(languages));
 
 /* ===== DETECT LANGUAGE ===== */
-const langMap = {
-    vi: 'vi-VN', en: 'en-US', zh: 'zh-CN', ja: 'ja-JP',
-    ko: 'ko-KR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE',
-    th: 'th-TH', ru: 'ru-RU'
-};
-const langNames = {
-    vi: '🇻🇳 Tiếng Việt', en: '🇺🇸 English', zh: '🇨🇳 中文', ja: '🇯🇵 日本語',
-    ko: '🇰🇷 한국어', fr: '🇫🇷 Français', es: '🇪🇸 Español', de: '🇩🇪 Deutsch',
-    th: '🇹🇭 ภาษาไทย', ru: '🇷🇺 Русский'
-};
+const langMap = Object.fromEntries(languages.map(l => [l.Code, l.Locale]));
+const langNames = Object.fromEntries(languages.map(l => [l.Code, `${l.Name} (${l.Code})`]));
 
 let detectTimeout;
+let detectedLangCode = 'vi';
 function detectLang(text) {
     clearTimeout(detectTimeout);
     if (!text.trim()) { document.getElementById('detectedLang').textContent = 'Đang nhận diện...'; return; }
@@ -216,40 +135,48 @@ function detectLang(text) {
         else if (/[\u0400-\u04ff]/.test(text)) detected = 'ru';
         else if (/[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/.test(text)) detected = 'vi';
         else if (/[a-zA-Z]/.test(text)) detected = 'en';
+        detectedLangCode = detected;
         document.getElementById('detectedLang').textContent = 'Phát hiện: ' + (langNames[detected] || detected);
     }, 400);
 }
 
-/* ===== TRANSLATE (Google free endpoint client-side) ===== */
-function translateText() {
-    const src = document.getElementById('srcText').value.trim();
-    const tgt = document.getElementById('targetLang').value;
-    if (!src) { alert('Vui lòng nhập văn bản trước!'); return; }
-
-    document.getElementById('dstText').value = '⏳ Đang dịch...';
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tgt}&dt=t&q=${encodeURIComponent(src)}`;
-
-    fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            const translated = data[0].map(x => x[0]).join('');
-            document.getElementById('dstText').value = translated;
-            estimateDuration(translated);
-        })
-        .catch(() => {
-            document.getElementById('dstText').value = src;
-            alert('Không dịch được (có thể do CORS). Bạn vẫn có thể nhập tay!');
-        });
+async function translateInto(targetCode, text) {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data[0].map(x => x[0]).join('');
 }
 
-/* ===== ESTIMATE DURATION ===== */
-function estimateDuration(text) {
-    if (!text) return;
-    const words = text.split(/\s+/).filter(Boolean).length;
-    const secs = Math.max(5, Math.round(words / 2.5));
-    document.getElementById('hidDuration').value = secs;
-    document.getElementById('durSec').textContent = secs;
-    document.getElementById('durationBadge').style.display = 'inline-flex';
+let translateTimer;
+function handleSourceInput(text) {
+    detectLang(text);
+    clearTimeout(translateTimer);
+    translateTimer = setTimeout(() => translateAll(text), 450);
+}
+
+async function translateAll(text) {
+    const src = (text || '').trim();
+    if (!src) {
+        languages.forEach(l => {
+            const box = document.getElementById(`dst-${l.Code}`);
+            if (box) box.value = '';
+        });
+        return;
+    }
+
+    for (const lang of languages) {
+        const box = document.getElementById(`dst-${lang.Code}`);
+        if (!box) continue;
+        if ((lang.Code || '').toLowerCase() === (detectedLangCode || '').toLowerCase()) {
+            box.value = src;
+            continue;
+        }
+        try {
+            box.value = await translateInto(lang.Code, src);
+        } catch {
+            box.value = src;
+        }
+    }
 }
 
 /* ===== SPEAK ===== */
@@ -259,18 +186,19 @@ function speakSource() {
     speak(text, 'vi-VN');
 }
 
-function speakTarget() {
-    const text = document.getElementById('dstText').value;
-    const lang = document.getElementById('targetLang').value;
+function speakTarget(langCode) {
+    const text = document.getElementById(`dst-${langCode}`)?.value || '';
     if (!text) return;
-    speak(text, langMap[lang] || 'vi-VN');
+    speak(text, langMap[langCode] || 'en-US');
 }
 
 function speak(text, lang) {
     stopSpeech();
     currentUtterance = new SpeechSynthesisUtterance(text);
     currentUtterance.lang = lang;
+    currentUtterance.pitch = 1.08;
     currentUtterance.rate = 0.95;
+    currentUtterance.voice = pickFemaleVoice(lang);
     synth.speak(currentUtterance);
 }
 
@@ -278,19 +206,29 @@ function stopSpeech() {
     synth.cancel();
 }
 
-/* ===== LOAD MP3 ===== */
-function loadMp3(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    const audio = document.getElementById('audioPreview');
-    audio.src = url;
-    document.getElementById('mp3Player').style.display = '';
-    audio.onloadedmetadata = function() {
-        const secs = Math.round(audio.duration);
-        document.getElementById('mp3Duration').textContent = secs + 's (' + Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0') + ')';
-        document.getElementById('hidDuration').value = secs;
-    };
+function pickFemaleVoice(lang) {
+    const l = (lang || '').toLowerCase();
+    if (l.startsWith('vi')) {
+        const vn = typeof cmsPickVietnameseFemaleVoice === 'function' ? cmsPickVietnameseFemaleVoice() : null;
+        if (vn) return vn;
+    }
+    return typeof cmsPickTtsVoiceForLocale === 'function' ? cmsPickTtsVoiceForLocale(lang, lang.substring(0, 2)) : null;
 }
+
+cmsWarmUpSpeechVoices();
+
+const poiIdsWithAudio = @Html.Raw(ViewBag.PoiIdsWithAudioJson ?? "[]");
+document.getElementById('audioForm').addEventListener('submit', function (e) {
+    const sel = document.querySelector('select[name="POIId"]');
+    if (!sel) return true;
+    const id = parseInt(sel.value, 10);
+    if (!id || !Array.isArray(poiIdsWithAudio) || poiIdsWithAudio.length === 0) return true;
+    if (!poiIdsWithAudio.includes(id)) return true;
+    if (!confirm('Địa điểm này đã có thuyết minh (nhiều ngôn ngữ). Lưu sẽ ghi đè toàn bộ. Bạn có muốn tiếp tục?')) {
+        e.preventDefault();
+        return false;
+    }
+    return true;
+});
 </script>
 }

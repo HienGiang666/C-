@@ -1,7 +1,7 @@
 @model TourApp.CMS.Models.POI
 
 @{
-    ViewData["Title"] = "Thêm Điểm Tham Quan";
+    ViewData["Title"] = "Thêm địa điểm";
 }
 
 <div class="row justify-content-center">
@@ -17,50 +17,45 @@
                         <input asp-for="Name" class="form-control" placeholder="VD: Bưu điện trung tâm Thành phố" required />
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Address" class="form-label fw-medium">Địa chỉ góc</label>
-                        <input asp-for="Address" class="form-control" placeholder="VD: 02 Công xã Paris, Bến Nghé, Quận 1" />
+                        <label asp-for="Address" class="form-label fw-medium">Địa chỉ <span class="text-danger">*</span></label>
+                        <input asp-for="Address" class="form-control" placeholder="VD: 02 Công xã Paris, Bến Nghé, Quận 1" required />
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label asp-for="Latitude" class="form-label fw-medium">Vĩ độ (Latitude) <span class="text-danger">*</span></label>
-                            <input asp-for="Latitude" class="form-control" type="number" step="any" placeholder="10.7769" required />
+                            <input asp-for="Latitude" class="form-control" type="number" step="any" min="0.000001" placeholder="10.7769" required />
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Longitude" class="form-label fw-medium">Kinh độ (Longitude) <span class="text-danger">*</span></label>
-                            <input asp-for="Longitude" class="form-control" type="number" step="any" placeholder="106.7009" required />
+                            <input asp-for="Longitude" class="form-control" type="number" step="any" min="0.000001" placeholder="106.7009" required />
                         </div>
                     </div>
+                    <input type="hidden" asp-for="Radius" value="20" />
+                    <input type="hidden" asp-for="Priority" value="1" />
                     <div class="row mb-3">
-                        <div class="col-md-3">
-                            <label asp-for="Radius" class="form-label fw-medium">Bán kính quét (m)</label>
-                            <input asp-for="Radius" class="form-control" type="number" value="80" required />
+                        <div class="col-md-6">
+                            <label asp-for="Rating" class="form-label fw-medium">Đánh giá ( &gt; 0, VD 1–5) <span class="text-danger">*</span></label>
+                            <input asp-for="Rating" class="form-control" type="number" step="any" min="0.01" value="4.5" required />
                         </div>
-                        <div class="col-md-3">
-                            <label asp-for="Priority" class="form-label fw-medium">Độ ưu tiên</label>
-                            <input asp-for="Priority" class="form-control" type="number" value="1" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label asp-for="Rating" class="form-label fw-medium">Đánh giá (1-5)</label>
-                            <input asp-for="Rating" class="form-control" type="number" step="0.1" value="4.5" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label asp-for="OpenTime" class="form-label fw-medium">Giờ mở cửa</label>
-                            <input asp-for="OpenTime" class="form-control" placeholder="08:00 - 17:00" />
+                        <div class="col-md-6">
+                            <label asp-for="OpenTime" class="form-label fw-medium">Giờ mở cửa <span class="text-danger">*</span></label>
+                            <input asp-for="OpenTime" class="form-control" placeholder="08:00 - 17:00" required />
                         </div>
                     </div>
+                    <p class="small text-muted mb-3">Bán kính quét mặc định <strong>20 m</strong>, độ ưu tiên <strong>1</strong> (hệ thống áp dụng tự động).</p>
                     <div class="mb-3">
-                        <label class="form-label fw-medium">Ảnh đại diện (Sẽ lưu lên máy chủ CMS)</label>
-                        <input type="file" name="uploadImage" class="form-control" accept="image/*" />
+                        <label class="form-label fw-medium">Ảnh đại diện <span class="text-danger">*</span></label>
+                        <input type="file" name="uploadImage" class="form-control" accept="image/*" required />
                     </div>
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" asp-for="IsActive" checked>
-                            <label class="form-check-label" asp-for="IsActive">Đang hoạt động trên App</label>
+                            <label class="form-check-label" asp-for="IsActive">Đang hoạt động trên App (sau khi Admin phê duyệt)</label>
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label asp-for="Description" class="form-label fw-medium">Mô tả chi tiết</label>
-                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Nhập giới thiệu về địa điểm..."></textarea>
+                        <label asp-for="Description" class="form-label fw-medium">Mô tả chi tiết <span class="text-danger">*</span></label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Nhập giới thiệu về địa điểm..." required></textarea>
                     </div>
                     <hr />
                     <div class="d-flex gap-2 justify-content-end">
