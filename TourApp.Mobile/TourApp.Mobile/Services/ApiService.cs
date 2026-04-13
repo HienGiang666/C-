@@ -57,36 +57,32 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         private static async Task AutoDiscoverInternalAsync(CancellationToken ct)
         {
-            // Ưu tiên thử DefaultUrl trước (nhanh nhất)
-            if (await TestUrlAsync(DefaultUrl) != null)
-            {
-                BaseUrl = DefaultUrl;
-                Debug.WriteLine($"[ApiService] Using default URL: {DefaultUrl}");
-                return;
-            }
-
-            // Nếu URL hiện tại khác default và còn sống thì giữ nguyên
-            if (BaseUrl != DefaultUrl && await new ApiService().TestConnectionAsync())
-                return;
-
             Debug.WriteLine("[ApiService] Start Auto Discovery...");
             var subnet = GetLocalSubnet();
             var ipsToTest = new List<string>();
-            
-            // 1. Emulator
+
+            // 1. Emulator ưu tiên hàng đầu, không check DefaultUrl trước chặn đường
             if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
             {
                 ipsToTest.Add("http://10.0.2.2:5254");
                 ipsToTest.Add("http://10.0.2.2:7244");
             }
+            else
+            {
+                ipsToTest.Add(DefaultUrl);
+                if (BaseUrl != DefaultUrl && !string.IsNullOrWhiteSpace(BaseUrl))
+                {
+                    ipsToTest.Add(BaseUrl);
+                }
+            }
 
-            // 2. Local network (giảm xuống 10 IP để nhanh hơn) 
+            // 2. Local network 
             for (int i = 1; i <= 10; i++)
             {
                 ipsToTest.Add($"http://{subnet}.{i}:5254");
             }
 
-            // Batch testing (5 at a time) với timeout ngắn hơn (1.5s)
+            // Batch testing (hỗn hợp 5 url cùng lúc)
             for (int i = 0; i < ipsToTest.Count; i += 5)
             {
                 ct.ThrowIfCancellationRequested();
@@ -163,12 +159,32 @@ namespace TourApp.Mobile.Services
             TryFetch("/api/poi", _ => true, () => false);
 
         [DebuggerNonUserCode]
-        public Task<List<POI>> GetAllPOIsAsync() =>
-            TryFetch(
-                "/api/poi?approvedOnly=true",
-                body => JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new(),
-                () => new List<POI>()
-            );
+        public async Task<List<POI>> GetAllPOIsAsync()
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "pois.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync("/api/poi?approvedOnly=true", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetAllPOIsAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<List<POI>>(cached, JsonOpts) ?? new();
+            }
+            return new List<POI>();
+        }
 
         [DebuggerNonUserCode]
         public Task<List<Tour>> GetAllToursAsync() =>
@@ -187,6 +203,37 @@ namespace TourApp.Mobile.Services
             );
 
         [DebuggerNonUserCode]
+        public Task<List<TourPOI>> GetTourStopsAsync(int tourId) =>
+            TryFetch(
+                $"/api/tour/{tourId}/stops",
+                body => JsonSerializer.Deserialize<List<TourPOI>>(body, JsonOpts) ?? new(),
+                () => new List<TourPOI>()
+            );
+
+        public async Task<(bool Success, string Message)> BookTourAsync(Booking booking)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var json = JsonSerializer.Serialize(booking);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await GetClient().PostAsync("/api/booking", content, cts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, "Đặt tour thành công!");
+                }
+                
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return (false, $"Lỗi server: {errorMsg}");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Lỗi kết nối mạng: {ex.Message}");
+            }
+        }
+
+        [DebuggerNonUserCode]
         public Task<List<Language>> GetLanguagesAsync() =>
             TryFetch(
                 "/api/language",
@@ -195,7 +242,11 @@ namespace TourApp.Mobile.Services
             );
 
         public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
-            Task.FromResult<Audio?>(null);
+            TryFetch(
+                $"/api/audio/poi/{poiId}?lang={lang}",
+                body => JsonSerializer.Deserialize<Audio>(body, JsonOpts),
+                () => null
+            );
 
         public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
         {

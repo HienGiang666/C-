@@ -210,34 +210,74 @@ namespace TourApp.Mobile.Services
         {
             var fallbackDict = new Dictionary<string, string>
             {
-                ["Error"] = "Lỗi",
-                ["Success"] = "Thành công",
-                ["OK"] = "OK",
-                ["Cancel"] = "Hủy",
-                ["Loading"] = "Đang tải...",
-                ["EmailRequired"] = "Vui lòng nhập email",
-                ["ResetCodeRequired"] = "Vui lòng nhập mã reset",
-                ["NewPasswordRequired"] = "Vui lòng nhập mật khẩu mới",
-                ["PasswordTooShort"] = "Mật khẩu phải có ít nhất 6 ký tự",
-                ["PasswordMismatch"] = "Mật khẩu xác nhận không khớp",
-                ["ServerError"] = "Lỗi kết nối",
-                ["SendCode"] = "Gửi mã",
-                ["ResetPasswordButton"] = "Đặt lại mật khẩu",
-                ["ResetCodeDemo"] = "Mã reset (demo):",
-                ["DemoCode"] = "Mã demo",
-                ["Login"] = "Đăng nhập",
-                ["SignUp"] = "Đăng ký",
-                ["ForgotPassword"] = "Quên mật khẩu?",
-                ["Email"] = "Email",
-                ["Password"] = "Mật khẩu",
-                ["Home"] = "Trang chủ",
-                ["Tours"] = "Tour",
-                ["Map"] = "Bản đồ",
-                ["Profile"] = "Hồ sơ"
+                ["Error"] = "Lỗi", ["Success"] = "Thành công", ["OK"] = "OK", ["Cancel"] = "Hủy", ["Loading"] = "Đang tải...",
+                ["EmailRequired"] = "Vui lòng nhập email", ["ResetCodeRequired"] = "Vui lòng nhập mã reset", ["NewPasswordRequired"] = "Vui lòng nhập mật khẩu mới", 
+                ["PasswordTooShort"] = "Mật khẩu phải có ít nhất 6 ký tự", ["PasswordMismatch"] = "Mật khẩu xác nhận không khớp", ["ServerError"] = "Lỗi kết nối",
+                ["SendCode"] = "Gửi mã", ["ResetPasswordButton"] = "Đặt lại mật khẩu", ["ResetCodeDemo"] = "Mã reset (demo):", ["DemoCode"] = "Mã demo",
+                ["Login"] = "Đăng nhập", ["SignUp"] = "Đăng ký", ["ForgotPassword"] = "Quên mật khẩu?", ["Email"] = "Email", ["Password"] = "Mật khẩu",
+                ["Home"] = "Trang chủ", ["Tours"] = "Tour", ["Map"] = "Bản đồ", ["Profile"] = "Hồ sơ",
+                ["TabHome"] = "Trang chủ", ["TabFood"] = "Quán ăn", ["TabMap"] = "Bản đồ", ["TabTour"] = "Tour", ["TabProfile"] = "Tôi",
+                ["Welcome"] = "Chào", ["SelectLanguage"] = "Chọn ngôn ngữ", ["Settings"] = "Cài đặt khóa ứng dụng", ["MyTours"] = "Các Tour Đã Đặt", ["ChangePassword"] = "Đổi mật khẩu", ["Logout"] = "Đăng xuất",
+                ["SearchPlaceholder"] = "Tìm món, tìm quán, tìm tour...", ["CategoryNuong"] = "Nướng", ["CategoryLau"] = "Lẩu", ["CategoryOc"] = "Ốc", ["CategoryAnVat"] = "Ăn vặt",
+                ["SuggestedTours"] = "🔥 Gợi ý Lộ trình", ["SeeMore"] = "Xem thêm >", ["TopPlaces"] = "Top Nổi Bật",
+                ["SearchFood"] = "Tìm quán ăn...", ["DiscoverTours"] = "Khám Phá Tour", ["SearchTour"] = "Tìm tour...", ["StartTour"] = "Bắt đầu Tour",
+                ["SearchMap"] = "Tìm quán ăn, điểm tham quan...", ["Search"] = "Tìm", ["ListenAudio"] = "🔊 Nghe", ["Directions"] = "🗺️ Đường đi", ["Close"] = "❌ Đóng",
+                ["TourDetailTitle"] = "Chi tiết Tour", ["Introduction"] = "Giới thiệu", ["Destinations"] = "Các điểm đến", ["DownloadOfflineAudio"] = "⬇️ Tải Audio Offline", ["ViewMap"] = "Xem Bản Đồ", ["BookTour"] = "Đặt Tour"
             };
             
-            _resources[DefaultLanguage] = fallbackDict;
-            System.Diagnostics.Debug.WriteLine($"[LanguageService] Created built-in fallback with {fallbackDict.Count} keys");
+            var enDict = new Dictionary<string, string>
+            {
+                ["Error"] = "Error", ["Success"] = "Success", ["OK"] = "OK", ["Cancel"] = "Cancel", ["Loading"] = "Loading...",
+                ["EmailRequired"] = "Please enter email", ["ResetCodeRequired"] = "Please enter reset code", ["NewPasswordRequired"] = "Please enter new password", 
+                ["PasswordTooShort"] = "Password must be at least 6 characters", ["PasswordMismatch"] = "Passwords do not match", ["ServerError"] = "Connection Error",
+                ["SendCode"] = "Send Code", ["ResetPasswordButton"] = "Reset Password", ["ResetCodeDemo"] = "Reset Code (demo):", ["DemoCode"] = "Demo Code",
+                ["Login"] = "Login", ["SignUp"] = "Sign Up", ["ForgotPassword"] = "Forgot Password?", ["Email"] = "Email", ["Password"] = "Password",
+                ["Home"] = "Home", ["Tours"] = "Tours", ["Map"] = "Map", ["Profile"] = "Profile",
+                ["TabHome"] = "Home", ["TabFood"] = "Food", ["TabMap"] = "Map", ["TabTour"] = "Tour", ["TabProfile"] = "Me",
+                ["Welcome"] = "Hello", ["SelectLanguage"] = "Select Language", ["Settings"] = "App Lock Setting", ["MyTours"] = "My Tours", ["ChangePassword"] = "Change Password", ["Logout"] = "Logout",
+                ["SearchPlaceholder"] = "Search food, places, tours...", ["CategoryNuong"] = "BBQ", ["CategoryLau"] = "Hotpot", ["CategoryOc"] = "Snails", ["CategoryAnVat"] = "Snacks",
+                ["SuggestedTours"] = "🔥 Suggested Tours", ["SeeMore"] = "See more >", ["TopPlaces"] = "Top Rated",
+                ["SearchFood"] = "Search food...", ["DiscoverTours"] = "Discover Tours", ["SearchTour"] = "Search tours...", ["StartTour"] = "Start Tour",
+                ["SearchMap"] = "Search places, tours...", ["Search"] = "Search", ["ListenAudio"] = "🔊 Listen", ["Directions"] = "🗺️ Directions", ["Close"] = "❌ Close",
+                ["TourDetailTitle"] = "Tour Details", ["Introduction"] = "Introduction", ["Destinations"] = "Destinations", ["DownloadOfflineAudio"] = "⬇️ Download Offline Audio", ["ViewMap"] = "View Map", ["BookTour"] = "Book Tour"
+            };
+
+            var zhDict = new Dictionary<string, string>(enDict)
+            {
+                ["TabHome"] = "主页", ["TabFood"] = "食品", ["TabMap"] = "地图", ["TabTour"] = "游览", ["TabProfile"] = "我",
+                ["Welcome"] = "你好", ["SelectLanguage"] = "选择语言", ["Logout"] = "登出"
+            };
+
+            var jaDict = new Dictionary<string, string>(enDict)
+            {
+                ["TabHome"] = "ホーム", ["TabFood"] = "食べ物", ["TabMap"] = "マップ", ["TabTour"] = "ツアー", ["TabProfile"] = "私",
+                ["Welcome"] = "こんにちは", ["SelectLanguage"] = "言語を選択", ["Logout"] = "ログアウト"
+            };
+
+            var koDict = new Dictionary<string, string>(enDict)
+            {
+                ["TabHome"] = "홈", ["TabFood"] = "음식", ["TabMap"] = "지도", ["TabTour"] = "투어", ["TabProfile"] = "나",
+                ["Welcome"] = "안녕하세요", ["SelectLanguage"] = "언어 선택", ["Logout"] = "로그아웃"
+            };
+
+            var frDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Accueil", ["TabFood"] = "Nourriture", ["TabMap"] = "Carte", ["TabTour"] = "Tour", ["TabProfile"] = "Moi", ["Welcome"] = "Bonjour", ["SelectLanguage"] = "Choisir", ["Logout"] = "Déconnexion" };
+            var deDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Startseite", ["TabFood"] = "Essen", ["TabMap"] = "Karte", ["TabTour"] = "Tour", ["TabProfile"] = "Ich", ["Welcome"] = "Hallo", ["SelectLanguage"] = "Sprache", ["Logout"] = "Abmelden" };
+            var esDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Inicio", ["TabFood"] = "Comida", ["TabMap"] = "Mapa", ["TabTour"] = "Tour", ["TabProfile"] = "Yo", ["Welcome"] = "Hola", ["SelectLanguage"] = "Idioma", ["Logout"] = "Cerrar sesión" };
+            var thDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "หน้าแรก", ["TabFood"] = "อาหาร", ["TabMap"] = "แผนที่", ["TabTour"] = "ทัวร์", ["TabProfile"] = "ฉัน", ["Welcome"] = "สวัสดี", ["SelectLanguage"] = "ภาษา", ["Logout"] = "ออกจากระบบ" };
+            var ruDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Главная", ["TabFood"] = "Еда", ["TabMap"] = "Карта", ["TabTour"] = "Тур", ["TabProfile"] = "Я", ["Welcome"] = "Привет", ["SelectLanguage"] = "Язык", ["Logout"] = "Выйти" };
+
+            _resources["vi"] = fallbackDict;
+            _resources["en"] = enDict;
+            _resources["zh"] = zhDict;
+            _resources["ja"] = jaDict;
+            _resources["ko"] = koDict;
+            _resources["fr"] = frDict;
+            _resources["de"] = deDict;
+            _resources["es"] = esDict;
+            _resources["th"] = thDict;
+            _resources["ru"] = ruDict;
+            
+            System.Diagnostics.Debug.WriteLine($"[LanguageService] Created built-in fallback for all 10 languages");
         }
         
         /// <summary>

@@ -43,37 +43,4 @@ namespace TourApp.Mobile.Models
         // Computed property for display
         public string DisplayName => !string.IsNullOrEmpty(FullName) ? FullName : Username ?? "Người dùng";
     }
-
-    public class Booking
-    {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-
-        [JsonPropertyName("userId")]
-        public int UserId { get; set; }
-
-        [JsonPropertyName("tourId")]
-        public int TourId { get; set; }
-
-        [JsonPropertyName("bookingDate")]
-        public DateTime? BookingDate { get; set; }
-
-        [JsonPropertyName("status")]
-        public string? Status { get; set; } // Confirmed, Completed, Cancelled
-
-        [JsonPropertyName("notes")]
-        public string? Notes { get; set; }
-
-        [JsonPropertyName("participants")]
-        public int? Participants { get; set; }
-
-        [JsonPropertyName("totalPrice")]
-        public decimal? TotalPrice { get; set; }
-
-        [JsonPropertyName("code")]
-        public string? Code { get; set; }
-
-        // Tour name from API (stored in Notes temporarily)
-        public string? TourName => Notes;
-    }
 }

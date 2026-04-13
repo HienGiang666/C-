@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:TourApp.Mobile.Models"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
              x:Class="TourApp.Mobile.Views.POIPage"
              BackgroundColor="#F5F6F8"
              Shell.NavBarIsVisible="False">
@@ -17,7 +18,7 @@
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
                             <Label Text="🍲" FontSize="24" />
-                            <Label Text="Quán Ăn" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                            <Label Text="{Binding [TabFood], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
                         </HorizontalStackLayout>
 
                         <!-- QR Code Scanner button -->
@@ -33,7 +34,7 @@
                     <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
                         <Grid ColumnDefinitions="30,*">
                             <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
-                            <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm quán ăn..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                            <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchFood], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
                         </Grid>
                     </Border>
                 </VerticalStackLayout>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:TourApp.Mobile.Views"
+             x:Class="TourApp.Mobile.Views.BookingPage"
+             x:DataType="views:BookingPage"
+             Title="Đặt Tour"
+             BackgroundColor="#F5F6F8">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+            <!-- Tour Summary -->
+            <Border StrokeThickness="0" BackgroundColor="White" Padding="20" StrokeShape="RoundRectangle 20">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Tour Đang Chọn:" FontSize="14" TextColor="#888"/>
+                    <Label x:Name="TourNameLabel" Text="Tên Tour" FontSize="18" FontAttributes="Bold" TextColor="Black"/>
+                    <HorizontalStackLayout Spacing="5" Margin="0,5,0,0">
+                        <Label Text="Giá/Người:" FontSize="14" TextColor="#444"/>
+                        <Label x:Name="PriceLabel" Text="0 đ" FontSize="14" FontAttributes="Bold" TextColor="#FF3D00"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Booking Form -->
+            <Label Text="Thông tin đặt chỗ" FontSize="18" FontAttributes="Bold" TextColor="Black"/>
+
+            <!-- Date Selection -->
+            <VerticalStackLayout>
+                <Label Text="Ngày khởi hành" FontSize="14" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="50" StrokeShape="RoundRectangle 10" Padding="10,0">
+                    <DatePicker x:Name="TourDatePicker" MinimumDate="{Binding MinimumDate}" TextColor="Black" BackgroundColor="Transparent"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Participants -->
+            <VerticalStackLayout>
+                <Label Text="Số lượng người" FontSize="14" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                <Grid ColumnDefinitions="*,50,*">
+                    <Button Grid.Column="0" Text="-" BackgroundColor="#E0E0E0" TextColor="Black" FontAttributes="Bold" CornerRadius="10" Clicked="OnDecreaseParticipantsClicked"/>
+                    <Label x:Name="ParticipantsLabel" Grid.Column="1" Text="1" FontSize="18" FontAttributes="Bold" TextColor="Black" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Button Grid.Column="2" Text="+" BackgroundColor="#E0E0E0" TextColor="Black" FontAttributes="Bold" CornerRadius="10" Clicked="OnIncreaseParticipantsClicked"/>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Notes -->
+            <VerticalStackLayout>
+                <Label Text="Ghi chú (Tùy chọn)" FontSize="14" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="100" StrokeShape="RoundRectangle 10" Padding="0">
+                    <Editor x:Name="NotesEditor" Placeholder="Yêu cầu đặc biệt..." TextColor="Black" BackgroundColor="Transparent" Margin="10,5"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Summary -->
+            <Border StrokeThickness="0" BackgroundColor="#FFEBE5" Padding="20" StrokeShape="RoundRectangle 15" Margin="0,10,0,0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0" Text="Tổng Thanh Toán:" FontSize="16" FontAttributes="Bold" TextColor="Black" VerticalOptions="Center"/>
+                    <Label x:Name="TotalPriceLabel" Grid.Column="1" Text="0 đ" FontSize="18" FontAttributes="Bold" TextColor="#FF3D00"/>
+                </Grid>
+            </Border>
+
+            <!-- Book Button -->
+            <Button x:Name="ConfirmBookingButton" Text="Xác nhận Đặt Tour" BackgroundColor="#FF3D00" TextColor="White" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,10,0,20" Clicked="OnConfirmBookingClicked"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

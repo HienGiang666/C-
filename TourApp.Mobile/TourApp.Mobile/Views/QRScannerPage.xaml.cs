@@ -18,6 +18,12 @@ public partial class QRScannerPage : ContentPage
     {
         base.OnAppearing();
         
+        // Hide emulator UI on physical devices
+        if (Microsoft.Maui.Devices.DeviceInfo.Current.DeviceType == DeviceType.Physical && DeviceInfo.Platform != DevicePlatform.WinUI)
+        {
+            EmulatorUI.IsVisible = false;
+        }
+
         // Start scanning
         cameraBarcodeReader.IsDetecting = true;
         
@@ -139,7 +145,18 @@ public partial class QRScannerPage : ContentPage
     private void OnFlashTapped(object sender, EventArgs e)
     {
         _isFlashOn = !_isFlashOn;
-        // Note: Flash control depends on device capabilities
-        // cameraBarcodeReader.TorchOn = _isFlashOn;
+        cameraBarcodeReader.IsTorchOn = _isFlashOn;
+    }
+
+    private async void OnMockScan1Clicked(object sender, EventArgs e)
+    {
+        Vibrate();
+        await Shell.Current.GoToAsync("//MapPage?poiId=1"); // Ốc Xiên Quán
+    }
+
+    private async void OnMockScan2Clicked(object sender, EventArgs e)
+    {
+        Vibrate();
+        await Shell.Current.GoToAsync("//MapPage?poiId=3"); // Lẩu Bò
     }
 }

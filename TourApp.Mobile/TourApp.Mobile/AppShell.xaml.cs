@@ -10,6 +10,9 @@ namespace TourApp.Mobile
 
             // Non-tab page still reached from the authenticated shell.
             Routing.RegisterRoute("QRScannerPage", typeof(Views.QRScannerPage));
+            Routing.RegisterRoute("TourDetailPage", typeof(Views.TourDetailPage));
+            Routing.RegisterRoute("BookingPage", typeof(Views.BookingPage));
+            Routing.RegisterRoute("UserBookingsPage", typeof(Views.UserBookingsPage));
             
             // Subscribe to language changes để update tab labels
             LanguageService.LanguageChanged += OnLanguageChanged;

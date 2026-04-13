@@ -227,21 +227,52 @@ public partial class MapPage : ContentPage
             {
                 System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending Tour ID: {_pendingTourId.Value}");
                 
-                // Load tour details
                 var tour = await _apiService.GetTourByIdAsync(_pendingTourId.Value);
                 if (tour != null && _pois != null)
                 {
-                    // Show alert
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        DisplayAlert("Tour", $"Đang hiển thị tour: {tour.Name}", "OK");
+                        DisplayAlert("Tour", $"Đang hiển thị lộ trình tour: {tour.Name}", "OK");
                     });
                     
-                    // TODO: Load tour POIs and draw route
-                    // For now, just fly to center of Vĩnh Khánh
-                    if (_isJsMapReady)
+                    var tourPois = await _apiService.GetTourStopsAsync(tour.Id);
+                    if (tourPois != null && tourPois.Any())
                     {
-                        MapWebView.Eval("map.flyTo({center: [106.7018, 10.7596], zoom: 15});");
+                        var originPOI = tourPois.First().POI;
+                        var destPOI = tourPois.Last().POI;
+                        
+                        var origin = _locationService.MockLocation ?? _lastLocation ?? new Location(originPOI!.Latitude, originPOI.Longitude);
+                        var dest = new Location(destPOI!.Latitude, destPOI.Longitude);
+                        
+                        var waypoints = new List<Location>();
+                        // If user location is used as origin, we must pass the first POI as waypoint
+                        if (_locationService.MockLocation != null || _lastLocation != null)
+                        {
+                            waypoints.Add(new Location(originPOI.Latitude, originPOI.Longitude));
+                        }
+                        
+                        // Add middle POIs
+                        for (int i = 1; i < tourPois.Count - 1; i++)
+                        {
+                            waypoints.Add(new Location(tourPois[i].POI!.Latitude, tourPois[i].POI!.Longitude));
+                        }
+                        
+                        // Highlight POIs in red
+                        if (_isJsMapReady)
+                        {
+                            var jsArray = string.Join(",", tourPois.Select(tp => tp.POIId.ToString()));
+                            MapWebView.Eval($@"
+                                document.querySelectorAll('.poi-marker').forEach(function(m) {{
+                                    if([{jsArray}].includes(parseInt(m.getAttribute('data-poi-id')))) {{
+                                        m.style.backgroundColor = '#FF0000'; // Make Tour POIs Red
+                                        m.classList.add('triggered');
+                                    }}
+                                }});
+                            ");
+                        }
+
+                        // Draw Route
+                        await DrawRouteAsync(origin, dest, waypoints);
                     }
                 }
             }
@@ -342,30 +373,44 @@ public partial class MapPage : ContentPage
         if (e.Url.StartsWith("poi://selected") || e.Url.StartsWith("http://poi/selected"))
         {
             e.Cancel = true;
-            System.Diagnostics.Debug.WriteLine($"[MapWebView] POI selected: {e.Url}");
-
             try
             {
                 var uri = new Uri(e.Url);
                 var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
                 if (int.TryParse(query["id"], out int poiId))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[MapWebView] Looking for POI ID: {poiId}");
                     var poi = _pois?.FirstOrDefault(p => p.Id == poiId);
-                    if (poi != null)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[MapWebView] Found POI: {poi.Name}");
-                        MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[MapWebView] POI not found. Available POIs: {string.Join(", ", _pois?.Select(p => $"ID:{p.Id}") ?? new[] { "none" })}");
-                    }
+                    if (poi != null) MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[MapWebView] Error: {ex.Message}");
+            }
+            return;
+        }
+
+        if (e.Url.StartsWith("http://map/setmock", StringComparison.OrdinalIgnoreCase))
+        {
+            e.Cancel = true;
+            try
+            {
+                var uri = new Uri(e.Url);
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                if (double.TryParse(query["lat"], System.Globalization.CultureInfo.InvariantCulture, out double lat) &&
+                    double.TryParse(query["lng"], System.Globalization.CultureInfo.InvariantCulture, out double lng))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Set Mock GPS to {lat}, {lng}");
+                    _locationService.IsMocking = true;
+                    _locationService.MockLocation = new Location(lat, lng);
+                    MainThread.BeginInvokeOnMainThread(async () => {
+                         await DisplayAlert("Mock GPS", $"Đã chốt vị trí U tại:\nLat: {lat}\nLng: {lng}", "OK");
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapWebView] Mock GPS Error: {ex.Message}");
             }
         }
     }
@@ -380,9 +425,81 @@ public partial class MapPage : ContentPage
     private async void OnDirectionsClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
-        var url = $"https://www.google.com/maps/dir/?api=1&destination={_currentPoi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{_currentPoi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&travelmode=walking";
-        try { await Launcher.Default.OpenAsync(new Uri(url)); }
-        catch { await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("Error"), LanguageService.GetString("OK")); }
+        
+        var origin = _locationService.MockLocation ?? _lastLocation;
+        if (origin == null)
+        {
+            await DisplayAlert("GPS", "Chưa xác định được vị trí của bạn.", "OK");
+            return;
+        }
+
+        BottomSheetView.IsVisible = false;
+
+        // Use In-App Routing instead of Google Maps app
+        await DrawRouteAsync(origin, new Location(_currentPoi.Latitude, _currentPoi.Longitude));
+    }
+
+    private async Task DrawRouteAsync(Location origin, Location destination, List<Location>? waypoints = null)
+    {
+        if (string.IsNullOrEmpty(GoongRestApiKey))
+        {
+            await DisplayAlert("Lỗi", "Chưa cấu hình Goong API Key", "OK");
+            return;
+        }
+        // Build url
+        var oStr = $"{origin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{origin.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        var dStr = $"{destination.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{destination.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        var url = $"https://rsapi.goong.io/Direction/Route?origin={oStr}&destination={dStr}&vehicle=bike&api_key={GoongRestApiKey}";
+
+        if (waypoints != null && waypoints.Any())
+        {
+            var wpStr = string.Join("|", waypoints.Select(w => $"{w.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{w.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}"));
+            url += $"&waypoints={wpStr}";
+        }
+
+        try
+        {
+            var res = await _http.GetStringAsync(url);
+            using var doc = System.Text.Json.JsonDocument.Parse(res);
+            var routes = doc.RootElement.GetProperty("routes");
+            if (routes.GetArrayLength() > 0)
+            {
+                var polyline = routes[0].GetProperty("overview_polyline").GetProperty("points").GetString();
+                if (polyline != null)
+                {
+                    var coords = DecodePolyline(polyline);
+                    var jsCoords = string.Join(",", coords.Select(c => $"[{c.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{c.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}]"));
+                    if (_isJsMapReady)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() => {
+                           MapWebView.Eval($"drawRoute([{jsCoords}]);");
+                        });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DrawRoute] error: {ex}");
+        }
+    }
+
+    private static List<Location> DecodePolyline(string encoded)
+    {
+        var polyline = new List<Location>();
+        if (string.IsNullOrEmpty(encoded)) return polyline;
+        int index = 0, len = encoded.Length, lat = 0, lng = 0;
+        while (index < len)
+        {
+            int b, shift = 0, result = 0;
+            do { b = encoded[index++] - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+            lat += ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            shift = 0; result = 0;
+            do { b = encoded[index++] - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+            lng += ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            polyline.Add(new Location((double)lat / 1E5, (double)lng / 1E5));
+        }
+        return polyline;
     }
 
     private void OnFavoriteClicked(object? sender, EventArgs e)
@@ -396,6 +513,49 @@ public partial class MapPage : ContentPage
     private void OnCloseSheetClicked(object? sender, EventArgs e)
     {
         BottomSheetView.IsVisible = false;
+    }
+
+    protected override void OnNavigatedTo(NavigatedToEventArgs args)
+    {
+        base.OnNavigatedTo(args);
+        AudioPlayerService.Instance.PropertyChanged += OnAudioPlayerPropertyChanged;
+        UpdateAudioPlayerUI();
+    }
+
+    protected override void OnNavigatingFrom(NavigatingFromEventArgs args)
+    {
+        base.OnNavigatingFrom(args);
+        AudioPlayerService.Instance.PropertyChanged -= OnAudioPlayerPropertyChanged;
+    }
+
+    private void OnAudioPlayerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateAudioPlayerUI);
+    }
+
+    private void UpdateAudioPlayerUI()
+    {
+        var svc = AudioPlayerService.Instance;
+        if (svc.IsPlaying || !string.IsNullOrEmpty(svc.CurrentAudioTitle))
+        {
+            FloatingAudioPlayer.IsVisible = true;
+            AudioTitleLabel.Text = svc.CurrentAudioTitle;
+            AudioPlayPauseBtn.Text = svc.IsPlaying ? "⏸" : "▶";
+        }
+        else
+        {
+            FloatingAudioPlayer.IsVisible = false;
+        }
+    }
+
+    private void OnToggleAudioClicked(object? sender, EventArgs e)
+    {
+        AudioPlayerService.Instance.TogglePlayPause();
+    }
+
+    private void OnStopAudioClicked(object? sender, EventArgs e)
+    {
+        AudioPlayerService.Instance.Stop();
     }
 
     private async void OnSearchClicked(object? sender, EventArgs e)
@@ -679,6 +839,9 @@ function onGoongLoaded() {{
     map.on('error', function(e) {{
       document.getElementById('loading').classList.add('hide');
     }});
+    map.on('contextmenu', function(e) {{
+      window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
+    }});
   }} catch(e) {{
     onGoongLoadError();
   }}
@@ -749,6 +912,54 @@ function updateUserLocation(lng, lat) {{
     userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
   }} else {{
     userMarker.setLngLat([lng, lat]);
+  }}
+}}
+
+function drawRoute(coords) {{
+  if (!map) return;
+  
+  if (map.getSource('route')) {{
+    map.getSource('route').setData({{
+      'type': 'Feature',
+      'properties': {{}},
+      'geometry': {{
+        'type': 'LineString',
+        'coordinates': coords
+      }}
+    }});
+  }} else {{
+    map.addSource('route', {{
+      'type': 'geojson',
+      'data': {{
+        'type': 'Feature',
+        'properties': {{}},
+        'geometry': {{
+          'type': 'LineString',
+          'coordinates': coords
+        }}
+      }}
+    }});
+    map.addLayer({{
+      'id': 'route',
+      'type': 'line',
+      'source': 'route',
+      'layout': {{
+        'line-join': 'round',
+        'line-cap': 'round'
+      }},
+      'paint': {{
+        'line-color': '#3B82F6',
+        'line-width': 6,
+        'line-opacity': 0.8
+      }}
+    }});
+  }}
+
+  if (coords.length > 0) {{
+    var bounds = coords.reduce(function(b, coord) {{
+      return b.extend(coord);
+    }}, new goongjs.LngLatBounds(coords[0], coords[0]));
+    map.fitBounds(bounds, {{ padding: 50 }});
   }}
 }}
 

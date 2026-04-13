@@ -7,6 +7,9 @@ namespace TourApp.Mobile.Services
         public event EventHandler<Location>? LocationChanged;
         private bool _isTracking = false;
 
+        public bool IsMocking { get; set; } = false;
+        public Location? MockLocation { get; set; }
+
         public async Task StartTracking()
         {
             if (_isTracking) return;
@@ -63,20 +66,30 @@ namespace TourApp.Mobile.Services
                 {
                     try
                     {
-                        // Oppo A31 CPU/RAM yếu: dùng accuracy thấp hơn, timeout dài hơn
-                        var request = new GeolocationRequest(GeolocationAccuracy.Low, TimeSpan.FromSeconds(5));
-                        var location = await Geolocation.Default.GetLocationAsync(request).ConfigureAwait(false);
-
-                        if (location != null)
+                        if (IsMocking && MockLocation != null)
                         {
                             MainThread.BeginInvokeOnMainThread(() =>
                             {
-                                try { LocationChanged?.Invoke(this, location); }
-                                catch (Exception uiEx)
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"[LocationService] UI callback error: {uiEx.Message}");
-                                }
+                                try { LocationChanged?.Invoke(this, MockLocation); }
+                                catch (Exception uiEx) { System.Diagnostics.Debug.WriteLine($"[LocationService] UI callback error: {uiEx.Message}"); }
                             });
+                        }
+                        else
+                        {
+                            var request = new GeolocationRequest(GeolocationAccuracy.Low, TimeSpan.FromSeconds(5));
+                            var location = await Geolocation.Default.GetLocationAsync(request).ConfigureAwait(false);
+
+                            if (location != null)
+                            {
+                                MainThread.BeginInvokeOnMainThread(() =>
+                                {
+                                    try { LocationChanged?.Invoke(this, location); }
+                                    catch (Exception uiEx)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[LocationService] UI callback error: {uiEx.Message}");
+                                    }
+                                });
+                            }
                         }
                     }
                     catch (Exception ex)
