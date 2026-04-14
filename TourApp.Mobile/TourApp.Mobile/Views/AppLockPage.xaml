@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TourApp.Mobile.Views.AppLockPage"
+             BackgroundColor="#F5F6F8"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="20">
+        
+        <Label Grid.Row="0" Text="Khóa Ứng Dụng" FontSize="24" FontAttributes="Bold" HorizontalOptions="Center" TextColor="Black" Margin="0,40,0,10"/>
+        <Label x:Name="InstructionLabel" Grid.Row="1" Text="Nhập mã PIN của bạn" FontSize="16" HorizontalOptions="Center" TextColor="#888" Margin="0,0,0,40"/>
+
+        <!-- PIN Circles -->
+        <HorizontalStackLayout Grid.Row="2" Spacing="20" HorizontalOptions="Center" VerticalOptions="Start" Margin="0,20,0,0">
+            <Border x:Name="Dot1" WidthRequest="20" HeightRequest="20" StrokeThickness="2" Stroke="#FF3D00" StrokeShape="RoundRectangle 10" BackgroundColor="Transparent"/>
+            <Border x:Name="Dot2" WidthRequest="20" HeightRequest="20" StrokeThickness="2" Stroke="#FF3D00" StrokeShape="RoundRectangle 10" BackgroundColor="Transparent"/>
+            <Border x:Name="Dot3" WidthRequest="20" HeightRequest="20" StrokeThickness="2" Stroke="#FF3D00" StrokeShape="RoundRectangle 10" BackgroundColor="Transparent"/>
+            <Border x:Name="Dot4" WidthRequest="20" HeightRequest="20" StrokeThickness="2" Stroke="#FF3D00" StrokeShape="RoundRectangle 10" BackgroundColor="Transparent"/>
+        </HorizontalStackLayout>
+
+        <!-- Numpad -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,*,*" RowDefinitions="80,80,80,80" ColumnSpacing="15" RowSpacing="15" Margin="20,0,20,40" VerticalOptions="End">
+            <Button Grid.Row="0" Grid.Column="0" Text="1" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="0" Grid.Column="1" Text="2" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="0" Grid.Column="2" Text="3" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            
+            <Button Grid.Row="1" Grid.Column="0" Text="4" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="1" Grid.Column="1" Text="5" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="1" Grid.Column="2" Text="6" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            
+            <Button Grid.Row="2" Grid.Column="0" Text="7" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="2" Grid.Column="1" Text="8" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="2" Grid.Column="2" Text="9" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            
+            <!-- Cancel or Biometric? We'll just put Cancel for now or empty -->
+            <Button x:Name="CancelBtn" Grid.Row="3" Grid.Column="0" Text="Hủy" FontSize="16" BackgroundColor="Transparent" TextColor="#FF3D00" Clicked="OnCancelClicked"/>
+            <Button Grid.Row="3" Grid.Column="1" Text="0" FontSize="24" BackgroundColor="White" TextColor="Black" CornerRadius="40" Clicked="OnDigitClicked"/>
+            <Button Grid.Row="3" Grid.Column="2" Text="⌫" FontSize="24" BackgroundColor="Transparent" TextColor="Black" Clicked="OnDeleteClicked"/>
+        </Grid>
+        
+    </Grid>
+</ContentPage>

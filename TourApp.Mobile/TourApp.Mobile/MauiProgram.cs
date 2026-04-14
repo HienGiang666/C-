@@ -22,6 +22,42 @@ namespace TourApp.Mobile
                     // handler.PlatformView.SetLayerType(Android.Views.LayerType.Hardware, null);
                 }
             });
+
+            // ===== FIX: Vietnamese Telex/VNI input bị mất chữ khi gõ dấu =====
+            // Nguyên nhân: MAUI update Text property liên tục làm hỏng composition state của Android IMEI
+            // Fix: Sử dụng SetRawInputType thay vì InputType property để tránh Android tự động apply các flags
+            // phá hỏng composition (như NoSuggestions).
+            Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("VietnameseInputFix", (handler, view) =>
+            {
+                if (handler.PlatformView is Android.Widget.EditText editText)
+                {
+                    if (view is Entry entry && !entry.IsPassword)
+                    {
+                        // SetRawInputType rất hiệu quả trong việc giữ nguyên state của Telex
+                        editText.SetRawInputType(Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationNormal);
+                    }
+                }
+            });
+
+            Microsoft.Maui.Handlers.EditorHandler.Mapper.AppendToMapping("VietnameseEditorFix", (handler, view) =>
+            {
+                if (handler.PlatformView is Android.Widget.EditText editText)
+                {
+                    editText.SetRawInputType(Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationNormal | Android.Text.InputTypes.TextFlagMultiLine);
+                }
+            });
+
+            Microsoft.Maui.Handlers.SearchBarHandler.Mapper.AppendToMapping("VietnameseSearchFix", (handler, view) =>
+            {
+                if (handler.PlatformView is AndroidX.AppCompat.Widget.SearchView searchView)
+                {
+                    var editText = FindEditText(searchView);
+                    if (editText != null)
+                    {
+                        editText.SetRawInputType(Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationNormal);
+                    }
+                }
+            });
 #endif
 
             var builder = MauiApp.CreateBuilder();
@@ -57,5 +93,26 @@ namespace TourApp.Mobile
 #endif
             return builder.Build();
         }
+
+#if ANDROID
+        /// <summary>
+        /// Tìm EditText bên trong ViewGroup (dùng cho SearchView)
+        /// </summary>
+        private static Android.Widget.EditText? FindEditText(Android.Views.ViewGroup viewGroup)
+        {
+            for (int i = 0; i < viewGroup.ChildCount; i++)
+            {
+                var child = viewGroup.GetChildAt(i);
+                if (child is Android.Widget.EditText editText)
+                    return editText;
+                if (child is Android.Views.ViewGroup childGroup)
+                {
+                    var result = FindEditText(childGroup);
+                    if (result != null) return result;
+                }
+            }
+            return null;
+        }
+#endif
     }
 }

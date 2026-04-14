@@ -375,6 +375,75 @@ GO
 
 
 
+-- POITranslations table (bản dịch đa ngôn ngữ cho POI)
+IF OBJECT_ID(N'[POITranslations]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [POITranslations] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [POIId] int NOT NULL,
+        [Language] nvarchar(10) NOT NULL,
+        [Name] nvarchar(200) NULL,
+        [Description] nvarchar(2000) NULL,
+        CONSTRAINT [PK_POITranslations] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_POITranslations_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [UQ_POITranslations_POI_Lang] UNIQUE ([POIId], [Language])
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POITranslations_POIId' AND object_id = OBJECT_ID('POITranslations'))
+    CREATE INDEX [IX_POITranslations_POIId] ON [POITranslations]([POIId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POITranslations_Language' AND object_id = OBJECT_ID('POITranslations'))
+    CREATE INDEX [IX_POITranslations_Language] ON [POITranslations]([Language]);
+GO
+
+-- Sample POI Translations (English)
+SET IDENTITY_INSERT [POITranslations] ON;
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 1)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (1, 1, 'en', N'Oc Oanh', N'Fresh seafood with special dipping sauce');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 2)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (2, 2, 'en', N'Oc Thao', N'Spacious venue with diverse menu');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 3)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (3, 3, 'en', N'Oc Dao 2', N'Over 30 types of snails, richly seasoned');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 4)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (4, 4, 'en', N'Oc Vu', N'Late-night snail eatery, student-friendly prices');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 5)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (5, 5, 'en', N'Lang Restaurant', N'Traditional Vietnamese cuisine');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 6)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (6, 6, 'en', N'Oc 35k', N'Fresh seafood at affordable prices');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 7)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (7, 7, 'en', N'Oc 662', N'Famous casual snail restaurant');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 8)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (8, 8, 'en', N'Nem Nuong Dac San Que Nha', N'Traditional grilled spring rolls');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 9)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (9, 9, 'en', N'The Gioi Bo - Grill, Sauce & Hotpot', N'Premium grilled beef, special sauces and hotpot');
+
+IF NOT EXISTS (SELECT 1 FROM [POITranslations] WHERE [Id] = 10)
+    INSERT INTO [POITranslations] ([Id], [POIId], [Language], [Name], [Description])
+    VALUES (10, 10, 'en', N'Banh Mi Que - Pizza Da Nang QUIN', N'Crispy, hot and generous baguette sandwiches');
+
+SET IDENTITY_INSERT [POITranslations] OFF;
+DBCC CHECKIDENT ('[POITranslations]', RESEED, 10);
+GO
+
 -- =============================================
 -- 3. CREATE __EFMigrationsHistory TABLE
 -- =============================================

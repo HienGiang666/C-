@@ -2,6 +2,10 @@
 @{
     ViewData["Title"] = "Cập nhật địa điểm";
     var isAdmin = ViewBag.IsAdminPoiEdit as bool? == true;
+    var translations = ViewBag.Translations as List<TourApp.CMS.Models.POITranslation> ?? new List<TourApp.CMS.Models.POITranslation>();
+    var languages = new[] {
+        ("en", "🇬🇧 English"), ("zh", "🇨🇳 中文"), ("ja", "🇯🇵 日本語")
+    };
 }
 
 <div class="row justify-content-center">
@@ -125,7 +129,7 @@
                             </div>
                         </div>
                         <div class="mb-4">
-                            <label asp-for="Description" class="form-label fw-medium">Mô tả chi tiết <span class="text-danger">*</span></label>
+                            <label asp-for="Description" class="form-label fw-medium">Mô tả chi tiết (Tiếng Việt) <span class="text-danger">*</span></label>
                             <textarea asp-for="Description" class="form-control" rows="4" required></textarea>
                         </div>
                     }
@@ -138,5 +142,115 @@
                 </form>
             </div>
         </div>
+
+        <!-- ===== TRANSLATION SECTION ===== -->
+        <div class="card border-0 mt-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-language me-2 text-success"></i> Bản dịch đa ngôn ngữ</h5>
+                <button type="button" class="btn btn-success btn-sm" onclick="autoTranslateAll()">
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Tự động dịch tất cả
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-3">Nhập bản dịch mô tả cho từng ngôn ngữ. Bấm <strong>"Tự động dịch tất cả"</strong> để hệ thống tự dịch từ mô tả tiếng Việt. Sau đó bấm <strong>"Lưu tất cả"</strong>.</p>
+
+                <div id="translationStatus" class="alert alert-info small d-none mb-3">
+                    <i class="fa-solid fa-spinner fa-spin me-1"></i> <span id="translationStatusText">Đang dịch...</span>
+                </div>
+
+                <form method="post" asp-action="SaveAllTranslations" asp-route-id="@Model.Id">
+                    <div class="row g-3">
+                        @for (var i = 0; i < languages.Length; i++)
+                        {
+                            var (code, label) = languages[i];
+                            var existing = translations.FirstOrDefault(t => t.Language == code);
+                            <div class="col-md-6">
+                                <div class="card h-100 border">
+                                    <div class="card-header py-2 bg-light d-flex justify-content-between align-items-center">
+                                        <span class="fw-semibold small">@label</span>
+                                        @if (existing != null && !string.IsNullOrWhiteSpace(existing.Description))
+                                        {
+                                            <span class="badge bg-success">✓ Đã dịch</span>
+                                        }
+                                    </div>
+                                    <div class="card-body p-2">
+                                        <input type="hidden" name="langs[]" value="@code" />
+                                        <input type="text" name="names[]" id="name-@code" class="form-control form-control-sm mb-2"
+                                               value="@(existing?.Name ?? "")" placeholder="Tên quán dịch..." />
+                                        <textarea name="descs[]" id="desc-@code" class="form-control form-control-sm" rows="3"
+                                                  placeholder="Mô tả dịch...">@(existing?.Description ?? "")</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <hr />
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-save me-1"></i> Lưu tất cả bản dịch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- ===== END TRANSLATION SECTION ===== -->
+
     </div>
 </div>
+
+<script>
+const poiDescription = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Description ?? ""));
+const poiName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name ?? ""));
+const langCodes = [@Html.Raw(string.Join(",", languages.Select(l => $"\"{l.Item1}\"")))];
+
+async function translateText(text, targetLang) {
+    try {
+        const url = `/api/Translate?text=${encodeURIComponent(text)}&target=${targetLang}&source=vi`;
+        const response = await fetch(url);
+        if (!response.ok) return text;
+        const data = await response.json();
+        if (data && data[0] && data[0].length > 0) {
+            return data[0].map(x => x[0]).join('');
+        }
+        return text;
+    } catch {
+        return text;
+    }
+}
+
+async function autoTranslateAll() {
+    if (!poiDescription && !poiName) {
+        alert('Vui lòng nhập mô tả tiếng Việt trước khi dịch.');
+        return;
+    }
+
+    const statusDiv = document.getElementById('translationStatus');
+    const statusText = document.getElementById('translationStatusText');
+    statusDiv.classList.remove('d-none');
+
+    for (let i = 0; i < langCodes.length; i++) {
+        const code = langCodes[i];
+        statusText.textContent = `Đang dịch ${code}... (${i + 1}/${langCodes.length})`;
+
+        try {
+            if (poiName) {
+                const nameBox = document.getElementById(`name-${code}`);
+                if (nameBox && !nameBox.value.trim()) {
+                    nameBox.value = await translateText(poiName, code);
+                }
+            }
+            if (poiDescription) {
+                const descBox = document.getElementById(`desc-${code}`);
+                if (descBox && !descBox.value.trim()) {
+                    descBox.value = await translateText(poiDescription, code);
+                }
+            }
+        } catch (err) {
+            console.warn(`Dịch ${code} thất bại:`, err);
+        }
+    }
+
+    statusText.textContent = '✅ Dịch xong! Kiểm tra và bấm "Lưu tất cả bản dịch" để lưu.';
+    setTimeout(() => statusDiv.classList.add('d-none'), 5000);
+}
+</script>

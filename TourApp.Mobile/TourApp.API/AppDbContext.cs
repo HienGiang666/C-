@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TourApp.API.Models;
 
 namespace TourApp.API.Data;
@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<FavoritePOI> FavoritePOIs { get; set; } // 7. FavoritePOIs
     public DbSet<UserLocationLog> UserLocationLogs { get; set; } // 8. UserLocationLogs
     public DbSet<NarrationLog> NarrationLogs { get; set; } // 9. NarrationLogs
+    public DbSet<POITranslation> POITranslations { get; set; } // 10. POITranslations
     // Note: ActivityLogs không có trong DB, CMS dùng in-memory
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

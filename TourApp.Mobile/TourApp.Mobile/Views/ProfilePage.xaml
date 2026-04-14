@@ -13,13 +13,24 @@
 
             <VerticalStackLayout Padding="20,40,20,40">
                 <!-- User Profile Info -->
-                <VerticalStackLayout Spacing="5" HorizontalOptions="Center" Margin="0,20,0,30">
+                <VerticalStackLayout Spacing="5" HorizontalOptions="Center" Margin="0,20,0,10">
                     <Border WidthRequest="100" HeightRequest="100" Stroke="White" StrokeThickness="2" Padding="0" StrokeShape="RoundRectangle 50" HorizontalOptions="Center">
                         <Image Source="media__1775454538289.png" Aspect="AspectFill"/>
                     </Border>
                     <Label x:Name="UserNameLabel" FontSize="22" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" Margin="0,10,0,0"/>
                     <Label x:Name="UserEmailLabel" FontSize="14" TextColor="#FFDED0" HorizontalOptions="Center"/>
                 </VerticalStackLayout>
+
+                <!-- Edit Profile Button (small, under avatar) -->
+                <Border StrokeThickness="0" BackgroundColor="#FFFFFF40" Padding="15,8" HorizontalOptions="Center" Margin="0,0,0,20" StrokeShape="RoundRectangle 20">
+                    <HorizontalStackLayout Spacing="6">
+                        <Label Text="✏️" FontSize="14" VerticalOptions="Center"/>
+                        <Label Text="Chỉnh sửa hồ sơ" FontSize="13" TextColor="White" FontAttributes="Bold" VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnEditProfileTapped"/>
+                    </Border.GestureRecognizers>
+                </Border>
 
                 <!-- Stats Card (Hidden) -->
                 <Border x:Name="StatsFrame" StrokeThickness="0" BackgroundColor="White" Padding="20" Margin="0,0,0,20" IsVisible="False" StrokeShape="RoundRectangle 20">
@@ -50,7 +61,7 @@
                 </Border>
 
                 <!-- Menu List -->
-                <Border StrokeThickness="0" BackgroundColor="White" Padding="10,0" Margin="0,0,0,30" StrokeShape="RoundRectangle 20">
+                <Border StrokeThickness="0" BackgroundColor="White" Padding="10,0" Margin="0,0,0,15" StrokeShape="RoundRectangle 20">
                     <Border.Shadow>
                         <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
                     </Border.Shadow>
@@ -67,7 +78,7 @@
                         </Grid>
                         <BoxView HeightRequest="1" Color="#F0F0F0" Margin="15,0"/>
 
-                        <!-- Lịch sử -->
+                        <!-- Lịch sử Tour -->
                         <Grid ColumnDefinitions="40,*,Auto" Padding="15" HeightRequest="60">
                             <Label Grid.Column="0" Text="🕒" FontSize="20" VerticalOptions="Center" TextColor="#FF3D00"/>
                             <Label Grid.Column="1" Text="{Binding [MyTours], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="16" TextColor="Black" FontAttributes="Bold" VerticalOptions="Center"/>
@@ -78,13 +89,24 @@
                         </Grid>
                         <BoxView HeightRequest="1" Color="#F0F0F0" Margin="15,0"/>
 
-                        <!-- Chỉnh IP -->
+                        <!-- Đổi mật khẩu -->
                         <Grid ColumnDefinitions="40,*,Auto" Padding="15" HeightRequest="60">
-                            <Label Grid.Column="0" Text="📡" FontSize="20" VerticalOptions="Center" TextColor="#FF3D00"/>
+                            <Label Grid.Column="0" Text="🔑" FontSize="20" VerticalOptions="Center" TextColor="#FF3D00"/>
+                            <Label Grid.Column="1" Text="{Binding [ChangePassword], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="16" TextColor="Black" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Label Grid.Column="2" Text=">" FontSize="18" TextColor="#CCC" VerticalOptions="Center"/>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnChangePasswordTapped"/>
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#F0F0F0" Margin="15,0"/>
+
+                        <!-- Khóa ứng dụng -->
+                        <Grid ColumnDefinitions="40,*,Auto" Padding="15" HeightRequest="60">
+                            <Label Grid.Column="0" Text="🔒" FontSize="20" VerticalOptions="Center" TextColor="#FF3D00"/>
                             <Label Grid.Column="1" Text="{Binding [Settings], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="16" TextColor="Black" FontAttributes="Bold" VerticalOptions="Center"/>
                             <Label Grid.Column="2" Text=">" FontSize="18" TextColor="#CCC" VerticalOptions="Center"/>
                             <Grid.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnChangeIpTapped"/>
+                                <TapGestureRecognizer Tapped="OnAppLockSettingsTapped"/>
                             </Grid.GestureRecognizers>
                         </Grid>
                     </VerticalStackLayout>
@@ -93,7 +115,11 @@
                 <!-- Logout Button -->
                 <Button Text="{Binding [Logout], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FFF0F0" TextColor="#FF3B30" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,0,0,20" Clicked="OnLogoutClicked"/>
 
-                <Label Text="Version 1.0.0" FontSize="12" TextColor="#BBB" HorizontalOptions="Center"/>
+                <Label Text="Version 1.0.0" FontSize="12" TextColor="#BBB" HorizontalOptions="Center">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnChangeIpTapped" NumberOfTapsRequired="3"/>
+                    </Label.GestureRecognizers>
+                </Label>
             </VerticalStackLayout>
         </Grid>
     </ScrollView>

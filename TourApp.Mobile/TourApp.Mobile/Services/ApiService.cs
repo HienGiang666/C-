@@ -187,28 +187,88 @@ namespace TourApp.Mobile.Services
         }
 
         [DebuggerNonUserCode]
-        public Task<List<Tour>> GetAllToursAsync() =>
-            TryFetch(
-                "/api/tour",
-                body => JsonSerializer.Deserialize<List<Tour>>(body, JsonOpts) ?? new(),
-                () => new List<Tour>()
-            );
+        public async Task<List<Tour>> GetAllToursAsync()
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "tours.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync("/api/tour", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<List<Tour>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetAllToursAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<List<Tour>>(cached, JsonOpts) ?? new();
+            }
+            return new List<Tour>();
+        }
 
         [DebuggerNonUserCode]
-        public Task<Tour?> GetTourByIdAsync(int tourId) =>
-            TryFetch(
-                $"/api/tour/{tourId}",
-                body => JsonSerializer.Deserialize<Tour>(body, JsonOpts),
-                () => null
-            );
+        public async Task<Tour?> GetTourByIdAsync(int tourId)
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"tour_{tourId}.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/tour/{tourId}", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<Tour>(body, JsonOpts);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetTourByIdAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<Tour>(cached, JsonOpts);
+            }
+            return null;
+        }
 
         [DebuggerNonUserCode]
-        public Task<List<TourPOI>> GetTourStopsAsync(int tourId) =>
-            TryFetch(
-                $"/api/tour/{tourId}/stops",
-                body => JsonSerializer.Deserialize<List<TourPOI>>(body, JsonOpts) ?? new(),
-                () => new List<TourPOI>()
-            );
+        public async Task<List<TourPOI>> GetTourStopsAsync(int tourId)
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"tour_stops_{tourId}.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/tour/{tourId}/stops", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<List<TourPOI>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetTourStopsAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<List<TourPOI>>(cached, JsonOpts) ?? new();
+            }
+            return new List<TourPOI>();
+        }
 
         public async Task<(bool Success, string Message)> BookTourAsync(Booking booking)
         {
@@ -234,19 +294,59 @@ namespace TourApp.Mobile.Services
         }
 
         [DebuggerNonUserCode]
-        public Task<List<Language>> GetLanguagesAsync() =>
-            TryFetch(
-                "/api/language",
-                body => JsonSerializer.Deserialize<List<Language>>(body, JsonOpts) ?? new(),
-                () => new List<Language>()
-            );
+        public async Task<List<Language>> GetLanguagesAsync()
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "languages.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync("/api/language", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<List<Language>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetLanguagesAsync: {ex.Message}");
+            }
 
-        public Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi") =>
-            TryFetch(
-                $"/api/audio/poi/{poiId}?lang={lang}",
-                body => JsonSerializer.Deserialize<Audio>(body, JsonOpts),
-                () => null
-            );
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<List<Language>>(cached, JsonOpts) ?? new();
+            }
+            return new List<Language>();
+        }
+
+        public async Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi")
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"audio_{poiId}_{lang}.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/audio/poi/{poiId}?lang={lang}", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<Audio>(body, JsonOpts);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetAudioByPoiAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<Audio>(cached, JsonOpts);
+            }
+            return null;
+        }
 
         public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
         {
@@ -341,6 +441,43 @@ namespace TourApp.Mobile.Services
                 BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromSeconds(8) // Oppo A31 dễ treo nếu timeout vô hạn
             };
+        }
+        // ===== LANGUAGE / TRANSLATION SYNC =====
+
+        /// <summary>
+        /// Tải toàn bộ bản dịch UI từ server, cache vào file JSON.
+        /// </summary>
+        [DebuggerNonUserCode]
+        public async Task<Dictionary<string, Dictionary<string, string>>?> GetUiTranslationsAsync()
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "ui_translations.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync("/api/language/translations", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(body, JsonOpts);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] GetUiTranslationsAsync failed: {ex.Message}");
+            }
+
+            // Fallback to cached file
+            if (File.Exists(cacheFile))
+            {
+                try
+                {
+                    var cached = await File.ReadAllTextAsync(cacheFile);
+                    return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(cached, JsonOpts);
+                }
+                catch { }
+            }
+            return null;
         }
     }
 }

@@ -55,6 +55,20 @@ namespace TourApp.Mobile.Models
         [JsonPropertyName("audios")]
         public List<Audio> Audios { get; set; } = new();
 
+        [JsonPropertyName("translations")]
+        public List<POITranslation> Translations { get; set; } = new();
+
+        /// <summary>
+        /// Lấy Description theo ngôn ngữ đang chọn, fallback về vi.
+        /// </summary>
+        public string GetLocalizedDescription(string lang = "vi")
+        {
+            if (lang == "vi") return Description ?? "";
+            var t = Translations.FirstOrDefault(x => x.Language == lang);
+            if (t != null && !string.IsNullOrWhiteSpace(t.Description)) return t.Description;
+            return Description ?? "";
+        }
+
         /// <summary>
         /// Lấy ScriptText theo ngôn ngữ, fallback về "vi", fallback cuối là Description.
         /// </summary>
@@ -70,6 +84,24 @@ namespace TourApp.Mobile.Models
             // Fallback cuối: dùng Description
         return $"Chào mừng bạn đến {Name}. {Description}";
     }
+}
+
+public class POITranslation
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("poiId")]
+    public int POIId { get; set; }
+
+    [JsonPropertyName("language")]
+    public string Language { get; set; } = "en";
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
 }
 
 public class POIMapDto

@@ -19,7 +19,7 @@ namespace TourApp.Mobile.Services
         private static bool _isInitialized = false;
         
         /// <summary>
-        /// Mã ngôn ngữ hiện tại (vi, en, zh, ja, ko, fr, es, de, th, ru)
+        /// Mã ngôn ngữ hiện tại (vi, en, zh, ja)
         /// </summary>
         public static string CurrentLanguage
         {
@@ -244,40 +244,44 @@ namespace TourApp.Mobile.Services
 
             var zhDict = new Dictionary<string, string>(enDict)
             {
-                ["TabHome"] = "主页", ["TabFood"] = "食品", ["TabMap"] = "地图", ["TabTour"] = "游览", ["TabProfile"] = "我",
-                ["Welcome"] = "你好", ["SelectLanguage"] = "选择语言", ["Logout"] = "登出"
+                ["Error"] = "错误", ["Success"] = "成功", ["OK"] = "确定", ["Cancel"] = "取消", ["Loading"] = "加载中...",
+                ["EmailRequired"] = "请输入邮箱", ["ResetCodeRequired"] = "请输入重置码", ["NewPasswordRequired"] = "请输入新密码",
+                ["PasswordTooShort"] = "密码至少6个字符", ["PasswordMismatch"] = "确认密码不匹配", ["ServerError"] = "连接错误",
+                ["SendCode"] = "发送验证码", ["ResetPasswordButton"] = "重置密码", ["ResetCodeDemo"] = "重置码(演示):", ["DemoCode"] = "演示码",
+                ["Login"] = "登录", ["SignUp"] = "注册", ["ForgotPassword"] = "忘记密码?", ["Email"] = "邮箱", ["Password"] = "密码",
+                ["Home"] = "首页", ["Tours"] = "旅游", ["Map"] = "地图", ["Profile"] = "个人",
+                ["TabHome"] = "首页", ["TabFood"] = "美食", ["TabMap"] = "地图", ["TabTour"] = "旅游", ["TabProfile"] = "我的",
+                ["Welcome"] = "你好", ["SelectLanguage"] = "选择语言", ["Settings"] = "应用锁定设置", ["MyTours"] = "我的旅游", ["ChangePassword"] = "修改密码", ["Logout"] = "退出登录",
+                ["SearchPlaceholder"] = "搜索美食、餐厅、旅游...", ["CategoryNuong"] = "烧烤", ["CategoryLau"] = "火锅", ["CategoryOc"] = "海螺", ["CategoryAnVat"] = "小吃",
+                ["SuggestedTours"] = "🔥 推荐路线", ["SeeMore"] = "查看更多 >", ["TopPlaces"] = "热门推荐",
+                ["SearchFood"] = "搜索餐厅...", ["DiscoverTours"] = "探索旅游", ["SearchTour"] = "搜索旅游...", ["StartTour"] = "开始旅游",
+                ["SearchMap"] = "搜索餐厅、景点...", ["Search"] = "搜索", ["ListenAudio"] = "🔊 收听", ["Directions"] = "🗺️ 导航", ["Close"] = "❌ 关闭",
+                ["TourDetailTitle"] = "旅游详情", ["Introduction"] = "简介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ 下载离线音频", ["ViewMap"] = "查看地图", ["BookTour"] = "预订旅游"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
             {
-                ["TabHome"] = "ホーム", ["TabFood"] = "食べ物", ["TabMap"] = "マップ", ["TabTour"] = "ツアー", ["TabProfile"] = "私",
-                ["Welcome"] = "こんにちは", ["SelectLanguage"] = "言語を選択", ["Logout"] = "ログアウト"
+                ["Error"] = "エラー", ["Success"] = "成功", ["OK"] = "OK", ["Cancel"] = "キャンセル", ["Loading"] = "読み込み中...",
+                ["EmailRequired"] = "メールアドレスを入力してください", ["ResetCodeRequired"] = "リセットコードを入力してください", ["NewPasswordRequired"] = "新しいパスワードを入力してください",
+                ["PasswordTooShort"] = "パスワードは6文字以上", ["PasswordMismatch"] = "確認パスワードが一致しません", ["ServerError"] = "接続エラー",
+                ["SendCode"] = "コード送信", ["ResetPasswordButton"] = "パスワードリセット", ["ResetCodeDemo"] = "リセットコード(デモ):", ["DemoCode"] = "デモコード",
+                ["Login"] = "ログイン", ["SignUp"] = "サインアップ", ["ForgotPassword"] = "パスワードを忘れた?", ["Email"] = "メール", ["Password"] = "パスワード",
+                ["Home"] = "ホーム", ["Tours"] = "ツアー", ["Map"] = "マップ", ["Profile"] = "プロフィール",
+                ["TabHome"] = "ホーム", ["TabFood"] = "グルメ", ["TabMap"] = "マップ", ["TabTour"] = "ツアー", ["TabProfile"] = "マイ",
+                ["Welcome"] = "こんにちは", ["SelectLanguage"] = "言語を選択", ["Settings"] = "アプリロック設定", ["MyTours"] = "マイツアー", ["ChangePassword"] = "パスワード変更", ["Logout"] = "ログアウト",
+                ["SearchPlaceholder"] = "料理、レストラン、ツアーを検索...", ["CategoryNuong"] = "焼肉", ["CategoryLau"] = "鍋", ["CategoryOc"] = "貝", ["CategoryAnVat"] = "軽食",
+                ["SuggestedTours"] = "🔥 おすすめルート", ["SeeMore"] = "もっと見る >", ["TopPlaces"] = "人気スポット",
+                ["SearchFood"] = "レストラン検索...", ["DiscoverTours"] = "ツアーを探す", ["SearchTour"] = "ツアー検索...", ["StartTour"] = "ツアー開始",
+                ["SearchMap"] = "レストラン、観光地を検索...", ["Search"] = "検索", ["ListenAudio"] = "🔊 再生", ["Directions"] = "🗺️ 経路", ["Close"] = "❌ 閉じる",
+                ["TourDetailTitle"] = "ツアー詳細", ["Introduction"] = "紹介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ オフライン音声DL", ["ViewMap"] = "地図を見る", ["BookTour"] = "ツアー予約"
             };
-
-            var koDict = new Dictionary<string, string>(enDict)
-            {
-                ["TabHome"] = "홈", ["TabFood"] = "음식", ["TabMap"] = "지도", ["TabTour"] = "투어", ["TabProfile"] = "나",
-                ["Welcome"] = "안녕하세요", ["SelectLanguage"] = "언어 선택", ["Logout"] = "로그아웃"
-            };
-
-            var frDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Accueil", ["TabFood"] = "Nourriture", ["TabMap"] = "Carte", ["TabTour"] = "Tour", ["TabProfile"] = "Moi", ["Welcome"] = "Bonjour", ["SelectLanguage"] = "Choisir", ["Logout"] = "Déconnexion" };
-            var deDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Startseite", ["TabFood"] = "Essen", ["TabMap"] = "Karte", ["TabTour"] = "Tour", ["TabProfile"] = "Ich", ["Welcome"] = "Hallo", ["SelectLanguage"] = "Sprache", ["Logout"] = "Abmelden" };
-            var esDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Inicio", ["TabFood"] = "Comida", ["TabMap"] = "Mapa", ["TabTour"] = "Tour", ["TabProfile"] = "Yo", ["Welcome"] = "Hola", ["SelectLanguage"] = "Idioma", ["Logout"] = "Cerrar sesión" };
-            var thDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "หน้าแรก", ["TabFood"] = "อาหาร", ["TabMap"] = "แผนที่", ["TabTour"] = "ทัวร์", ["TabProfile"] = "ฉัน", ["Welcome"] = "สวัสดี", ["SelectLanguage"] = "ภาษา", ["Logout"] = "ออกจากระบบ" };
-            var ruDict = new Dictionary<string, string>(enDict) { ["TabHome"] = "Главная", ["TabFood"] = "Еда", ["TabMap"] = "Карта", ["TabTour"] = "Тур", ["TabProfile"] = "Я", ["Welcome"] = "Привет", ["SelectLanguage"] = "Язык", ["Logout"] = "Выйти" };
 
             _resources["vi"] = fallbackDict;
             _resources["en"] = enDict;
             _resources["zh"] = zhDict;
             _resources["ja"] = jaDict;
-            _resources["ko"] = koDict;
-            _resources["fr"] = frDict;
-            _resources["de"] = deDict;
-            _resources["es"] = esDict;
-            _resources["th"] = thDict;
-            _resources["ru"] = ruDict;
             
-            System.Diagnostics.Debug.WriteLine($"[LanguageService] Created built-in fallback for all 10 languages");
+            System.Diagnostics.Debug.WriteLine($"[LanguageService] Created built-in fallback for 4 languages (vi, en, zh, ja)");
         }
         
         /// <summary>
@@ -393,12 +397,6 @@ namespace TourApp.Mobile.Services
                 "en" => "English",
                 "zh" => "中文",
                 "ja" => "日本語",
-                "ko" => "한국어",
-                "fr" => "Français",
-                "de" => "Deutsch",
-                "es" => "Español",
-                "th" => "ไทย",
-                "ru" => "Русский",
                 _ => code?.ToUpper() ?? "Unknown"
             };
         }
@@ -411,15 +409,60 @@ namespace TourApp.Mobile.Services
             new LanguageInfo { Code = "vi", Name = "Vietnamese", NativeName = "Tiếng Việt", IsActive = true },
             new LanguageInfo { Code = "en", Name = "English", NativeName = "English", IsActive = true },
             new LanguageInfo { Code = "zh", Name = "Chinese", NativeName = "中文", IsActive = true },
-            new LanguageInfo { Code = "ja", Name = "Japanese", NativeName = "日本語", IsActive = true },
-            new LanguageInfo { Code = "ko", Name = "Korean", NativeName = "한국어", IsActive = true },
-            new LanguageInfo { Code = "fr", Name = "French", NativeName = "Français", IsActive = true },
-            new LanguageInfo { Code = "de", Name = "German", NativeName = "Deutsch", IsActive = true },
-            new LanguageInfo { Code = "es", Name = "Spanish", NativeName = "Español", IsActive = true },
-            new LanguageInfo { Code = "th", Name = "Thai", NativeName = "ไทย", IsActive = true },
-            new LanguageInfo { Code = "ru", Name = "Russian", NativeName = "Русский", IsActive = true }
+            new LanguageInfo { Code = "ja", Name = "Japanese", NativeName = "日本語", IsActive = true }
         };
         
+        /// <summary>
+        /// Đồng bộ bản dịch UI từ server API.
+        /// Gọi khi app khởi động (sau Initialize) để thay thế hardcode bằng dữ liệu từ server.
+        /// Nếu không có mạng → sử dụng cache hoặc built-in fallback.
+        /// </summary>
+        public static async Task SyncFromServerAsync()
+        {
+            try
+            {
+                var apiService = IPlatformApplication.Current?.Services.GetService<ApiService>();
+                if (apiService == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[LanguageService] No ApiService, skip sync");
+                    return;
+                }
+
+                var serverTranslations = await apiService.GetUiTranslationsAsync();
+                if (serverTranslations == null || serverTranslations.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("[LanguageService] Server returned no translations, keeping local");
+                    return;
+                }
+
+                // Ghi đè resources bằng dữ liệu từ server
+                foreach (var (lang, dict) in serverTranslations)
+                {
+                    if (_resources.ContainsKey(lang))
+                    {
+                        // Merge: server values override local, giữ lại local keys không có trên server
+                        foreach (var (key, val) in dict)
+                        {
+                            _resources[lang][key] = val;
+                        }
+                    }
+                    else
+                    {
+                        _resources[lang] = dict;
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Synced {serverTranslations.Count} languages from server");
+                
+                // Trigger refresh UI nếu đang active
+                OnLanguageChanged(CurrentLanguage);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] SyncFromServer error: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Lấy danh sách ngôn ngữ đang active
         /// </summary>

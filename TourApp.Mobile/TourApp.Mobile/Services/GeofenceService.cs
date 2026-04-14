@@ -25,7 +25,7 @@ namespace TourApp.Mobile.Services
 
         /// <summary>
         /// Ngôn ngữ hiện tại của app (có thể thay đổi từ UI settings).
-        /// vi | en | zh | ja | ko | fr | es | de | th | ru
+        /// vi | en | zh | ja
         /// </summary>
         public string CurrentLanguage { get; set; } = "vi";
 
@@ -39,12 +39,6 @@ namespace TourApp.Mobile.Services
             ["en"] = "en-US",
             ["zh"] = "zh-CN",
             ["ja"] = "ja-JP",
-            ["ko"] = "ko-KR",
-            ["fr"] = "fr-FR",
-            ["es"] = "es-ES",
-            ["de"] = "de-DE",
-            ["th"] = "th-TH",
-            ["ru"] = "ru-RU",
         };
 
         public GeofenceService(ApiService apiService)

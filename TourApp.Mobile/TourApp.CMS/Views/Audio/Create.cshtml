@@ -141,7 +141,7 @@ function detectLang(text) {
 }
 
 async function translateInto(targetCode, text) {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
+    const url = `/api/Translate?text=${encodeURIComponent(text)}&target=${targetCode}&source=auto`;
     const response = await fetch(url);
     const data = await response.json();
     return data[0].map(x => x[0]).join('');

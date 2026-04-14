@@ -12,6 +12,7 @@ public partial class HomePage : ContentPage
     public ObservableCollection<MockItem> MockPois { get; set; } = new();
     
     private List<POI>? _allPois;
+    private List<Tour>? _allTours;
     private readonly ApiService _apiService;
     
     // Localized properties for XAML binding
@@ -45,18 +46,13 @@ public partial class HomePage : ContentPage
         // Subscribe to language changes
         LanguageService.LanguageChanged += OnLanguageChanged;
         
-        MockTours.Add(new MockItem { Name = "Tour Ốc Vĩnh Khánh", Summary = "5 điểm • 3.2km" });
-        MockTours.Add(new MockItem { Name = "Tour Nướng Quận 1", Summary = "4 điểm • 2.8km" });
-
-        MockPois.Add(new MockItem { Name = "Ốc Xiên Quán", Summary = "⭐ 4.5", PoiId = 1 });
-        MockPois.Add(new MockItem { Name = "Bánh Tráng Trộn", Summary = "⭐ 4.6", PoiId = 2 });
-        MockPois.Add(new MockItem { Name = "Lẩu Bò", Summary = "⭐ 4.9", PoiId = 3 });
+        // Dữ liệu sẽ được load từ API trong LoadDataAsync()
 
         TourCollectionView.ItemsSource = MockTours;
         PoiCollectionView.ItemsSource = MockPois;
         
-        // Load POIs from API
-        _ = LoadPoisAsync();
+        // Load POIs and Tours from API
+        _ = LoadDataAsync();
         
         BindingContext = this;
     }
@@ -104,16 +100,19 @@ public partial class HomePage : ContentPage
         UpdateLocalizedText();
     }
     
-    private async Task LoadPoisAsync()
+    private async Task LoadDataAsync()
     {
         try
         {
             await ApiService.AutoDiscoverApiAsync();
-            _allPois = await _apiService.GetAllPOIsAsync();
             
+            // Đồng bộ bản dịch UI từ server (fire-and-forget, không block UI)
+            _ = LanguageService.SyncFromServerAsync();
+            
+            // Load POIs
+            _allPois = await _apiService.GetAllPOIsAsync();
             if (_allPois?.Any() == true)
             {
-                // Update MockPois with real data
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     MockPois.Clear();
@@ -121,7 +120,7 @@ public partial class HomePage : ContentPage
                     {
                         MockPois.Add(new MockItem 
                         { 
-                            Name = poi.Name, 
+                            Name = poi.Name ?? "Unknown", 
                             Summary = $"⭐ {poi.Rating:F1}",
                             PoiId = poi.Id,
                             Latitude = poi.Latitude,
@@ -130,10 +129,28 @@ public partial class HomePage : ContentPage
                     }
                 });
             }
+
+            // Load Tours
+            _allTours = await _apiService.GetAllToursAsync();
+            if (_allTours?.Any() == true)
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    MockTours.Clear();
+                    foreach (var tour in _allTours.Take(5))
+                    {
+                        MockTours.Add(new MockItem
+                        {
+                            Name = tour.Name ?? "Tour",
+                            Summary = $"{tour.PoiCount} điểm"
+                        });
+                    }
+                });
+            }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[HomePage] LoadPoisAsync error: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[HomePage] LoadDataAsync error: {ex.Message}");
         }
     }
 
@@ -159,12 +176,12 @@ public partial class HomePage : ContentPage
             p.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
             .ToList();
             
-        // Search in Tours (mock data for now)
-        var matchingTours = MockTours.Where(t =>
+        // Search in Tours
+        var matchingTours = _allTours?.Where(t =>
             !string.IsNullOrEmpty(t.Name) && t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .ToList();
         
-        if ((matchingPois?.Any() != true) && !matchingTours.Any())
+        if ((matchingPois?.Any() != true) && (matchingTours?.Any() != true))
         {
             await DisplayAlert(LanguageService.GetString("SearchResults"), 
                 LanguageService.GetString("NoResults", query), 
@@ -183,7 +200,7 @@ public partial class HomePage : ContentPage
             }
         }
         
-        if (matchingTours.Any())
+        if (matchingTours?.Any() == true)
         {
             if (!string.IsNullOrEmpty(resultMessage)) resultMessage += "\n";
             resultMessage += $"🚩 {LanguageService.GetString("Tours")}:\n";

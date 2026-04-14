@@ -13,6 +13,8 @@ namespace TourApp.Mobile
             Routing.RegisterRoute("TourDetailPage", typeof(Views.TourDetailPage));
             Routing.RegisterRoute("BookingPage", typeof(Views.BookingPage));
             Routing.RegisterRoute("UserBookingsPage", typeof(Views.UserBookingsPage));
+            Routing.RegisterRoute("EditProfilePage", typeof(Views.EditProfilePage));
+            Routing.RegisterRoute("ChangePasswordPage", typeof(Views.ChangePasswordPage));
             
             // Subscribe to language changes để update tab labels
             LanguageService.LanguageChanged += OnLanguageChanged;

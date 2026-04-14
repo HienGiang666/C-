@@ -333,7 +333,7 @@ public partial class MapPage : ContentPage
     {
         _currentPoi = poi;
         PoiNameLabel.Text = poi.Name;
-        PoiDescLabel.Text = poi.Description;
+        PoiDescLabel.Text = poi.GetLocalizedDescription(LanguageService.CurrentLanguage);
         PoiRatingLabel.Text = $"⭐ {poi.Rating:F1}";
         PoiDistanceLabel.Text = $"• {poi.Radius}m bán kính";
 
@@ -441,34 +441,33 @@ public partial class MapPage : ContentPage
 
     private async Task DrawRouteAsync(Location origin, Location destination, List<Location>? waypoints = null)
     {
-        if (string.IsNullOrEmpty(GoongRestApiKey))
+        // OSRM API expects coordinates in Longitude,Latitude format
+        var coords = new List<string>
         {
-            await DisplayAlert("Lỗi", "Chưa cấu hình Goong API Key", "OK");
-            return;
-        }
-        // Build url
-        var oStr = $"{origin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{origin.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
-        var dStr = $"{destination.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{destination.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
-        var url = $"https://rsapi.goong.io/Direction/Route?origin={oStr}&destination={dStr}&vehicle=bike&api_key={GoongRestApiKey}";
+            $"{origin.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{origin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
+        };
 
         if (waypoints != null && waypoints.Any())
         {
-            var wpStr = string.Join("|", waypoints.Select(w => $"{w.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{w.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}"));
-            url += $"&waypoints={wpStr}";
+            coords.AddRange(waypoints.Select(w => $"{w.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{w.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}"));
         }
+
+        coords.Add($"{destination.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{destination.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+        var pathStr = string.Join(";", coords);
+        var url = $"http://router.project-osrm.org/route/v1/driving/{pathStr}?overview=full&geometries=polyline";
 
         try
         {
             var res = await _http.GetStringAsync(url);
             using var doc = System.Text.Json.JsonDocument.Parse(res);
-            var routes = doc.RootElement.GetProperty("routes");
-            if (routes.GetArrayLength() > 0)
+            if (doc.RootElement.TryGetProperty("routes", out var routes) && routes.GetArrayLength() > 0)
             {
-                var polyline = routes[0].GetProperty("overview_polyline").GetProperty("points").GetString();
-                if (polyline != null)
+                var geometry = routes[0].GetProperty("geometry").GetString();
+                if (geometry != null)
                 {
-                    var coords = DecodePolyline(polyline);
-                    var jsCoords = string.Join(",", coords.Select(c => $"[{c.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{c.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}]"));
+                    var polylineCoords = DecodePolyline(geometry);
+                    var jsCoords = string.Join(",", polylineCoords.Select(c => $"[{c.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{c.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}]"));
                     if (_isJsMapReady)
                     {
                         MainThread.BeginInvokeOnMainThread(() => {
@@ -477,10 +476,19 @@ public partial class MapPage : ContentPage
                     }
                 }
             }
+            else
+            {
+                MainThread.BeginInvokeOnMainThread(async () => {
+                   await DisplayAlert("Lộ trình", "Không tìm thấy đường đi.", "OK");
+                });
+            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[DrawRoute] error: {ex}");
+            MainThread.BeginInvokeOnMainThread(async () => {
+               await DisplayAlert("Lỗi", "Không thể gọi API chỉ đường, vui lòng kiểm tra mạng.", "OK");
+            });
         }
     }
 

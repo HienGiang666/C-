@@ -164,9 +164,72 @@ public class POIController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        // Load translations
+        var transResponse = await client.GetAsync($"api/POI/{id}/translations");
+        var translations = transResponse.IsSuccessStatusCode
+            ? await transResponse.Content.ReadFromJsonAsync<List<POITranslation>>() ?? new List<POITranslation>()
+            : new List<POITranslation>();
+        ViewBag.Translations = translations;
+
         var isAdmin = (HttpContext.Session.GetString("Role") ?? "").Equals("Admin", StringComparison.OrdinalIgnoreCase);
         ViewBag.IsAdminPoiEdit = isAdmin;
         return View(poi);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveTranslation(int id, string language, string? translatedName, string? translatedDescription)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var translation = new POITranslation
+        {
+            POIId = id,
+            Language = language,
+            Name = translatedName,
+            Description = translatedDescription
+        };
+        var response = await client.PostAsJsonAsync($"api/POI/{id}/translations", translation);
+        if (response.IsSuccessStatusCode)
+            TempData["success"] = $"Đã lưu bản dịch [{language}] thành công!";
+        else
+            TempData["error"] = "Lỗi khi lưu bản dịch!";
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    public async Task<IActionResult> DeleteTranslation(int id, string lang)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        await client.DeleteAsync($"api/POI/{id}/translations/{lang}");
+        TempData["success"] = $"Đã xóa bản dịch [{lang}].";
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveAllTranslations(int id, [FromForm(Name = "langs[]")] string[] langs, [FromForm(Name = "names[]")] string[] names, [FromForm(Name = "descs[]")] string[] descs)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        int saved = 0;
+        for (int i = 0; i < langs.Length; i++)
+        {
+            var lang = langs[i];
+            var name = i < names.Length ? names[i] : "";
+            var desc = i < descs.Length ? descs[i] : "";
+
+            if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(desc))
+                continue;
+
+            var translation = new POITranslation
+            {
+                POIId = id,
+                Language = lang,
+                Name = name?.Trim(),
+                Description = desc?.Trim()
+            };
+            await client.PostAsJsonAsync($"api/POI/{id}/translations", translation);
+            saved++;
+        }
+
+        TempData["success"] = $"Đã lưu {saved} bản dịch thành công!";
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     [HttpPost]

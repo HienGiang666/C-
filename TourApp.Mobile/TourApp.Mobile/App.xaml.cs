@@ -31,10 +31,22 @@ namespace TourApp.Mobile
         {
             AuthService.LoadSavedSession();
 
-            Page startPage =
-                AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username)
-                    ? new AppShell()
-                    : new NavigationPage(new Views.Auth.LoginPage());
+            Page startPage;
+            if (AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username))
+            {
+                if (Preferences.Default.ContainsKey("app_lock_pin"))
+                {
+                    startPage = new Views.AppLockPage(0);
+                }
+                else
+                {
+                    startPage = new AppShell();
+                }
+            }
+            else
+            {
+                startPage = new NavigationPage(new Views.Auth.LoginPage());
+            }
 
             return new Window(startPage);
         }
