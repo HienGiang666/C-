@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:views="clr-namespace:TourApp.Mobile.Views"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
              x:Class="TourApp.Mobile.Views.HomePage"
              x:DataType="views:HomePage"
              BackgroundColor="#F5F6F8"
@@ -37,7 +38,7 @@
                         <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
                             <Grid ColumnDefinitions="30,*">
                                 <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
-                                <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="Tìm món, tìm quán, tìm tour..." TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                                <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchPlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
                             </Grid>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnSearchBarTapped"/>
@@ -58,7 +59,7 @@
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🔥" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="Nướng" FontSize="12" TextColor="#444"/>
+                            <Label Text="{Binding [CategoryNuong], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="#FCE4E4" Padding="5,15" StrokeShape="RoundRectangle 15">
@@ -67,7 +68,7 @@
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🍲" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="Lẩu" FontSize="12" TextColor="#444"/>
+                            <Label Text="{Binding [CategoryLau], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Column="2" StrokeThickness="0" BackgroundColor="#E6F0FF" Padding="5,15" StrokeShape="RoundRectangle 15">
@@ -76,7 +77,7 @@
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🐚" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="Ốc" FontSize="12" TextColor="#444"/>
+                            <Label Text="{Binding [CategoryOc], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Column="3" StrokeThickness="0" BackgroundColor="#E6FCEF" Padding="5,15" StrokeShape="RoundRectangle 15">
@@ -85,7 +86,7 @@
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
                             <Label Text="🍢" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="Ăn vặt" FontSize="12" TextColor="#444"/>
+                            <Label Text="{Binding [CategoryAnVat], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
@@ -93,8 +94,8 @@
                 <!-- Lộ Trình Gợi Ý -->
                 <VerticalStackLayout Spacing="15">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="🔥 Gợi ý Lộ trình" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
-                        <Label Grid.Column="1" Text="Xem thêm >" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
+                        <Label Grid.Column="0" Text="{Binding [SuggestedTours], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
+                        <Label Grid.Column="1" Text="{Binding [SeeMore], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnXemThemTourTapped"/>
                             </Label.GestureRecognizers>
@@ -125,8 +126,8 @@
                 <!-- Top Nổi Bật -->
                 <VerticalStackLayout Spacing="15">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="Top Nổi Bật" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
-                        <Label Grid.Column="1" Text="Xem thêm >" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
+                        <Label Grid.Column="0" Text="{Binding [TopPlaces], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
+                        <Label Grid.Column="1" Text="{Binding [SeeMore], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnXemThemPoiTapped"/>
                             </Label.GestureRecognizers>

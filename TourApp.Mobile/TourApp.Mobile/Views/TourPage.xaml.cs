@@ -99,11 +99,9 @@ public partial class TourPage : ContentPage
 
     private async void OnStartTourClicked(object sender, EventArgs e)
     {
-        // Get the tour from the binding context of the button
         if (sender is Button button && button.BindingContext is Tour selectedTour)
         {
-            // Navigate to MapPage with tour ID to show the route
-            await Shell.Current.GoToAsync($"//MapPage?tourId={selectedTour.Id}");
+            await Shell.Current.GoToAsync($"TourDetailPage?tourId={selectedTour.Id}");
         }
     }
     
@@ -160,8 +158,8 @@ public partial class TourPage : ContentPage
             // Clear selection
             TourCollectionView.SelectedItem = null;
             
-            // Navigate to MapPage with tour ID
-            await Shell.Current.GoToAsync($"//MapPage?tourId={selectedTour.Id}");
+            // Navigate to TourDetailPage with tour ID
+            await Shell.Current.GoToAsync($"TourDetailPage?tourId={selectedTour.Id}");
         }
     }
 }

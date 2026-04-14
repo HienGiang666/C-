@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
              x:Class="TourApp.Mobile.Views.QRScannerPage"
              BackgroundColor="Black"
              Shell.NavBarIsVisible="False">
@@ -70,8 +70,16 @@
                     <!-- Scanning line animation -->
                     <BoxView x:Name="ScanLine" Color="#FF3D00" HeightRequest="2" 
                              HorizontalOptions="Fill" VerticalOptions="Start" Margin="20,0"/>
+
                 </Grid>
             </Border>
+
+            <!-- Emulator Mock Buttons -->
+            <VerticalStackLayout x:Name="EmulatorUI" IsVisible="True" VerticalOptions="Center" HorizontalOptions="Center" Spacing="20" BackgroundColor="#AA000000" Padding="20">
+                <Label Text="(Test Giả Lập)" TextColor="White" HorizontalOptions="Center"/>
+                <Button Text="Giả lập: Quét Ốc Xiên Quán" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan1Clicked"/>
+                <Button Text="Giả lập: Quét Lẩu Bò" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan2Clicked"/>
+            </VerticalStackLayout>
         </Grid>
 
         <!-- Bottom instruction -->

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:TourApp.Mobile.Models"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
+             x:Class="TourApp.Mobile.Views.TourDetailPage"
+             Title="{Binding [TourDetailTitle], Source={x:Static services:LocalizationResourceManager.Instance}}"
+             BackgroundColor="#F5F6F8">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="0">
+            <!-- Header Image -->
+            <Image x:Name="TourImage" HeightRequest="250" Aspect="AspectFill" Source="media__1775454533773.jpg" />
+
+            <VerticalStackLayout Padding="20" Spacing="15" Margin="0,-20,0,0" BackgroundColor="#F5F6F8">
+                <!-- Tour Title and Stats -->
+                <Border StrokeThickness="0" BackgroundColor="White" Padding="20" StrokeShape="RoundRectangle 20">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="10">
+                        <Label x:Name="TourNameLabel" Text="Tên Tour" FontSize="22" FontAttributes="Bold" TextColor="Black"/>
+                        
+                        <Grid ColumnDefinitions="*,*,*" Margin="0,10,0,0">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="5">
+                                <Label Text="💸" FontSize="14"/><Label x:Name="PriceLabel" Text="0 đ" FontSize="14" TextColor="#FF3D00" FontAttributes="Bold"/>
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Grid.Column="1" Spacing="5">
+                                <Label Text="⏰" FontSize="14"/><Label x:Name="DurationLabel" Text="1 ngày" FontSize="14" TextColor="#444"/>
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Grid.Column="2" Spacing="5">
+                                <Label Text="👥" FontSize="14"/><Label x:Name="ParticipantsLabel" Text="Tối đa 20" FontSize="14" TextColor="#444"/>
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Tour Description -->
+                <Label Text="{Binding [Introduction], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="18" FontAttributes="Bold" TextColor="Black" Margin="0,10,0,0"/>
+                <Label x:Name="TourDescriptionLabel" Text="Mô tả của tour sẽ nằm ở đây..." FontSize="14" TextColor="#666" LineBreakMode="WordWrap"/>
+
+                <!-- Stops (POIs) -->
+                <Label Text="{Binding [Destinations], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="18" FontAttributes="Bold" TextColor="Black" Margin="0,10,0,5"/>
+                <CollectionView x:Name="StopsCollectionView">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:TourPOI">
+                            <Grid ColumnDefinitions="40,*" Margin="0,5,0,5">
+                                <!-- Order Circle -->
+                                <Border Grid.Column="0" WidthRequest="30" HeightRequest="30" StrokeThickness="0" BackgroundColor="#FF3D00" StrokeShape="RoundRectangle 15" VerticalOptions="Center" HorizontalOptions="Start">
+                                    <Label Text="{Binding OrderIndex}" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" FontAttributes="Bold"/>
+                                </Border>
+                                <!-- POI Info -->
+                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                    <Label Text="{Binding POI.Name}" FontSize="16" FontAttributes="Bold" TextColor="Black"/>
+                                    <Label Text="{Binding POI.Address}" FontSize="12" TextColor="#888" LineBreakMode="TailTruncation"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Download Offline Audio Button -->
+                <Button x:Name="DownloadAudioButton" Text="{Binding [DownloadOfflineAudio], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#E2E8F0" TextColor="#16182B" CornerRadius="10" HeightRequest="50" Margin="0,10,0,0" Clicked="OnDownloadAudioClicked" />
+
+                <!-- Action Buttons -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,20,0,20">
+                    <Button Grid.Column="0" Text="{Binding [ViewMap], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="Transparent" TextColor="#FF3D00" BorderColor="#FF3D00" BorderWidth="1" CornerRadius="10" HeightRequest="50" Clicked="OnViewMapClicked"/>
+                    <Button Grid.Column="1" Text="{Binding [BookTour], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnBookTourClicked"/>
+                </Grid>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -130,9 +130,27 @@ namespace TourApp.Mobile.Services
             try
             {
                 var lang = overrideLang ?? CurrentLanguage;
-                var script = poi.GetScript(lang);
-                var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
+                
+                // 1. Try to fetch MP3 Audio from API
+                var audio = await _apiService.GetAudioByPoiAsync(poi.Id, lang);
+                if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
+                {
+                    var audioUrl = audio.AudioPath.StartsWith("http") 
+                        ? audio.AudioPath 
+                        : ApiService.BaseUrl + audio.AudioPath;
+                        
+                    await AudioPlayerService.Instance.PlayFromUrlAsync(audioUrl, poi.Name ?? "Audio");
+                    
+                    // Log metrics
+                    _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "geofence");
+                    return; // Successfully played real audio
+                }
 
+                // 2. Fallback to TTS if no MP3 found
+                var script = poi.GetScript(lang);
+                if (string.IsNullOrWhiteSpace(script)) return;
+
+                var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
                 System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script.Substring(0, Math.Min(50, script.Length))}...");
 
                 var locales = await TextToSpeech.Default.GetLocalesAsync();
@@ -143,24 +161,15 @@ namespace TourApp.Mobile.Services
                 {
                     Pitch = 1.0f,
                     Volume = 1.0f,
-                    Locale = matchedLocale // null = system default, vẫn OK
+                    Locale = matchedLocale 
                 };
 
                 await TextToSpeech.Default.SpeakAsync(script, options);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence_tts");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[TTS] Error with locale: {ex.Message}");
-                try
-                {
-                    // Fallback hoàn toàn không locale
-                    var script = poi.GetScript("vi");
-                    await TextToSpeech.Default.SpeakAsync(script);
-                }
-                catch (Exception ex2)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[TTS] Fallback failed: {ex2.Message}");
-                }
+                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.Message}");
             }
         }
 
