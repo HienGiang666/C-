@@ -16,8 +16,7 @@
 4. [Actor #1 — Admin](#4-actor-1--admin-quản-trị-viên)
 5. [Actor #2 — Chủ Quán Ăn](#5-actor-2--chủ-quán-ăn-restaurant-owner)
 6. [Actor #3 — Khách Tham Quan](#6-actor-3--khách-tham-quan-customer)
-7. [Diagrams](#7-diagrams)
-8. [Technology Stack](#8-technology-stack)
+7. [Technology Stack](#7-technology-stack)
 
 ---
 
