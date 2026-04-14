@@ -24,17 +24,19 @@ namespace TourApp.Mobile
             });
 
             // ===== FIX: Vietnamese Telex/VNI input bị mất chữ khi gõ dấu =====
-            // Nguyên nhân: MAUI update Text property liên tục làm hỏng composition state của Android IMEI
-            // Fix: Sử dụng SetRawInputType thay vì InputType property để tránh Android tự động apply các flags
-            // phá hỏng composition (như NoSuggestions).
+            // Nguyên nhân: MAUI update Text property liên tục làm hỏng composition state của Android IME.
+            // Fix 1: SetRawInputType để giữ composition state.
+            // Fix 2: Thêm ImeOptions.NoExtractUi, tắt TextFlagNoSuggestions.
+            // Fix 3: Đặt PrivateImeOptions "nm" (no microphone) để giảm interference.
             Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("VietnameseInputFix", (handler, view) =>
             {
                 if (handler.PlatformView is Android.Widget.EditText editText)
                 {
                     if (view is Entry entry && !entry.IsPassword)
                     {
-                        // SetRawInputType rất hiệu quả trong việc giữ nguyên state của Telex
                         editText.SetRawInputType(Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationNormal);
+                        editText.ImeOptions = Android.Views.InputMethods.ImeAction.Done;
+                        editText.PrivateImeOptions = "nm";
                     }
                 }
             });
@@ -44,6 +46,8 @@ namespace TourApp.Mobile
                 if (handler.PlatformView is Android.Widget.EditText editText)
                 {
                     editText.SetRawInputType(Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationNormal | Android.Text.InputTypes.TextFlagMultiLine);
+                    editText.ImeOptions = Android.Views.InputMethods.ImeAction.Unspecified;
+                    editText.PrivateImeOptions = "nm";
                 }
             });
 
@@ -55,6 +59,7 @@ namespace TourApp.Mobile
                     if (editText != null)
                     {
                         editText.SetRawInputType(Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationNormal);
+                        editText.PrivateImeOptions = "nm";
                     }
                 }
             });

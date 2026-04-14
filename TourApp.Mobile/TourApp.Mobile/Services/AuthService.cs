@@ -116,6 +116,7 @@ namespace TourApp.Mobile.Services
                 var baseUrl = ApiService.BaseUrl;
 
                 using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+                httpClient.Timeout = TimeSpan.FromSeconds(15);
 
                 var request = new
                 {
@@ -128,8 +129,20 @@ namespace TourApp.Mobile.Services
                     CreatedAt = DateTime.Now
                 };
 
-                var response = await httpClient.PostAsJsonAsync("/api/user", request);
-                
+                HttpResponseMessage response;
+                try
+                {
+                    response = await httpClient.PostAsJsonAsync("/api/user", request);
+                }
+                catch (TaskCanceledException)
+                {
+                    return (false, "Không thể kết nối đến máy chủ. Vui lòng kiểm tra WiFi hoặc địa chỉ API.", null);
+                }
+                catch (HttpRequestException ex)
+                {
+                    return (false, $"Lỗi kết nối: {ex.Message}", null);
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
@@ -150,8 +163,23 @@ namespace TourApp.Mobile.Services
                     }
                 }
 
+                // Xử lý lỗi từ API
                 var errorContent = await response.Content.ReadAsStringAsync();
-                return (false, $"Đăng ký thất bại: {errorContent}", null);
+                
+                // Parse message từ JSON response nếu có
+                try
+                {
+                    var errorObj = JsonSerializer.Deserialize<JsonElement>(errorContent);
+                    if (errorObj.TryGetProperty("message", out var msgProp))
+                        return (false, msgProp.GetString() ?? "Đăng ký thất bại!", null);
+                }
+                catch { }
+
+                // 409 Conflict = trùng email/username
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    return (false, "Email hoặc tên đăng nhập đã tồn tại!", null);
+
+                return (false, $"Đăng ký thất bại ({(int)response.StatusCode})", null);
             }
             catch (Exception ex)
             {
