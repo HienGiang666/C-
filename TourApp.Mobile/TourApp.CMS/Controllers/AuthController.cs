@@ -210,8 +210,7 @@ public class AuthController : Controller
 
     private string NormalizeCmsRole(string role)
     { 
-        if (role.Equals("RestaurantOwner", StringComparison.OrdinalIgnoreCase)) return "Chủ quán ăn";
-        if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase)) return "Nhân viên";
+        // Giữ nguyên giá trị gốc để các chỗ kiểm tra role hoạt động đúng
         return role;
     }
 }

@@ -18,14 +18,19 @@ public partial class QRScannerPage : ContentPage
     {
         base.OnAppearing();
         
-        // Hide emulator UI on physical devices
+        // Device logic
         if (Microsoft.Maui.Devices.DeviceInfo.Current.DeviceType == DeviceType.Physical && DeviceInfo.Platform != DevicePlatform.WinUI)
         {
             EmulatorUI.IsVisible = false;
+            cameraBarcodeReader.IsVisible = true;
+            cameraBarcodeReader.IsDetecting = true;
         }
-
-        // Start scanning
-        cameraBarcodeReader.IsDetecting = true;
+        else
+        {
+            EmulatorUI.IsVisible = true;
+            cameraBarcodeReader.IsVisible = false;
+            cameraBarcodeReader.IsDetecting = false;
+        }
         
         // Start scan line animation
         StartScanLineAnimation();

@@ -22,7 +22,7 @@ public class POIController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<POI>>> GetPOIs([FromQuery] int? ownerUserId, [FromQuery] bool approvedOnly = false)
     {
-        var q = _context.POIs.Include(p => p.Audios).AsQueryable();
+        var q = _context.POIs.Include(p => p.Audios).Include(p => p.Translations).AsSplitQuery().AsQueryable();
         if (approvedOnly)
             q = q.Where(p => p.ApprovalStatus == "Approved" && p.IsActive);
         if (ownerUserId.HasValue)
@@ -33,7 +33,7 @@ public class POIController : ControllerBase
     [HttpGet("pending")]
     public async Task<ActionResult<IEnumerable<POI>>> GetPendingPOIs()
     {
-        return await _context.POIs.Include(p => p.Audios)
+        return await _context.POIs.Include(p => p.Audios).Include(p => p.Translations).AsSplitQuery()
             .Where(p => p.ApprovalStatus == "Pending")
             .OrderByDescending(p => p.Id) // Sắp xếp cái mới nhất (ID lớn nhất) lên đầu
             .ToListAsync();
@@ -42,7 +42,7 @@ public class POIController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<POI>> GetPOI(int id)
     {
-        var poi = await _context.POIs.Include(p => p.Audios).FirstOrDefaultAsync(p => p.Id == id);
+        var poi = await _context.POIs.Include(p => p.Audios).Include(p => p.Translations).AsSplitQuery().FirstOrDefaultAsync(p => p.Id == id);
 
         if (poi == null)
         {
@@ -51,6 +51,54 @@ public class POIController : ControllerBase
 
         return poi;
     }
+
+    // ===== TRANSLATION ENDPOINTS =====
+
+    [HttpGet("{poiId}/translations")]
+    public async Task<ActionResult<IEnumerable<POITranslation>>> GetTranslations(int poiId)
+    {
+        return await _context.POITranslations.Where(t => t.POIId == poiId).ToListAsync();
+    }
+
+    [HttpGet("{poiId}/translations/{lang}")]
+    public async Task<ActionResult<POITranslation>> GetTranslation(int poiId, string lang)
+    {
+        var t = await _context.POITranslations.FirstOrDefaultAsync(x => x.POIId == poiId && x.Language == lang);
+        if (t == null) return NotFound();
+        return t;
+    }
+
+    [HttpPost("{poiId}/translations")]
+    public async Task<ActionResult<POITranslation>> SaveTranslation(int poiId, POITranslation translation)
+    {
+        translation.POIId = poiId;
+        var existing = await _context.POITranslations
+            .FirstOrDefaultAsync(x => x.POIId == poiId && x.Language == translation.Language);
+
+        if (existing != null)
+        {
+            existing.Name = translation.Name;
+            existing.Description = translation.Description;
+        }
+        else
+        {
+            _context.POITranslations.Add(translation);
+        }
+        await _context.SaveChangesAsync();
+        return Ok(translation);
+    }
+
+    [HttpDelete("{poiId}/translations/{lang}")]
+    public async Task<IActionResult> DeleteTranslation(int poiId, string lang)
+    {
+        var t = await _context.POITranslations.FirstOrDefaultAsync(x => x.POIId == poiId && x.Language == lang);
+        if (t == null) return NotFound();
+        _context.POITranslations.Remove(t);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // ===== END TRANSLATION ENDPOINTS =====
 
     [HttpPost("{id}/approve")]
     public async Task<IActionResult> ApprovePoi(int id)

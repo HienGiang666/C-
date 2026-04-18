@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TourApp.Mobile.Views.EditProfilePage"
+             Title="Chỉnh sửa hồ sơ"
+             BackgroundColor="#F5F6F8">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Avatar -->
+            <VerticalStackLayout HorizontalOptions="Center" Spacing="10" Margin="0,10,0,10">
+                <Border WidthRequest="90" HeightRequest="90" Stroke="#FF3D00" StrokeThickness="2" Padding="0" StrokeShape="RoundRectangle 45" HorizontalOptions="Center">
+                    <Image Source="media__1775454538289.png" Aspect="AspectFill"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Full Name -->
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Họ và tên" FontSize="14" FontAttributes="Bold" TextColor="#444"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <Entry x:Name="FullNameEntry" Placeholder="Nhập họ và tên" TextColor="Black" BackgroundColor="Transparent" FontSize="15"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Email -->
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Email" FontSize="14" FontAttributes="Bold" TextColor="#444"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <Entry x:Name="EmailEntry" Placeholder="Nhập email" TextColor="Black" BackgroundColor="Transparent" Keyboard="Email" FontSize="15"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Phone -->
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Số điện thoại" FontSize="14" FontAttributes="Bold" TextColor="#444"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <Entry x:Name="PhoneEntry" Placeholder="Nhập số điện thoại" TextColor="Black" BackgroundColor="Transparent" Keyboard="Telephone" FontSize="15"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Address -->
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Địa chỉ" FontSize="14" FontAttributes="Bold" TextColor="#444"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <Entry x:Name="AddressEntry" Placeholder="Nhập địa chỉ" TextColor="Black" BackgroundColor="Transparent" FontSize="15"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Date of Birth -->
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Ngày sinh" FontSize="14" FontAttributes="Bold" TextColor="#444"/>
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="White" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <DatePicker x:Name="DateOfBirthPicker" TextColor="Black" BackgroundColor="Transparent" MaximumDate="{Binding Today}" Format="dd/MM/yyyy"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Save Button -->
+            <Button x:Name="SaveButton" Text="Lưu thay đổi" BackgroundColor="#FF3D00" TextColor="White" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,10,0,0" Clicked="OnSaveClicked"/>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator x:Name="LoadingIndicator" IsRunning="False" IsVisible="False" Color="#FF3D00" HorizontalOptions="Center"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

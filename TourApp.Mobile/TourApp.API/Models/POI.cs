@@ -29,6 +29,8 @@ public class POI
 
     public ICollection<Audio> Audios { get; set; } = new List<Audio>();
 
+    public ICollection<POITranslation> Translations { get; set; } = new List<POITranslation>();
+
     // Navigation property for many-to-many with Tours
     public virtual ICollection<TourPOI> TourPOIs { get; set; } = new List<TourPOI>();
 }

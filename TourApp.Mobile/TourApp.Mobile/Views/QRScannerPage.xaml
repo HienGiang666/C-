@@ -35,6 +35,7 @@
             <!-- ZXing Camera Barcode Reader -->
             <zxing:CameraBarcodeReaderView
                 x:Name="cameraBarcodeReader"
+                CameraLocation="Rear"
                 BarcodesDetected="OnBarcodesDetected"
                 IsDetecting="True"
                 HorizontalOptions="Fill"
