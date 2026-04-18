@@ -30,11 +30,35 @@ public class UserController : ControllerBase
             var password = (req.Password ?? "").Trim();
             var hash = SecurityHelper.HashPassword(password);
             
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == username && u.IsActive);
-            
-            if (user == null || user.PasswordHash != hash)
+            // Tìm tất cả các User khớp với Username, Email hoặc FullName
+            var matchingUsers = await _context.Users
+                .Where(u => u.IsActive && (
+                    u.Username.ToLower() == username || 
+                    u.Email.ToLower() == username || 
+                    u.FullName.ToLower() == username))
+                .ToListAsync();
+
+            // Lọc ra những User có mật khẩu khớp
+            var validUsers = matchingUsers.Where(u => u.PasswordHash == hash).ToList();
+
+            if (!validUsers.Any())
                 return Unauthorized(new { message = "Sai tên đăng nhập hoặc mật khẩu!" });
+
+            User? user = null;
+
+            if (req.IsCms)
+            {
+                // Nếu login từ CMS: Ưu tiên Admin, sau đó đến RestaurantOwner
+                user = validUsers.FirstOrDefault(u => u.Role == "Admin") 
+                    ?? validUsers.FirstOrDefault(u => u.Role == "RestaurantOwner")
+                    ?? validUsers.FirstOrDefault();
+            }
+            else
+            {
+                // Nếu login từ Mobile: Ưu tiên Customer
+                user = validUsers.FirstOrDefault(u => u.Role == "Customer")
+                    ?? validUsers.FirstOrDefault();
+            }
 
             user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
@@ -264,4 +288,4 @@ public class UserController : ControllerBase
     }
 }
 
-public record LoginRequest(string Username, string Password);
+public record LoginRequest(string Username, string Password, bool IsCms = false);

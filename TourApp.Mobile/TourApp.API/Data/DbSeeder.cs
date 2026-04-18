@@ -46,22 +46,16 @@ namespace TourApp.API.Data
             // 2. Đồng bộ mật khẩu cho các tài khoản đặc biệt (Dùng '12345678')
             var specialPassHash = SecurityHelper.HashPassword("12345678");
             
-            // pham
-            var pham = context.Users.FirstOrDefault(u => u.Username.ToLower() == "pham");
-            if (pham != null) { pham.PasswordHash = specialPassHash; pham.IsActive = true; }
+            var specialUsernames = new[] { "pham", "cuongpham", "hien", "cuong", "cuongowner" };
+            foreach (var uname in specialUsernames)
+            {
+                var u = context.Users.FirstOrDefault(x => x.Username.ToLower() == uname);
+                if (u != null) { u.PasswordHash = specialPassHash; u.IsActive = true; }
+            }
 
-            // cuongpham
-            var cuong = context.Users.FirstOrDefault(u => u.Username.ToLower() == "cuongpham");
-            if (cuong != null) { cuong.PasswordHash = specialPassHash; cuong.IsActive = true; }
-
-            // hien
-            var hien = context.Users.FirstOrDefault(u => u.Username.ToLower() == "hien");
-            if (hien != null) { hien.PasswordHash = specialPassHash; hien.IsActive = true; }
-
-            Console.WriteLine("[DbSeeder] Reset passwords for pham, cuongpham, hien to '12345678'.");
+            Console.WriteLine("[DbSeeder] Reset passwords for special accounts to '12345678'.");
 
             // 3. Đối với các user khác, chúng ta GIỮ NGUYÊN mật khẩu họ đã đổi trước đó (không ghi đè)
-            var specialUsernames = new[] { "pham", "cuongpham", "hien" };
             var otherUsers = context.Users
                 .Where(u => u.Username.ToLower() != "admin" && !specialUsernames.Contains(u.Username.ToLower()))
                 .ToList();
