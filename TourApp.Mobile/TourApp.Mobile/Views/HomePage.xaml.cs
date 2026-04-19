@@ -122,6 +122,7 @@ public partial class HomePage : ContentPage
                         { 
                             Name = poi.Name ?? "Unknown", 
                             Summary = $"⭐ {poi.Rating:F1}",
+                            ImageUrl = poi.ImageUrl,
                             PoiId = poi.Id,
                             Latitude = poi.Latitude,
                             Longitude = poi.Longitude
@@ -349,6 +350,7 @@ public class MockItem
 {
     public string? Name { get; set; }
     public string? Summary { get; set; }
+    public string? ImageUrl { get; set; }
     public int PoiId { get; set; }
     public int TourId { get; set; }
     public double Latitude { get; set; }
