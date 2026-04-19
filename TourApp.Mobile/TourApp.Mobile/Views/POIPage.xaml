@@ -3,10 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:TourApp.Mobile.Models"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
+             xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
              x:Class="TourApp.Mobile.Views.POIPage"
              BackgroundColor="#F5F6F8"
              Shell.NavBarIsVisible="False">
 
+    <ContentPage.Resources>
+        <converters:UrlToImageSourceConverter x:Key="UrlToImageConverter" />
+    </ContentPage.Resources>
+    
     <Grid RowDefinitions="Auto,*">
         <!-- Header Content -->
         <VerticalStackLayout Grid.Row="0">
@@ -55,7 +60,7 @@
                                     <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
                                 </Border.Shadow>
                                 <Grid RowDefinitions="120,Auto">
-                                    <Image Grid.Row="0" Source="media__1775454533773.jpg" Aspect="AspectFill"/>
+                                    <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill"/>
                                     <VerticalStackLayout Grid.Row="1" Padding="15">
                                         <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14" TextColor="Black"/>
                                         <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>

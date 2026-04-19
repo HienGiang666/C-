@@ -194,11 +194,12 @@ public partial class MapPage : ContentPage
                 {
                     // Hiển thị chi tiết POI
                     ShowPoiDetails(poi);
-                    
-                    // Fly đến vị trí POI trên bản đồ
+
+                    // Fly đến vị trí POI trên bản đồ và highlight marker
                     if (_isJsMapReady)
                     {
                         MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
+                        MapWebView.Eval($"highlightPoi({poi.Id});");
                     }
                 });
             }
