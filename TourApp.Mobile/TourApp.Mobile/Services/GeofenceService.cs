@@ -22,6 +22,7 @@ namespace TourApp.Mobile.Services
         private List<POI>? _pois;
         private int _lastSpokenPoiId = -1;
         private DateTime _lastSpokenTime = DateTime.MinValue;
+        private CancellationTokenSource? _ttsCts;
 
         /// <summary>
         /// Ngôn ngữ hiện tại của app (có thể thay đổi từ UI settings).
@@ -123,6 +124,11 @@ namespace TourApp.Mobile.Services
         {
             try
             {
+                // Dừng TTS (Text-to-Speech) nếu đang phát
+                CancelTTS();
+                _ttsCts = new CancellationTokenSource();
+                var token = _ttsCts.Token;
+
                 var lang = overrideLang ?? CurrentLanguage;
                 
                 // 1. Try to fetch MP3 Audio from API
@@ -158,13 +164,32 @@ namespace TourApp.Mobile.Services
                     Locale = matchedLocale 
                 };
 
-                await TextToSpeech.Default.SpeakAsync(script, options);
+                await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
                 _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence_tts");
+            }
+            catch (OperationCanceledException)
+            {
+                System.Diagnostics.Debug.WriteLine("[TTS] Cancelled");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Hủy TTS đang phát
+        /// </summary>
+        public void CancelTTS()
+        {
+            try
+            {
+                _ttsCts?.Cancel();
+                _ttsCts?.Dispose();
+                _ttsCts = null;
+                System.Diagnostics.Debug.WriteLine("[TTS] Cancelled from CancelTTS()");
+            }
+            catch { }
         }
 
         /// <summary>

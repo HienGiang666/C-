@@ -1,6 +1,7 @@
 using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
 using System.Text.Json;
+using Microsoft.Maui.Media;
 
 namespace TourApp.Mobile.Views;
 
@@ -121,6 +122,12 @@ public partial class MapPage : ContentPage
 
             // Bắt đầu tracking GPS
             await _locationService.StartTracking();
+
+            // Xử lý pending POI ID nếu có (khi navigate từ tab khác)
+            if (_pendingPoiId.HasValue && _isJsMapReady && _pois != null)
+            {
+                ProcessPendingPoiId();
+            }
         }
         catch (Exception ex)
         {
@@ -177,6 +184,10 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         _locationService.StopTracking();
+        // Dừng audio thuyết minh khi rời khỏi trang
+        AudioPlayerService.Instance.Stop();
+        // Dừng TTS (Text-to-Speech) nếu đang phát
+        _geofenceService.CancelTTS();
     }
     
     /// <summary>
@@ -522,6 +533,10 @@ public partial class MapPage : ContentPage
     private void OnCloseSheetClicked(object? sender, EventArgs e)
     {
         BottomSheetView.IsVisible = false;
+        // Dừng audio thuyết minh khi đóng chi tiết quán
+        AudioPlayerService.Instance.Stop();
+        // Dừng TTS (Text-to-Speech) nếu đang phát
+        _geofenceService.CancelTTS();
     }
 
     protected override void OnNavigatedTo(NavigatedToEventArgs args)
