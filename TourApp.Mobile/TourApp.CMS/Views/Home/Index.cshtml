@@ -141,15 +141,10 @@
                     </div>
                 </div>
                 
-                <!-- Bản đồ vị trí người dùng đang online -->
-                <div id="userLocationMap" style="height: 300px; border-radius: 8px; background: #f8f9fa;">
-                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                        <div class="text-center">
-                            <i class="fa-solid fa-map-location-dot fs-1 mb-2"></i>
-                            <p class="mb-0">Bản đồ vị trí người dùng đang online sẽ hiển thị ở đây</p>
-                            <small>Sử dụng Leaflet/OpenStreetMap để hiển thị các "chấm xanh"</small>
-                        </div>
-                    </div>
+                <!-- Bản đồ vị trí người dùng đang online - Leaflet -->
+                <div id="userLocationMap" style="height: 300px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                <div id="connectionStatus" class="mt-2 text-center">
+                    <small class="text-muted"><i class="fa-solid fa-plug me-1"></i>Đang kết nối real-time...</small>
                 </div>
             </div>
         </div>
@@ -257,12 +252,161 @@
 </div>
 }
 
+@section Styles {
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
+
 @section Scripts {
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- SignalR Client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    
     <script>
-        // Real-time polling cho số người đang online (mỗi 30 giây)
         document.addEventListener("DOMContentLoaded", function () {
-            // TODO: Implement SignalR hoặc polling để cập nhật real-time
-            console.log("Dashboard analytics loaded");
+            // ===== LEAFLET MAP SETUP =====
+            // Tọa độ mặc định: khu vực Vĩnh Khánh Q4 (trung tâm các POI)
+            var map = L.map('userLocationMap').setView([10.762, 106.702], 15);
+            
+            // Thêm OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Store markers by deviceId
+            var markers = {};
+            var onlineCount = 0;
+            
+            // Icon cho user online (chấm xanh)
+            var onlineIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:#28a745;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);'></div>",
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            
+            // ===== SIGNALR SETUP =====
+            // API URL - khớp với port API đang chạy (https://localhost:7244)
+            var apiBaseUrl = 'https://localhost:7244';
+            
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl(apiBaseUrl + '/hubs/userlocation')
+                .withAutomaticReconnect()
+                .build();
+            
+            // Cập nhật trạng thái kết nối
+            function updateConnectionStatus(status, color) {
+                var statusEl = document.getElementById('connectionStatus');
+                if (statusEl) {
+                    statusEl.innerHTML = '<small class="' + color + '"><i class="fa-solid fa-circle me-1" style="font-size:8px"></i>' + status + '</small>';
+                }
+            }
+            
+            // Nhận location update từ API
+            connection.on('LocationUpdated', function (data) {
+                console.log('[SignalR] Location update:', data);
+                
+                var deviceId = data.deviceId || data.DeviceId;
+                var lat = data.latitude || data.Latitude;
+                var lng = data.longitude || data.Longitude;
+                
+                // Remove existing marker for this device
+                if (markers[deviceId]) {
+                    map.removeLayer(markers[deviceId]);
+                }
+                
+                // Add new marker
+                var marker = L.marker([lat, lng], { icon: onlineIcon })
+                    .addTo(map)
+                    .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Time:</b> ' + new Date().toLocaleTimeString());
+                
+                markers[deviceId] = marker;
+                
+                // Cập nhật số đang online (ước tính)
+                if (!onlineCount) onlineCount = Object.keys(markers).length;
+                document.getElementById('onlineCount').textContent = onlineCount + ' đang online';
+            });
+            
+            // User offline
+            connection.on('UserOffline', function (data) {
+                console.log('[SignalR] User offline:', data);
+                var deviceId = data.deviceId || data.DeviceId;
+                
+                if (markers[deviceId]) {
+                    map.removeLayer(markers[deviceId]);
+                    delete markers[deviceId];
+                }
+                
+                onlineCount = Object.keys(markers).length;
+                document.getElementById('onlineCount').textContent = onlineCount + ' đang online';
+            });
+            
+            // User online (initial)
+            connection.on('UserOnline', function (data) {
+                console.log('[SignalR] User online:', data);
+                var deviceId = data.deviceId || data.DeviceId;
+                var lat = data.latitude || data.Latitude;
+                var lng = data.longitude || data.Longitude;
+                
+                var marker = L.marker([lat, lng], { icon: onlineIcon })
+                    .addTo(map)
+                    .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Time:</b> ' + new Date().toLocaleTimeString());
+                
+                markers[deviceId] = marker;
+                
+                onlineCount = Object.keys(markers).length;
+                document.getElementById('onlineCount').textContent = onlineCount + ' đang online';
+            });
+            
+            // Start SignalR connection
+            connection.start()
+                .then(function () {
+                    console.log('[SignalR] Connected!');
+                    updateConnectionStatus('Kết nối real-time thành công', 'text-success');
+                    
+                    // Load initial online users từ API
+                    fetch(apiBaseUrl + '/api/userlocation/stats')
+                        .then(r => r.json())
+                        .then(data => {
+                            console.log('[API] Initial stats:', data);
+                            if (data.onlineLocations) {
+                                data.onlineLocations.forEach(function (loc) {
+                                    var deviceId = loc.deviceId || loc.DeviceId;
+                                    var lat = loc.latitude || loc.Latitude;
+                                    var lng = loc.longitude || loc.Longitude;
+                                    
+                                    var marker = L.marker([lat, lng], { icon: onlineIcon })
+                                        .addTo(map)
+                                        .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Last seen:</b> ' + (loc.timestamp || loc.Timestamp));
+                                    
+                                    markers[deviceId] = marker;
+                                });
+                                
+                                onlineCount = data.onlineNow || data.onlineLocations.length;
+                                document.getElementById('onlineCount').textContent = onlineCount + ' đang online';
+                            }
+                        })
+                        .catch(err => console.error('[API] Error loading stats:', err));
+                })
+                .catch(function (err) {
+                    console.error('[SignalR] Connection failed:', err);
+                    updateConnectionStatus('Mất kết nối real-time - đang thử lại...', 'text-warning');
+                });
+            
+            // Xử lý reconnect
+            connection.onreconnecting(function (err) {
+                console.warn('[SignalR] Reconnecting...', err);
+                updateConnectionStatus('Mất kết nối - đang kết nối lại...', 'text-warning');
+            });
+            
+            connection.onreconnected(function (connectionId) {
+                console.log('[SignalR] Reconnected!');
+                updateConnectionStatus('Kết nối real-time thành công', 'text-success');
+            });
+            
+            console.log('Dashboard with Leaflet + SignalR initialized');
         });
     </script>
 }

@@ -2,22 +2,28 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using TourApp.API.Data;
 using TourApp.API.Services;
+using TourApp.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. MỞ CỔNG CORS (Cho phép các App/Web khác gọi vào) ---
+// Lưu ý: SignalR yêu cầu AllowCredentials nên không dùng AllowAnyOrigin()
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(origin => true)  // Cho phép tất cả origins
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();  // Bắt buộc cho SignalR
     });
 });
 // -----------------------------------------------------------
 
 builder.Services.AddControllers();
+
+// === SIGNALR - Real-time tracking ===
+builder.Services.AddSignalR();
 
 // Bật tính năng Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -83,5 +89,9 @@ app.UseCors("AllowAll");
 // [DISABLED] Phone kết nối qua HTTP → nếu redirect sang HTTPS sẽ fail
 // app.UseHttpsRedirection();
 app.UseAuthorization();
+
+// === SIGNALR Hub endpoint ===
+app.MapHub<UserLocationHub>("/hubs/userlocation");
+
 app.MapControllers();
 app.Run();

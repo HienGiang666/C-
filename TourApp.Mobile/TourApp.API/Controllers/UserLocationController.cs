@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourApp.API.Data;
 using TourApp.API.Models;
+using TourApp.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace TourApp.API.Controllers;
 
@@ -10,10 +12,12 @@ namespace TourApp.API.Controllers;
 public class UserLocationController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IHubContext<UserLocationHub> _hubContext;
 
-    public UserLocationController(AppDbContext context)
+    public UserLocationController(AppDbContext context, IHubContext<UserLocationHub> hubContext)
     {
         _context = context;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -29,62 +33,64 @@ public class UserLocationController : ControllerBase
     public async Task<ActionResult<UserLocationLog>> LogLocation(UserLocationLog log)
     {
         log.Timestamp = DateTime.Now;
+        log.IsActive = true; // Đánh dấu đang online
+        
         _context.UserLocationLogs.Add(log);
         await _context.SaveChangesAsync();
+        
+        // Broadcast real-time location update qua SignalR
+        await _hubContext.Clients.All.SendAsync("LocationUpdated", new
+        {
+            log.DeviceId,
+            log.SessionId,
+            log.Latitude,
+            log.Longitude,
+            log.Timestamp,
+            log.IsActive
+        });
+        
         return Ok(log);
     }
 
     /// <summary>
     /// GET /api/userlocation/stats
-    /// Trả về thống kê người dùng đang online (IsActive = true)
+    /// Trả về thống kê người dùng đang online (theo Timestamp gần nhất trong 1 phút)
     /// và tổng số device unique trong 24h qua
     /// </summary>
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        // Số người đang online (IsActive = true)
-        var onlineNow = await _context.UserLocationLogs
-            .Where(l => l.IsActive)
-            .Select(l => l.DeviceId)
-            .Distinct()
-            .CountAsync();
-
-        // Số device unique trong 24h qua
+        var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
         var since24h = DateTime.Now.AddHours(-24);
-        var active24h = await _context.UserLocationLogs
+        
+        // Lấy tất cả logs trong 24h, group by DeviceId, lấy log mới nhất mỗi device
+        var recentLogs = await _context.UserLocationLogs
             .Where(l => l.Timestamp >= since24h)
-            .Select(l => l.DeviceId)
-            .Distinct()
-            .CountAsync();
-
-        // Lấy danh sách device đang online với vị trí mới nhất
-        var onlineDeviceIds = await _context.UserLocationLogs
-            .Where(l => l.IsActive)
-            .Select(l => l.DeviceId)
-            .Distinct()
+            .OrderByDescending(l => l.Timestamp)
             .ToListAsync();
-
-        // Lấy vị trí mới nhất của từng device đang online
-        var onlineLocations = new List<object>();
-        foreach (var deviceId in onlineDeviceIds)
+        
+        var latestByDevice = recentLogs
+            .GroupBy(l => l.DeviceId)
+            .Select(g => g.First()) // Log mới nhất của mỗi device
+            .ToList();
+        
+        // Online = log mới nhất trong vòng 1 phút
+        var onlineDevices = latestByDevice
+            .Where(l => l.Timestamp >= oneMinuteAgo)
+            .ToList();
+        
+        var onlineNow = onlineDevices.Count;
+        var active24h = latestByDevice.Count;
+        
+        // Vị trí online (dùng log mới nhất trong 1 phút)
+        var onlineLocations = onlineDevices.Select(l => new
         {
-            var latestLocation = await _context.UserLocationLogs
-                .Where(l => l.DeviceId == deviceId && l.IsActive)
-                .OrderByDescending(l => l.Timestamp)
-                .FirstOrDefaultAsync();
-
-            if (latestLocation != null)
-            {
-                onlineLocations.Add(new
-                {
-                    latestLocation.DeviceId,
-                    latestLocation.Latitude,
-                    latestLocation.Longitude,
-                    latestLocation.Timestamp,
-                    latestLocation.SessionId
-                });
-            }
-        }
+            l.DeviceId,
+            l.Latitude,
+            l.Longitude,
+            l.Timestamp,
+            l.SessionId
+        }).ToList();
 
         return Ok(new
         {
