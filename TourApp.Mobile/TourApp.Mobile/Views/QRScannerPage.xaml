@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
              x:Class="TourApp.Mobile.Views.QRScannerPage"
              BackgroundColor="Black"
              Shell.NavBarIsVisible="False">
@@ -17,11 +17,11 @@
                 </Border.GestureRecognizers>
             </Border>
             
-            <Label Grid.Column="1" Text="Quét mã QR" FontSize="20" FontAttributes="Bold" 
+            <Label Grid.Column="1" Text="{Binding [QRScannerTitle], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="20" FontAttributes="Bold" 
                    TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
             
-            <!-- Flash toggle -->
-            <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0"
+            <!-- Flash toggle - hidden on Windows -->
+            <Border x:Name="FlashButton" Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0"
                    BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
                 <Label Text="⚡" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
@@ -31,21 +31,19 @@
         </Grid>
 
         <!-- Camera View -->
-        <Grid Grid.Row="1">
-            <!-- ZXing Camera Barcode Reader -->
-            <zxing:CameraBarcodeReaderView
-                x:Name="cameraBarcodeReader"
-                CameraLocation="Rear"
-                BarcodesDetected="OnBarcodesDetected"
-                IsDetecting="True"
-                HorizontalOptions="Fill"
-                VerticalOptions="Fill"/>
-            
-            <!-- Scanner overlay frame -->
+        <Grid Grid.Row="1" x:Name="CameraGrid">
+            <!-- Camera view - only visible on mobile platforms -->
+            <Grid x:Name="CameraContainer" IsVisible="False"
+                  HorizontalOptions="Fill" VerticalOptions="Fill">
+                <!-- Camera view will be added dynamically on supported platforms -->
+            </Grid>
+
+            <!-- Scanner overlay frame - InputTransparent so camera works underneath -->
             <Border BackgroundColor="Transparent" Stroke="#FF3D00" StrokeThickness="3"
                    StrokeShape="RoundRectangle 20" Padding="0"
                    WidthRequest="250" HeightRequest="250"
-                   HorizontalOptions="Center" VerticalOptions="Center">
+                   HorizontalOptions="Center" VerticalOptions="Center"
+                   InputTransparent="True">
                 <Grid>
                     <!-- Corner markers -->
                     <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
@@ -77,17 +75,17 @@
 
             <!-- Emulator Mock Buttons -->
             <VerticalStackLayout x:Name="EmulatorUI" IsVisible="True" VerticalOptions="Center" HorizontalOptions="Center" Spacing="20" BackgroundColor="#AA000000" Padding="20">
-                <Label Text="(Test Giả Lập)" TextColor="White" HorizontalOptions="Center"/>
-                <Button Text="Giả lập: Quét Ốc Xiên Quán" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan1Clicked"/>
-                <Button Text="Giả lập: Quét Lẩu Bò" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan2Clicked"/>
+                <Label x:Name="TestModeLabel" Text="(Test Mode)" TextColor="White" HorizontalOptions="Center"/>
+                <Button Text="{Binding [MockScan1], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan1Clicked"/>
+                <Button Text="{Binding [MockScan2], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan2Clicked"/>
             </VerticalStackLayout>
         </Grid>
 
         <!-- Bottom instruction -->
         <VerticalStackLayout Grid.Row="2" Padding="20,30" BackgroundColor="#80000000" Spacing="10">
-            <Label Text="Đưa mã QR vào khung để quét" FontSize="14" TextColor="White" 
+            <Label Text="{Binding [ScanQRInstruction], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="14" TextColor="White" 
                    HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
-            <Label Text="Mã QR thường được dán tại các điểm tham quan" FontSize="12" 
+            <Label Text="{Binding [QRHelpText], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" 
                    TextColor="#AAAAAA" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
         </VerticalStackLayout>
     </Grid>

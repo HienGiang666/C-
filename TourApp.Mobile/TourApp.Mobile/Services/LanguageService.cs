@@ -232,7 +232,12 @@ namespace TourApp.Mobile.Services
                 // UserBookingsPage keys
                 ["NoBookings"] = "Bạn chưa đặt tour nào.",
                 ["TourDate"] = "Ngày đi: ", ["Participants"] = "Số người: ", ["TotalPrice"] = "Tổng tiền: ",
-                ["Status"] = "Trạng thái: ", ["BookingDate"] = "Đặt ngày"
+                ["Status"] = "Trạng thái: ", ["BookingDate"] = "Đặt ngày",
+                // QR Scanner keys
+                ["QRScannerTitle"] = "Quét mã QR", ["ScanQRInstruction"] = "Đưa mã QR vào khung để quét",
+                ["QRHelpText"] = "Mã QR thường được dán tại các điểm tham quan",
+                ["QRInvalid"] = "Mã QR không hợp lệ. Vui lòng thử lại.",
+                ["MockScan1"] = "Giả lập: Quét Ốc Xiên Quán", ["MockScan2"] = "Giả lập: Quét Lẩu Bò"
             };
             
             var enDict = new Dictionary<string, string>
@@ -259,7 +264,12 @@ namespace TourApp.Mobile.Services
                 // UserBookingsPage keys
                 ["NoBookings"] = "You haven't booked any tours yet.",
                 ["TourDate"] = "Tour Date: ", ["Participants"] = "Participants: ", ["TotalPrice"] = "Total: ",
-                ["Status"] = "Status: ", ["BookingDate"] = "Booked on"
+                ["Status"] = "Status: ", ["BookingDate"] = "Booked on",
+                // QR Scanner keys
+                ["QRScannerTitle"] = "Scan QR Code", ["ScanQRInstruction"] = "Point QR code at the frame to scan",
+                ["QRHelpText"] = "QR codes are usually placed at tourist attractions",
+                ["QRInvalid"] = "Invalid QR code. Please try again.",
+                ["MockScan1"] = "Mock: Scan Ốc Xiên Quán", ["MockScan2"] = "Mock: Scan Lẩu Bò"
             };
 
             var zhDict = new Dictionary<string, string>(enDict)
@@ -286,7 +296,12 @@ namespace TourApp.Mobile.Services
                 // UserBookingsPage keys
                 ["NoBookings"] = "您还没有预订任何旅游。",
                 ["TourDate"] = "出发日期：", ["Participants"] = "人数：", ["TotalPrice"] = "总价：",
-                ["Status"] = "状态：", ["BookingDate"] = "预订日期"
+                ["Status"] = "状态：", ["BookingDate"] = "预订日期",
+                // QR Scanner keys
+                ["QRScannerTitle"] = "扫描二维码", ["ScanQRInstruction"] = "将二维码对准框内进行扫描",
+                ["QRHelpText"] = "二维码通常贴在旅游景点",
+                ["QRInvalid"] = "二维码无效。请重试。",
+                ["MockScan1"] = "模拟：扫描 Ốc Xiên Quán", ["MockScan2"] = "模拟：扫描 Lẩu Bò"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
@@ -313,7 +328,12 @@ namespace TourApp.Mobile.Services
                 // UserBookingsPage keys
                 ["NoBookings"] = "まだツアーを予約していません。",
                 ["TourDate"] = "ツアー日：", ["Participants"] = "参加人数：", ["TotalPrice"] = "合計：",
-                ["Status"] = "ステータス：", ["BookingDate"] = "予約日"
+                ["Status"] = "ステータス：", ["BookingDate"] = "予約日",
+                // QR Scanner keys
+                ["QRScannerTitle"] = "QRコードをスキャン", ["ScanQRInstruction"] = "QRコードをフレーム内に合わせてスキャン",
+                ["QRHelpText"] = "QRコードは通常、観光地に設置されています",
+                ["QRInvalid"] = "無効なQRコードです。もう一度お試しください。",
+                ["MockScan1"] = "模擬：Ốc Xiên Quánをスキャン", ["MockScan2"] = "模擬：Lẩu Bòをスキャン"
             };
 
             _resources["vi"] = fallbackDict;
