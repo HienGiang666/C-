@@ -192,6 +192,8 @@ BEGIN
         [Latitude] float NOT NULL,
         [Longitude] float NOT NULL,
         [Timestamp] datetime2 NOT NULL DEFAULT GETDATE(),
+        [SessionId] nvarchar(100) NULL,  -- Session SignalR để theo dõi real-time
+        [IsActive] bit NOT NULL DEFAULT 1,  -- User đang online (1) hay offline (0)
         CONSTRAINT [PK_UserLocationLogs] PRIMARY KEY ([Id])
     );
 END
@@ -202,6 +204,10 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UserLocationLogs_Devic
     CREATE INDEX [IX_UserLocationLogs_DeviceId] ON [UserLocationLogs]([DeviceId]);
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UserLocationLogs_Timestamp' AND object_id = OBJECT_ID('UserLocationLogs'))
     CREATE INDEX [IX_UserLocationLogs_Timestamp] ON [UserLocationLogs]([Timestamp]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UserLocationLogs_SessionId' AND object_id = OBJECT_ID('UserLocationLogs'))
+    CREATE INDEX [IX_UserLocationLogs_SessionId] ON [UserLocationLogs]([SessionId]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UserLocationLogs_IsActive' AND object_id = OBJECT_ID('UserLocationLogs'))
+    CREATE INDEX [IX_UserLocationLogs_IsActive] ON [UserLocationLogs]([IsActive]);
 GO
 
 -- NarrationLogs table (khớp với NarrationLog.cs)
@@ -214,6 +220,7 @@ BEGIN
         [TriggerType] nvarchar(100) NOT NULL,
         [Timestamp] datetime2 NOT NULL DEFAULT GETDATE(),
         [DeviceId] nvarchar(200) NOT NULL,
+        [DurationListened] int NOT NULL DEFAULT 0,  -- Thời gian nghe (giây)
         CONSTRAINT [PK_NarrationLogs] PRIMARY KEY ([Id]),
         CONSTRAINT [FK_NarrationLogs_POIs] FOREIGN KEY ([POIId]) REFERENCES [POIs]([Id]) ON DELETE CASCADE
     );
@@ -225,6 +232,8 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NarrationLogs_POIId' A
     CREATE INDEX [IX_NarrationLogs_POIId] ON [NarrationLogs]([POIId]);
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NarrationLogs_Timestamp' AND object_id = OBJECT_ID('NarrationLogs'))
     CREATE INDEX [IX_NarrationLogs_Timestamp] ON [NarrationLogs]([Timestamp]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NarrationLogs_DurationListened' AND object_id = OBJECT_ID('NarrationLogs'))
+    CREATE INDEX [IX_NarrationLogs_DurationListened] ON [NarrationLogs]([DurationListened]);
 GO
 
 -- Bookings table
@@ -258,6 +267,29 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Status' AND o
     CREATE INDEX [IX_Bookings_Status] ON [Bookings]([Status]);
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Code' AND object_id = OBJECT_ID('Bookings'))
     CREATE INDEX [IX_Bookings_Code] ON [Bookings]([Code]);
+GO
+
+-- POIVersion table (cho auto-sync - kiểm tra dữ liệu mới)
+IF OBJECT_ID(N'[POIVersion]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [POIVersion] (
+        [Id] int NOT NULL IDENTITY(1,1),
+        [EntityType] nvarchar(50) NOT NULL,  -- 'POI', 'Audio', 'Tour', 'POITranslation'
+        [EntityId] int NOT NULL,
+        [VersionNumber] int NOT NULL DEFAULT 1,  -- Số phiên bản tăng dần
+        [LastModified] datetime2 NOT NULL DEFAULT GETDATE(),
+        [Checksum] nvarchar(64) NULL,  -- Hash để so sánh nhanh
+        [IsDeleted] bit NOT NULL DEFAULT 0,  -- Soft delete flag
+        CONSTRAINT [PK_POIVersion] PRIMARY KEY ([Id]),
+        CONSTRAINT [UQ_POIVersion_Entity] UNIQUE ([EntityType], [EntityId])
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POIVersion_EntityType' AND object_id = OBJECT_ID('POIVersion'))
+    CREATE INDEX [IX_POIVersion_EntityType] ON [POIVersion]([EntityType]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_POIVersion_LastModified' AND object_id = OBJECT_ID('POIVersion'))
+    CREATE INDEX [IX_POIVersion_LastModified] ON [POIVersion]([LastModified]);
 GO
 
 -- =============================================
