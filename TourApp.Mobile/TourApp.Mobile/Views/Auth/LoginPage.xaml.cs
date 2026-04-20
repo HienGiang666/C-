@@ -25,13 +25,13 @@ public partial class LoginPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("UsernamePlaceholder"), LanguageService.GetString("OK"));
+            await DisplayAlert(LanguageService.GetString("Error"), "Vui lòng nhập tên đăng nhập", LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordPlaceholder"), LanguageService.GetString("OK"));
+            await DisplayAlert(LanguageService.GetString("Error"), "Vui lòng nhập mật khẩu", LanguageService.GetString("OK"));
             return;
         }
 
@@ -47,14 +47,16 @@ public partial class LoginPage : ContentPage
             if (result.Success && result.User != null)
             {
                 // Navigate to main app
-                AppNavigation.SetRootPage(new AppShell());
+                MainThread.BeginInvokeOnMainThread(() => {
+                    AppNavigation.SetRootPage(new AppShell());
+                });
             }
             else
             {
                 // Phân biệt rõ lỗi mạng vs lỗi sai tài khoản
                 var title = result.IsNetworkError 
                     ? LanguageService.GetString("ServerError") 
-                    : LanguageService.GetString("LoginFailed");
+                    : "Đăng nhập thất bại";
                 await DisplayAlert(title, result.Message, LanguageService.GetString("OK"));
             }
         }
@@ -65,7 +67,7 @@ public partial class LoginPage : ContentPage
         finally
         {
             LoginButton.IsEnabled = true;
-            LoginButton.Text = LanguageService.GetString("LoginButton").ToUpper();
+            LoginButton.Text = "LOG IN";
         }
     }
 

@@ -61,7 +61,8 @@ public class AuthController : Controller
             var response = await client.PostAsJsonAsync("api/user/login", new
             {
                 Username = model.Username,
-                Password = model.Password
+                Password = model.Password,
+                IsCms = true
             });
 
             if (response.IsSuccessStatusCode)

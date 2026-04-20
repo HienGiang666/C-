@@ -40,7 +40,8 @@ namespace TourApp.Mobile.Services
                 var request = new
                 {
                     Username = username,
-                    Password = password
+                    Password = password,
+                    IsCms = false
                 };
 
                 HttpResponseMessage response;
