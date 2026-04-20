@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using QRCoder;
 using TourApp.CMS.Models;
 using TourApp.CMS.Services;
 
@@ -351,5 +352,46 @@ public class POIController : Controller
         if (poi.Latitude == 0 || poi.Longitude == 0) { error = "Vĩ độ và kinh độ phải khác 0."; return false; }
         if (poi.Rating <= 0) { error = "Đánh giá phải lớn hơn 0."; return false; }
         return true;
+    }
+
+    /// <summary>
+    /// Generate QR Code cho POI - App quét sẽ mở trang map với POI detail + phát audio
+    /// </summary>
+    [HttpGet("POI/GenerateQR/{id}")]
+    public async Task<IActionResult> GenerateQR(int id)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var response = await client.GetAsync($"api/POI/{id}");
+        
+        if (!response.IsSuccessStatusCode)
+            return NotFound(new { error = "POI not found" });
+
+        var poi = await response.Content.ReadFromJsonAsync<POI>();
+        if (poi == null)
+            return NotFound(new { error = "POI not found" });
+
+        // Tạo deep link cho app: tourapp://poi/{id}?action=openAndPlay
+        // Hoặc nếu app chưa cài, redirect tới store
+        var qrContent = $"tourapp://poi/{id}?lat={poi.Latitude}&lng={poi.Longitude}&action=openAndPlay";
+        
+        // Thêm web fallback URL
+        var webFallback = $"https://tourapp.vn/poi/{id}";
+        var fullContent = $"{qrContent}|{webFallback}";
+
+        // Tạo QR code
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrData = qrGenerator.CreateQrCode(fullContent, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrData);
+        var qrBytes = qrCode.GetGraphic(20);
+        
+        var base64Image = Convert.ToBase64String(qrBytes);
+        
+        return Ok(new { 
+            qrCode = $"data:image/png;base64,{base64Image}",
+            poiId = id,
+            poiName = poi.Name,
+            deepLink = qrContent,
+            webFallback = webFallback
+        });
     }
 }
