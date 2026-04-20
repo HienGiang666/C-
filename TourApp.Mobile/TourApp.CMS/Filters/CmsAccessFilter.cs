@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace TourApp.CMS.Filters;
 
-/// <summary>
-/// Phân quyền CMS: Chủ quán chỉ truy cập POI, Audio, Activity; Admin toàn quyền.
-/// </summary>
 public class CmsAccessFilter : IActionFilter
 {
     public void OnActionExecuting(ActionExecutingContext context)
     {
         var path = context.HttpContext.Request.Path.Value?.ToLowerInvariant() ?? "";
-        if (path.StartsWith("/auth", StringComparison.Ordinal))
+
+        // Skip auth and translate API
+        if (path.StartsWith("/auth", StringComparison.Ordinal) ||
+            path.StartsWith("/api/translate", StringComparison.Ordinal))
             return;
 
         if (string.IsNullOrEmpty(context.HttpContext.Session.GetString("UserId")))
@@ -31,8 +31,9 @@ public class CmsAccessFilter : IActionFilter
         var ctrl = context.RouteData.Values["controller"]?.ToString() ?? "";
         var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Home", "POI", "Audio", "Activity", "Auth"
+            "Home", "POI", "Audio", "Activity", "Auth", "Translate"
         };
+
         if (allowed.Contains(ctrl))
             return;
 

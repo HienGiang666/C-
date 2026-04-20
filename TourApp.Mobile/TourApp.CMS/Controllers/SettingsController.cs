@@ -144,20 +144,103 @@ public class SettingsController : Controller
 
     private async Task<string> TranslateAsync(string sourceText, string targetCode)
     {
+        // Thử LibreTranslate trước (free, không cần API key)
+        var libreResult = await TryLibreTranslateAsync(sourceText, targetCode);
+        if (!string.IsNullOrEmpty(libreResult))
+        {
+            Console.WriteLine($"[Settings Translate] LibreTranslate success: {targetCode}");
+            return libreResult;
+        }
+
+        // Fallback sang Google Translate
+        var googleResult = await TryGoogleTranslateAsync(sourceText, targetCode);
+        if (!string.IsNullOrEmpty(googleResult))
+        {
+            Console.WriteLine($"[Settings Translate] Google Translate success: {targetCode}");
+            return googleResult;
+        }
+
+        // Fallback cuối: trả về văn bản gốc
+        Console.WriteLine($"[Settings Translate] All services failed, returning source text");
+        return sourceText;
+    }
+
+    private async Task<string?> TryLibreTranslateAsync(string text, string targetCode)
+    {
         try
         {
-            using var http = new HttpClient();
-            var url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={targetCode}&dt=t&q={Uri.EscapeDataString(sourceText)}";
+            var src = "vi"; // Mặc định dịch từ tiếng Việt
+            
+            // Public LibreTranslate instances
+            var libreUrls = new[]
+            {
+                "https://libretranslate.de/translate",
+                "https://translate.argosopentech.com/translate"
+            };
+
+            foreach (var libreUrl in libreUrls)
+            {
+                try
+                {
+                    using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+                    var requestBody = new
+                    {
+                        q = text,
+                        source = src,
+                        target = targetCode,
+                        format = "text"
+                    };
+
+                    var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    
+                    var response = await http.PostAsync(libreUrl, content);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = await response.Content.ReadFromJsonAsync<LibreTranslateResponse>();
+                        if (!string.IsNullOrEmpty(result?.TranslatedText))
+                        {
+                            return result.TranslatedText;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[LibreTranslate] {libreUrl} failed: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LibreTranslate] Error: {ex.Message}");
+        }
+        
+        return null;
+    }
+
+    private async Task<string?> TryGoogleTranslateAsync(string text, string targetCode)
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+            var url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={targetCode}&dt=t&q={Uri.EscapeDataString(text)}";
             var json = await http.GetStringAsync(url);
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var root = doc.RootElement[0];
-            var text = string.Join("", root.EnumerateArray().Select(x => x[0].GetString() ?? string.Empty));
-            return string.IsNullOrWhiteSpace(text) ? sourceText : text;
+            var translated = string.Join("", root.EnumerateArray().Select(x => x[0].GetString() ?? string.Empty));
+            return string.IsNullOrWhiteSpace(translated) ? null : translated;
         }
-        catch
+        catch (Exception ex)
         {
-            return sourceText;
+            Console.WriteLine($"[Google Translate] Error: {ex.Message}");
+            return null;
         }
+    }
+
+    private class LibreTranslateResponse
+    {
+        public string? TranslatedText { get; set; }
     }
 
     private static int EstimateDuration(string script)

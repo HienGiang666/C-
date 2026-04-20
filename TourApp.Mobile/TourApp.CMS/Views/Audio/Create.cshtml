@@ -110,125 +110,203 @@
         </div>
     </div>
 </div>
-
 @section Scripts {
-<script src="~/js/cms-tts.js" asp-append-version="true"></script>
-<script>
-let synth = window.speechSynthesis;
-let currentUtterance = null;
-const languages = @Html.Raw(JsonSerializer.Serialize(languages));
+    <script src="~/js/cms-tts.js" asp-append-version="true"></script>
+    <script>
+        let synth = window.speechSynthesis;
+        let currentUtterance = null;
+        const languages = @Html.Raw(JsonSerializer.Serialize(languages));
 
-/* ===== DETECT LANGUAGE ===== */
-const langMap = Object.fromEntries(languages.map(l => [l.Code, l.Locale]));
-const langNames = Object.fromEntries(languages.map(l => [l.Code, `${l.Name} (${l.Code})`]));
+        const langMap = Object.fromEntries(languages.map(l => [l.Code, l.Locale]));
+        const langNames = Object.fromEntries(languages.map(l => [l.Code, `${l.Name} (${l.Code})`]));
 
-let detectTimeout;
-let detectedLangCode = 'vi';
-function detectLang(text) {
-    clearTimeout(detectTimeout);
-    if (!text.trim()) { document.getElementById('detectedLang').textContent = 'Đang nhận diện...'; return; }
-    detectTimeout = setTimeout(() => {
-        let detected = 'vi';
-        if (/[\u4e00-\u9fff]/.test(text)) detected = 'zh';
-        else if (/[\u3040-\u30ff]/.test(text)) detected = 'ja';
-        else if (/[\uac00-\ud7af]/.test(text)) detected = 'ko';
-        else if (/[\u0400-\u04ff]/.test(text)) detected = 'ru';
-        else if (/[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/.test(text)) detected = 'vi';
-        else if (/[a-zA-Z]/.test(text)) detected = 'en';
-        detectedLangCode = detected;
-        document.getElementById('detectedLang').textContent = 'Phát hiện: ' + (langNames[detected] || detected);
-    }, 400);
-}
+        let translateTimer = null;
+        let activeController = null;
+        let requestVersion = 0;
 
-async function translateInto(targetCode, text) {
-    const url = `/api/Translate?text=${encodeURIComponent(text)}&target=${targetCode}&source=auto`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return data[0].map(x => x[0]).join('');
-}
+        function detectLang(text) {
+            if (!text.trim()) return 'vi';
+            if (/[\u4e00-\u9fff]/.test(text)) return 'zh';
+            if (/[\u3040-\u30ff]/.test(text)) return 'ja';
+            if (/[\uac00-\ud7af]/.test(text)) return 'ko';
+            if (/[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/.test(text)) return 'vi';
+            return 'en';
+        }
 
-let translateTimer;
-function handleSourceInput(text) {
-    detectLang(text);
-    clearTimeout(translateTimer);
-    translateTimer = setTimeout(() => translateAll(text), 450);
-}
+        async function translateInto(targetCode, text, signal) {
+            try {
+                console.log(`[Translate] Calling API: target=${targetCode}, text="${text.substring(0, 30)}..."`);
 
-async function translateAll(text) {
-    const src = (text || '').trim();
-    if (!src) {
-        languages.forEach(l => {
-            const box = document.getElementById(`dst-${l.Code}`);
-            if (box) box.value = '';
+                const url = `/api/translate?text=${encodeURIComponent(text)}&target=${targetCode}&source=auto`;
+                const response = await fetch(url, { signal });
+
+                console.log(`[Translate] Response status: ${response.status}, Content-Type: ${response.headers.get('content-type')}`);
+
+                if (!response.ok) {
+                    console.error(`[Translate] HTTP error: ${response.status}`);
+                    return text;
+                }
+
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    const htmlPreview = await response.text();
+                    console.error(`[Translate] Not JSON! Content-Type: ${contentType}`);
+                    console.error(`[Translate] Response preview: ${htmlPreview.substring(0, 200)}`);
+                    return text;
+                }
+
+                const data = await response.json();
+                console.log('[Translate] Response data:', data);
+
+                if (data && Array.isArray(data) && data[0] && Array.isArray(data[0]) && data[0].length > 0) {
+                    const result = data[0].map(x => x[0]).join('');
+                    console.log(`[Translate] Translated to ${targetCode}: "${result.substring(0, 30)}..."`);
+                    return result;
+                }
+
+                console.warn('[Translate] Unexpected format:', data);
+                return text;
+            } catch (err) {
+                if (err && err.name === 'AbortError') {
+                    return null;
+                }
+
+                console.error('[Translate] Exception:', err);
+                return text;
+            }
+        }
+
+        function handleSourceInput(text) {
+            clearTimeout(translateTimer);
+
+            if (activeController) {
+                activeController.abort('new-input');
+                activeController = null;
+            }
+
+            translateTimer = setTimeout(() => translateAll(text), 350);
+        }
+
+        async function translateAll(text) {
+            const src = (text || '').trim();
+
+            if (!src) {
+                document.getElementById('detectedLang').textContent = 'Đang nhận diện...';
+                for (const lang of languages) {
+                    const box = document.getElementById(`dst-${lang.Code}`);
+                    if (box) box.value = '';
+                }
+                return;
+            }
+
+            const currentVersion = ++requestVersion;
+            const detected = detectLang(src);
+
+            document.getElementById('detectedLang').textContent = 'Phát hiện: ' + (langNames[detected] || detected);
+            console.log(`[translateAll] Detected: ${detected}, Languages:`, languages.map(l => l.Code));
+
+            activeController = new AbortController();
+            const signal = activeController.signal;
+
+            for (const lang of languages) {
+                if (currentVersion !== requestVersion) return;
+
+                const box = document.getElementById(`dst-${lang.Code}`);
+                if (!box) continue;
+
+                const langCode = (lang.Code || '').toLowerCase();
+                const detectedCode = (detected || '').toLowerCase();
+
+                if (langCode === detectedCode) {
+                    console.log(`[translateAll] Skip ${lang.Code} (same as detected)`);
+                    box.value = src;
+                    continue;
+                }
+
+                console.log(`[translateAll] Translating to ${lang.Code}...`);
+
+                try {
+                    const translated = await translateInto(lang.Code, src, signal);
+
+                    if (currentVersion !== requestVersion) return;
+                    if (translated === null) continue;
+
+                    box.value = translated;
+                    console.log(`[translateAll] ${lang.Code} = "${translated.substring(0, 30)}..."`);
+                } catch (err) {
+                    if (err && err.name === 'AbortError') {
+                        return;
+                    }
+
+                    console.error(`[translateAll] Error for ${lang.Code}:`, err);
+                    box.value = src;
+                }
+            }
+        }
+
+        /* ===== SPEAK ===== */
+        function speakSource() {
+            const text = document.getElementById('srcText').value;
+            if (!text) return;
+            speak(text, 'vi-VN');
+        }
+
+        function speakTarget(langCode) {
+            const text = document.getElementById(`dst-${langCode}`)?.value || '';
+            if (!text) return;
+            speak(text, langMap[langCode] || 'en-US');
+        }
+
+        function speak(text, lang) {
+            stopSpeech();
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = lang;
+            currentUtterance.pitch = 1.08;
+            currentUtterance.rate = 0.95;
+            currentUtterance.voice = pickFemaleVoice(lang);
+            synth.speak(currentUtterance);
+        }
+
+        function stopSpeech() {
+            try {
+                if (synth && typeof synth.cancel === 'function') {
+                    synth.cancel();
+                    console.log('[Speech] Stopped');
+                }
+            } catch (e) {
+                console.error('[Speech] Error stopping:', e);
+            }
+        }
+
+        function pickFemaleVoice(lang) {
+            const l = (lang || '').toLowerCase();
+            if (l.startsWith('vi')) {
+                const vn = typeof cmsPickVietnameseFemaleVoice === 'function' ? cmsPickVietnameseFemaleVoice() : null;
+                if (vn) return vn;
+            }
+            return typeof cmsPickTtsVoiceForLocale === 'function'
+                ? cmsPickTtsVoiceForLocale(lang, lang.substring(0, 2))
+                : null;
+        }
+
+        cmsWarmUpSpeechVoices();
+
+        const poiIdsWithAudio = @Html.Raw(ViewBag.PoiIdsWithAudioJson ?? "[]");
+        document.getElementById('audioForm').addEventListener('submit', function (e) {
+            const sel = document.querySelector('select[name="POIId"]');
+            if (!sel) return true;
+
+            const id = parseInt(sel.value, 10);
+            if (!id || !Array.isArray(poiIdsWithAudio) || poiIdsWithAudio.length === 0) return true;
+            if (!poiIdsWithAudio.includes(id)) return true;
+
+            if (!confirm('Địa điểm này đã có thuyết minh (nhiều ngôn ngữ). Lưu sẽ ghi đè toàn bộ. Bạn có muốn tiếp tục?')) {
+                e.preventDefault();
+                return false;
+            }
+
+            return true;
         });
-        return;
-    }
-
-    for (const lang of languages) {
-        const box = document.getElementById(`dst-${lang.Code}`);
-        if (!box) continue;
-        if ((lang.Code || '').toLowerCase() === (detectedLangCode || '').toLowerCase()) {
-            box.value = src;
-            continue;
-        }
-        try {
-            box.value = await translateInto(lang.Code, src);
-        } catch {
-            box.value = src;
-        }
-    }
+    </script>
 }
 
-/* ===== SPEAK ===== */
-function speakSource() {
-    const text = document.getElementById('srcText').value;
-    if (!text) return;
-    speak(text, 'vi-VN');
-}
-
-function speakTarget(langCode) {
-    const text = document.getElementById(`dst-${langCode}`)?.value || '';
-    if (!text) return;
-    speak(text, langMap[langCode] || 'en-US');
-}
-
-function speak(text, lang) {
-    stopSpeech();
-    currentUtterance = new SpeechSynthesisUtterance(text);
-    currentUtterance.lang = lang;
-    currentUtterance.pitch = 1.08;
-    currentUtterance.rate = 0.95;
-    currentUtterance.voice = pickFemaleVoice(lang);
-    synth.speak(currentUtterance);
-}
-
-function stopSpeech() {
-    synth.cancel();
-}
-
-function pickFemaleVoice(lang) {
-    const l = (lang || '').toLowerCase();
-    if (l.startsWith('vi')) {
-        const vn = typeof cmsPickVietnameseFemaleVoice === 'function' ? cmsPickVietnameseFemaleVoice() : null;
-        if (vn) return vn;
-    }
-    return typeof cmsPickTtsVoiceForLocale === 'function' ? cmsPickTtsVoiceForLocale(lang, lang.substring(0, 2)) : null;
-}
-
-cmsWarmUpSpeechVoices();
-
-const poiIdsWithAudio = @Html.Raw(ViewBag.PoiIdsWithAudioJson ?? "[]");
-document.getElementById('audioForm').addEventListener('submit', function (e) {
-    const sel = document.querySelector('select[name="POIId"]');
-    if (!sel) return true;
-    const id = parseInt(sel.value, 10);
-    if (!id || !Array.isArray(poiIdsWithAudio) || poiIdsWithAudio.length === 0) return true;
-    if (!poiIdsWithAudio.includes(id)) return true;
-    if (!confirm('Địa điểm này đã có thuyết minh (nhiều ngôn ngữ). Lưu sẽ ghi đè toàn bộ. Bạn có muốn tiếp tục?')) {
-        e.preventDefault();
-        return false;
-    }
-    return true;
-});
-</script>
-}

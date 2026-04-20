@@ -8,9 +8,9 @@ namespace TourApp.CMS.Filters
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             var path = context.HttpContext.Request.Path.Value?.ToLower() ?? "";
-            
-            // Allow Auth controller without login
-            if (path.StartsWith("/auth"))
+
+            // Allow Auth and Translate API without login redirect
+            if (path.StartsWith("/auth") || path.StartsWith("/api/translate"))
             {
                 base.OnActionExecuting(context);
                 return;
@@ -20,6 +20,7 @@ namespace TourApp.CMS.Filters
             if (string.IsNullOrEmpty(userId))
             {
                 context.Result = new RedirectToActionResult("Login", "Auth", null);
+                return;
             }
 
             base.OnActionExecuting(context);
