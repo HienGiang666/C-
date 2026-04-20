@@ -95,4 +95,63 @@ public class NarrationLogController : ControllerBase
             })
         });
     }
+
+    /// <summary>
+    /// GET /api/narrationlog/duration-stats
+    /// Trả về thống kê thời gian nghe trung bình tại mỗi POI
+    /// </summary>
+    [HttpGet("duration-stats")]
+    public async Task<IActionResult> GetDurationStats()
+    {
+        // Lấy tất cả logs có DurationListened > 0 về client (vì property này [NotMapped])
+        var allLogs = await _context.NarrationLogs
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Filter và tính toán bằng client-side LINQ
+        var durationStats = allLogs
+            .Where(l => l.DurationListened > 0)
+            .GroupBy(l => l.POIId)
+            .Select(g => new
+            {
+                PoiId = g.Key,
+                AvgDuration = g.Average(l => l.DurationListened),
+                TotalListens = g.Count(),
+                TotalDuration = g.Sum(l => l.DurationListened)
+            })
+            .OrderByDescending(x => x.TotalListens)
+            .Take(10)
+            .ToList();
+
+        // Lấy tên POI
+        var poiIds = durationStats.Select(x => x.PoiId).ToList();
+        var poiNames = await _context.POIs
+            .Where(p => poiIds.Contains(p.Id))
+            .Select(p => new { p.Id, p.Name })
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var result = durationStats.Select(x => new
+        {
+            x.PoiId,
+            PoiName = poiNames.TryGetValue(x.PoiId, out var n) ? n : $"POI #{x.PoiId}",
+            AvgDurationSeconds = x.AvgDuration,
+            AvgDurationFormatted = TimeSpan.FromSeconds(x.AvgDuration).ToString(@"mm\:ss"),
+            x.TotalListens,
+            TotalDurationSeconds = x.TotalDuration
+        }).ToList();
+
+        // Thời gian nghe trung bình toàn hệ thống (client-side)
+        var globalAvg = allLogs
+            .Where(l => l.DurationListened > 0)
+            .Select(l => (double?)l.DurationListened)
+            .DefaultIfEmpty(0)
+            .Average() ?? 0;
+
+        return Ok(new
+        {
+            globalAverageSeconds = globalAvg,
+            globalAverageFormatted = TimeSpan.FromSeconds(globalAvg).ToString(@"mm\:ss"),
+            poiDurations = result
+        });
+    }
 }
