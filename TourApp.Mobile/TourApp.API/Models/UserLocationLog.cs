@@ -10,4 +10,6 @@ public class UserLocationLog
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.Now;
+    public string? SessionId { get; set; }
+    public bool IsActive { get; set; } = true;
 }

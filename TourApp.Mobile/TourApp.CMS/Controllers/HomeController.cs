@@ -17,10 +17,14 @@ public class HomeController : Controller
         ViewData["Title"] = "Dashboard";
 
         int poiCount = 0, tourCount = 0, userCount = 0, bookingCount = 0;
+        var narrationStats = new NarrationStatsViewModel();
+        var userLocationStats = new UserLocationStatsViewModel();
+        var durationStats = new DurationStatsViewModel();
 
         try
         {
             var client = _clientFactory.CreateClient("TourApi");
+            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
             var role = HttpContext.Session.GetString("Role") ?? "";
             var userIdStr = HttpContext.Session.GetString("UserId");
@@ -29,14 +33,19 @@ public class HomeController : Controller
                 int.TryParse(userIdStr, out var ownerId))
                 poiUrl = $"api/POI?ownerUserId={ownerId}";
 
+            // Basic counts
             var poiTask = client.GetAsync(poiUrl);
             var tourTask = client.GetAsync("api/tour");
             var userTask = client.GetAsync("api/user");
             var bookingTask = client.GetAsync("api/booking");
 
-            await Task.WhenAll(poiTask, tourTask, userTask, bookingTask);
+            // Analytics data
+            var narrationStatsTask = client.GetAsync("api/narrationlog/stats");
+            var userLocationStatsTask = client.GetAsync("api/userlocation/stats");
+            var durationStatsTask = client.GetAsync("api/narrationlog/duration-stats");
 
-            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            await Task.WhenAll(poiTask, tourTask, userTask, bookingTask, 
+                narrationStatsTask, userLocationStatsTask, durationStatsTask);
 
             if (poiTask.Result.IsSuccessStatusCode)
             {
@@ -58,6 +67,56 @@ public class HomeController : Controller
                 var bookings = await bookingTask.Result.Content.ReadFromJsonAsync<List<Booking>>(options);
                 bookingCount = bookings?.Count ?? 0;
             }
+
+            // Parse analytics data
+            if (narrationStatsTask.Result.IsSuccessStatusCode)
+            {
+                var stats = await narrationStatsTask.Result.Content.ReadFromJsonAsync<NarrationStatsResponse>(options);
+                if (stats != null)
+                {
+                    narrationStats.TotalPlays = stats.total;
+                    narrationStats.TopPOIs = stats.topPoi?.Select(p => new TopPOIViewModel 
+                    { 
+                        PoiId = p.poiId, 
+                        PoiName = p.poiName, 
+                        Count = p.count 
+                    }).ToList() ?? new List<TopPOIViewModel>();
+                }
+            }
+
+            if (userLocationStatsTask.Result.IsSuccessStatusCode)
+            {
+                var stats = await userLocationStatsTask.Result.Content.ReadFromJsonAsync<UserLocationStatsResponse>(options);
+                if (stats != null)
+                {
+                    userLocationStats.OnlineNow = stats.onlineNow;
+                    userLocationStats.Active24h = stats.active24h;
+                    userLocationStats.OnlineLocations = stats.onlineLocations?.Select(l => new OnlineLocationViewModel
+                    {
+                        DeviceId = l.deviceId,
+                        Latitude = l.latitude,
+                        Longitude = l.longitude,
+                        Timestamp = l.timestamp,
+                        SessionId = l.sessionId
+                    }).ToList() ?? new List<OnlineLocationViewModel>();
+                }
+            }
+
+            if (durationStatsTask.Result.IsSuccessStatusCode)
+            {
+                var stats = await durationStatsTask.Result.Content.ReadFromJsonAsync<DurationStatsResponse>(options);
+                if (stats != null)
+                {
+                    durationStats.GlobalAverageFormatted = stats.globalAverageFormatted;
+                    durationStats.POIDurations = stats.poiDurations?.Select(p => new POIDurationViewModel
+                    {
+                        PoiId = p.poiId,
+                        PoiName = p.poiName,
+                        AvgDurationFormatted = p.avgDurationFormatted,
+                        TotalListens = p.totalListens
+                    }).ToList() ?? new List<POIDurationViewModel>();
+                }
+            }
         }
         catch { }
 
@@ -65,6 +124,9 @@ public class HomeController : Controller
         ViewBag.TourCount = tourCount;
         ViewBag.UserCount = userCount;
         ViewBag.BookingCount = bookingCount;
+        ViewBag.NarrationStats = narrationStats;
+        ViewBag.UserLocationStats = userLocationStats;
+        ViewBag.DurationStats = durationStats;
 
         return View();
     }

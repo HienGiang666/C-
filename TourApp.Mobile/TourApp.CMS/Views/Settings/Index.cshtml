@@ -39,6 +39,33 @@
                 </form>
             </div>
         </div>
+
+        <!-- Thông tin hệ thống (được chuyển từ Dashboard) -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-circle-info text-info me-2"></i> Thông tin hệ thống</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-solid fa-server me-2"></i> Phiên bản</span>
+                        <span class="badge bg-primary rounded-pill">v1.0.0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-solid fa-database me-2"></i> Database</span>
+                        <span class="badge bg-success rounded-pill">SQL Server</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-solid fa-code me-2"></i> Framework</span>
+                        <span class="badge bg-info rounded-pill">.NET 9</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fa-regular fa-clock me-2"></i> Ngày</span>
+                        <span class="badge bg-secondary rounded-pill">@DateTime.Now.ToString("dd/MM/yyyy")</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <div class="col-lg-7">
