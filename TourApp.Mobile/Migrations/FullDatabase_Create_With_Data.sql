@@ -190,6 +190,7 @@ BEGIN
         [Id] int NOT NULL IDENTITY(1,1),
         [DeviceId] nvarchar(200) NOT NULL,
         [Latitude] float NOT NULL,
+        
         [Longitude] float NOT NULL,
         [Timestamp] datetime2 NOT NULL DEFAULT GETDATE(),
         [SessionId] nvarchar(100) NULL,  -- Session SignalR để theo dõi real-time

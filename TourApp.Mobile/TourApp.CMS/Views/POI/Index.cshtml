@@ -88,6 +88,9 @@
                                     }
                                 </td>
                                 <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="showQRCode(@item.Id, '@item.Name.Replace("'", "\\'")')" title="Tạo QR Code">
+                                        <i class="fa-solid fa-qrcode"></i> QR
+                                    </button>
                                     <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1" title="Quản lý Audio">
                                         <i class="fa-solid fa-headphones"></i> Audios
                                     </a>
@@ -124,3 +127,74 @@
         </div>
     }
 </div>
+
+<!-- QR Code Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-qrcode me-2"></i>QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="mb-3 text-muted">Quét mã QR để mở địa điểm trong app</p>
+                <div id="qrCodeContainer" class="d-flex justify-content-center">
+                    <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+                </div>
+                <div class="mt-3">
+                    <strong id="qrPoiName" class="text-primary"></strong>
+                    <div class="mt-2">
+                        <small class="text-muted">Tải app: </small>
+                        <a href="/download/app" class="small">Android</a>
+                        <span class="text-muted">|</span>
+                        <a href="/download/ios" class="small">iOS</a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="downloadQRCode()">
+                    <i class="fa-solid fa-download me-1"></i> Tải QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentQrData = null;
+    let currentPoiName = '';
+
+    function showQRCode(poiId, poiName) {
+        currentPoiName = poiName;
+        document.getElementById('qrPoiName').textContent = poiName;
+        document.getElementById('qrCodeContainer').innerHTML = '<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>';
+        
+        // Mở modal
+        const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+        modal.show();
+        
+        // Gọi API lấy QR
+        fetch(`/POI/GenerateQR/${poiId}`)
+            .then(response => response.json())
+            .then(data => {
+                currentQrData = data.qrCode;
+                document.getElementById('qrCodeContainer').innerHTML = 
+                    `<img src="${data.qrCode}" alt="QR Code" class="img-fluid" style="max-width: 250px;">`;
+            })
+            .catch(error => {
+                document.getElementById('qrCodeContainer').innerHTML = 
+                    '<div class="text-danger">Lỗi tạo QR code</div>';
+            });
+    }
+
+    function downloadQRCode() {
+        if (!currentQrData) return;
+        const link = document.createElement('a');
+        link.href = currentQrData;
+        link.download = `POI-${currentPoiName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+        link.click();
+    }
+</script>
+}
