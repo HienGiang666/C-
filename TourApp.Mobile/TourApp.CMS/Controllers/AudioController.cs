@@ -87,17 +87,20 @@ public class AudioController : Controller
     public async Task<IActionResult> EditByPoi(int poiId)
     {
         var client = _clientFactory.CreateClient("TourApi");
-        
-        // Lấy thông tin POI để hiển thị tên
+
+        // Lấy thông tin POI để hiển thị tên và mô tả
         var poiResponse = await client.GetAsync($"api/POI/{poiId}");
         string poiName = $"Địa điểm #{poiId}";
+        string poiDescription = string.Empty;
         if (poiResponse.IsSuccessStatusCode)
         {
             var poi = await poiResponse.Content.ReadFromJsonAsync<POI>();
             if (!string.IsNullOrWhiteSpace(poi?.Name))
                 poiName = poi.Name;
+            if (!string.IsNullOrWhiteSpace(poi?.Description))
+                poiDescription = poi.Description;
         }
-        
+
         var response = await client.GetAsync($"api/Audio?poiId={poiId}");
         if (!response.IsSuccessStatusCode)
         {
@@ -111,10 +114,14 @@ public class AudioController : Controller
             l => l.Code,
             l => audios.FirstOrDefault(x => x.Language.Equals(l.Code, StringComparison.OrdinalIgnoreCase))?.ScriptText ?? string.Empty);
 
+        // Nếu chưa có thuyết minh tiếng Việt, dùng mô tả POI làm văn bản gốc
+        var viScript = scripts.TryGetValue("vi", out var viText) ? viText : string.Empty;
+        var sourceText = !string.IsNullOrWhiteSpace(viScript) ? viScript : poiDescription;
+
         var model = new AudioBulkCreateViewModel
         {
             POIId = poiId,
-            SourceText = scripts.TryGetValue("vi", out var viText) ? viText : string.Empty,
+            SourceText = sourceText,
             Scripts = scripts
         };
 
