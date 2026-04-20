@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using TourApp.CMS.Filters;
 using TourApp.CMS.Services;
 
@@ -16,12 +17,18 @@ builder.Services.AddHttpClient("TourApi", client =>
 });
 
 builder.Services.AddDistributedMemoryCache();
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+
+    // Giảm warning cookie trong môi trường local/dev
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
+
 builder.Services.AddHttpContextAccessor();
 
 // Register application services
@@ -43,8 +50,10 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseSession();       // Phải trước UseAuthorization
+app.UseSession();
 app.UseAuthorization();
+
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
