@@ -15,6 +15,8 @@ namespace TourApp.Mobile.Services
         {
             LanguageService.LanguageChanged += (s, e) =>
             {
+                // Raise for Item[] indexer and null to refresh all bindings
+                OnPropertyChanged("Item[]");
                 OnPropertyChanged(null);
             };
         }
