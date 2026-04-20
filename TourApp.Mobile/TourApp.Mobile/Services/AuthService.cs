@@ -318,21 +318,32 @@ namespace TourApp.Mobile.Services
         }
 
         /// <summary>
-        /// Check if user has saved login session
+        /// Check if user has saved login session (including guest)
         /// </summary>
         public static bool HasSavedSession()
         {
             var isLoggedIn = Preferences.Default.Get("is_logged_in", false);
             var userId = Preferences.Default.Get("user_id", 0);
-            // Only consider valid session if is_logged_in is true AND user_id is valid (> 0)
-            return isLoggedIn && userId > 0;
+            var isGuestMode = Preferences.Default.Get("is_guest_mode", false);
+
+            // Valid session: logged in as regular user (userId > 0) OR guest mode
+            return isLoggedIn && (userId > 0 || isGuestMode);
         }
 
         /// <summary>
-        /// Load saved user session
+        /// Load saved user session (support both regular user and guest)
         /// </summary>
         public static void LoadSavedSession()
         {
+            var isGuestMode = Preferences.Default.Get("is_guest_mode", false);
+
+            if (isGuestMode)
+            {
+                // Tạo lại guest user từ session
+                CurrentUser = CreateGuestUser();
+                return;
+            }
+
             if (HasSavedSession())
             {
                 CurrentUser = new User
@@ -358,6 +369,7 @@ namespace TourApp.Mobile.Services
             Preferences.Default.Remove("user_email");
             Preferences.Default.Remove("user_role");
             Preferences.Default.Set("is_logged_in", false);
+            ClearGuestMode();
         }
 
         /// <summary>
@@ -369,7 +381,7 @@ namespace TourApp.Mobile.Services
             {
                 var baseUrl = ApiService.BaseUrl;
                 using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
-                
+
                 var response = await httpClient.GetAsync($"/api/user/{userId}/bookings");
                 if (response.IsSuccessStatusCode)
                 {
@@ -382,6 +394,62 @@ namespace TourApp.Mobile.Services
                 Debug.WriteLine($"[AuthService] Get bookings error: {ex.Message}");
             }
             return new List<Booking>();
+        }
+
+        /// <summary>
+        /// Tạo user khách (guest) để đăng nhập không cần tài khoản
+        /// </summary>
+        public static User CreateGuestUser()
+        {
+            var guestId = Guid.NewGuid().ToString("N")[..8];
+            return new User
+            {
+                Id = 0,
+                Username = $"guest_{guestId}",
+                FullName = "Khách",
+                Email = null,
+                Role = "Guest",
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+        }
+
+        /// <summary>
+        /// Đặt user hiện tại (dùng cho guest login)
+        /// </summary>
+        public static void SetCurrentUser(User user)
+        {
+            CurrentUser = user;
+
+            if (user != null && user.Role != "Guest")
+            {
+                // Lưu preferences cho user thường (không lưu guest)
+                Preferences.Default.Set("user_id", user.Id);
+                Preferences.Default.Set("user_username", user.Username);
+                Preferences.Default.Set("user_fullname", user.FullName ?? user.Username);
+                Preferences.Default.Set("user_email", user.Email ?? "");
+                Preferences.Default.Set("user_role", user.Role ?? "Customer");
+                Preferences.Default.Set("is_logged_in", true);
+            }
+            else if (user?.Role == "Guest")
+            {
+                // Đánh dấu là đang dùng guest mode
+                Preferences.Default.Set("is_guest_mode", true);
+                Preferences.Default.Set("is_logged_in", true);
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra có đang ở guest mode không
+        /// </summary>
+        public static bool IsGuestMode => CurrentUser?.Role == "Guest" || Preferences.Default.Get("is_guest_mode", false);
+
+        /// <summary>
+        /// Xóa trạng thái guest mode khi logout
+        /// </summary>
+        public static void ClearGuestMode()
+        {
+            Preferences.Default.Remove("is_guest_mode");
         }
     }
 }

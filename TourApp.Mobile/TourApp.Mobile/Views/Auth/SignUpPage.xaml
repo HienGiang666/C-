@@ -16,8 +16,8 @@
                 </Border.GestureRecognizers>
             </Border>
             
-            <Label Text="Sign Up" FontSize="32" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" Margin="0,10,0,0"/>
-            <Label Text="Please sign up to get started" FontSize="14" TextColor="#A0A0B0" HorizontalOptions="Center" Margin="0,5,0,0"/>
+            <Label Text="Đăng ký" FontSize="32" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" Margin="0,10,0,0"/>
+            <Label Text="Vui lòng đăng ký để bắt đầu" FontSize="14" TextColor="#A0A0B0" HorizontalOptions="Center" Margin="0,5,0,0"/>
         </VerticalStackLayout>
 
         <!-- White card form -->
@@ -29,17 +29,17 @@
                 <VerticalStackLayout Spacing="20">
                     <!-- Name -->
                     <VerticalStackLayout>
-                        <Label Text="NAME" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                        <Label Text="HỌ VÀ TÊN" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
-                            <Entry x:Name="FullNameEntry" Placeholder="John doe" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                            <Entry x:Name="FullNameEntry" Placeholder="Nhập họ và tên" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
                         </Border>
                     </VerticalStackLayout>
 
                     <!-- Username -->
                     <VerticalStackLayout>
-                        <Label Text="USERNAME" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                        <Label Text="TÀI KHOẢN" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
-                            <Entry x:Name="UsernameEntry" Placeholder="Enter username" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                            <Entry x:Name="UsernameEntry" Placeholder="Nhập tài khoản" TextColor="Black" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
                         </Border>
                     </VerticalStackLayout>
 
@@ -47,16 +47,16 @@
                     <VerticalStackLayout>
                         <Label Text="EMAIL" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
-                            <Entry x:Name="EmailEntry" Placeholder="example@gmail.com" TextColor="Black" PlaceholderColor="#B0B0B0" Keyboard="Email" VerticalOptions="Center"/>
+                            <Entry x:Name="EmailEntry" Placeholder="Nhập email" TextColor="Black" PlaceholderColor="#B0B0B0" Keyboard="Email" VerticalOptions="Center"/>
                         </Border>
                     </VerticalStackLayout>
 
                     <!-- Password -->
                     <VerticalStackLayout>
-                        <Label Text="PASSWORD" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                        <Label Text="MẬT KHẨU" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
                             <Grid ColumnDefinitions="*,30">
-                                <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                                <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="Nhập mật khẩu" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
                                 <Label x:Name="ShowPasswordLabel" Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center">
                                     <Label.GestureRecognizers>
                                         <TapGestureRecognizer Tapped="OnShowPasswordTapped"/>
@@ -68,10 +68,10 @@
 
                     <!-- Re-type Password -->
                     <VerticalStackLayout>
-                        <Label Text="RE-TYPE PASSWORD" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
+                        <Label Text="NHẬP LẠI MẬT KHẨU" FontSize="12" FontAttributes="Bold" TextColor="#444" Margin="0,0,0,5"/>
                         <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="15,0" HeightRequest="50" StrokeShape="RoundRectangle 10">
                             <Grid ColumnDefinitions="*,30">
-                                <Entry x:Name="ConfirmPasswordEntry" Grid.Column="0" Placeholder="••••••••" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
+                                <Entry x:Name="ConfirmPasswordEntry" Grid.Column="0" Placeholder="Nhập lại mật khẩu" TextColor="Black" IsPassword="True" PlaceholderColor="#B0B0B0" VerticalOptions="Center"/>
                                 <Label x:Name="ShowConfirmPasswordLabel" Grid.Column="1" Text="👁" TextColor="#888" VerticalOptions="Center" HorizontalOptions="Center">
                                     <Label.GestureRecognizers>
                                         <TapGestureRecognizer Tapped="OnShowConfirmPasswordTapped"/>
@@ -82,7 +82,7 @@
                     </VerticalStackLayout>
 
                     <!-- Sign Up Button -->
-                    <Button x:Name="SignUpButton" Text="SIGN UP" BackgroundColor="#FF5B00" TextColor="White" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,10,0,50" Clicked="OnSignUpClicked"/>
+                    <Button x:Name="SignUpButton" Text="ĐĂNG KÝ" BackgroundColor="#FF5B00" TextColor="White" FontAttributes="Bold" CornerRadius="15" HeightRequest="55" Margin="0,10,0,50" Clicked="OnSignUpClicked"/>
 
                 </VerticalStackLayout>
             </ScrollView>

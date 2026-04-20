@@ -7,7 +7,7 @@ namespace TourApp.Mobile.Services
     public class ApiService
     {
         // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
-        private const string DefaultUrl = "http://192.168.1.5:5254";
+        private const string DefaultUrl = "http://10.89.192.150:5254";
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
@@ -57,11 +57,14 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         private static async Task AutoDiscoverInternalAsync(CancellationToken ct)
         {
-            Debug.WriteLine("[ApiService] Start Auto Discovery...");
+            var myIp = GetLocalIpAddress();
+            Debug.WriteLine($"[ApiService] Start Auto Discovery... (This device IP: {myIp ?? "Unknown"})");
+            Debug.WriteLine($"[ApiService] Looking for API server in local network...");
+            
             var subnet = GetLocalSubnet();
             var ipsToTest = new List<string>();
 
-            // 1. Emulator ưu tiên hàng đầu, không check DefaultUrl trước chặn đường
+            // 1. Emulator ưu tiên hàng đầu
             if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
             {
                 ipsToTest.Add("http://10.0.2.2:5254");
@@ -69,15 +72,20 @@ namespace TourApp.Mobile.Services
             }
             else
             {
+                // Phone thật: ưu tiên DefaultUrl và BaseUrl trước
                 ipsToTest.Add(DefaultUrl);
+                Debug.WriteLine($"[ApiService] Will try DefaultUrl: {DefaultUrl}");
+                
                 if (BaseUrl != DefaultUrl && !string.IsNullOrWhiteSpace(BaseUrl))
                 {
                     ipsToTest.Add(BaseUrl);
+                    Debug.WriteLine($"[ApiService] Will try saved BaseUrl: {BaseUrl}");
                 }
             }
 
-            // 2. Local network 
-            for (int i = 1; i <= 10; i++)
+            // 2. Quét subnet rộng hơn (1-50 trước, nếu không thấy thì quét tiếp)
+            Debug.WriteLine($"[ApiService] Scanning subnet {subnet}.1-50...");
+            for (int i = 1; i <= 50; i++)
             {
                 ipsToTest.Add($"http://{subnet}.{i}:5254");
             }
@@ -109,9 +117,13 @@ namespace TourApp.Mobile.Services
         {
             try
             {
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(1.5) };
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
                 var r = await client.GetAsync($"{url}/api/poi", ct);
-                if (r.IsSuccessStatusCode) return url;
+                if (r.IsSuccessStatusCode) 
+                {
+                    Debug.WriteLine($"[ApiService] Found server at: {url}");
+                    return url;
+                }
             }
             catch { }
             return null;
@@ -477,6 +489,34 @@ namespace TourApp.Mobile.Services
                 }
                 catch { }
             }
+            return null;
+        }
+
+        /// <summary>
+        /// Lấy IP WiFi hiện tại của máy tính để hiển thị cho user
+        /// </summary>
+        public static string? GetLocalIpAddress()
+        {
+            try {
+                foreach (var netInterface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (netInterface.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                        netInterface.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                    {
+                        foreach (var addrInfo in netInterface.GetIPProperties().UnicastAddresses)
+                        {
+                            if (addrInfo.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            {
+                                var ip = addrInfo.Address.ToString();
+                                if (ip.StartsWith("192.168.") || ip.StartsWith("10.0.") || ip.StartsWith("172."))
+                                {
+                                    return ip;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch { }
             return null;
         }
     }

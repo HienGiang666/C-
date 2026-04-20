@@ -69,13 +69,24 @@ public partial class LoginPage : ContentPage
         }
     }
 
-    private async void OnForgotPasswordTapped(object sender, EventArgs e)
-    {
-        await Navigation.PushAsync(new ForgotPasswordPage());
-    }
-
     private async void OnSignUpTapped(object sender, EventArgs e)
     {
         await Navigation.PushAsync(new SignUpPage());
+    }
+
+    private async void OnGuestLoginClicked(object sender, EventArgs e)
+    {
+        // Tạo user khách
+        var guestUser = AuthService.CreateGuestUser();
+
+        // Lưu thông tin user khách
+        AuthService.SetCurrentUser(guestUser);
+
+        // Khởi động session cho khách
+        var guestId = $"guest_{Guid.NewGuid().ToString("N")[..8]}";
+        UserSessionService.StartSession(null, "Khách", guestId);
+
+        // Chuyển đến app chính
+        AppNavigation.SetRootPage(new AppShell());
     }
 }
