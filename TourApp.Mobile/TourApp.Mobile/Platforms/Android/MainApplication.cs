@@ -1,5 +1,10 @@
 using Android.App;
+using Android.Content;
+using Android.OS;
 using Android.Runtime;
+using AndroidX.Core.App;
+using AndroidX.Core.Content;
+using TourApp.Mobile.Platforms.Android.Services;
 
 namespace TourApp.Mobile
 {
@@ -25,6 +30,51 @@ namespace TourApp.Mobile
                 System.Diagnostics.Debug.WriteLine($"[CRASH][Android] {args.Exception}");
                 args.Handled = true; // Ngăn Android kill process ngay lập tức
             };
+        }
+
+        /// <summary>
+        /// Check and request notification permission (required for Android 13+)
+        /// </summary>
+        public static async Task<bool> RequestNotificationPermissionAsync()
+        {
+            if (Build.VERSION.SdkInt < BuildVersionCodes.Tiramisu) return true;
+
+            var status = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.PostNotifications>();
+            }
+            return status == PermissionStatus.Granted;
+        }
+
+        /// <summary>
+        /// Start location foreground service
+        /// </summary>
+        public static void StartLocationService(Context context)
+        {
+            try
+            {
+                LocationForegroundService.Start(context);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainApplication] Failed to start location service: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Stop location foreground service
+        /// </summary>
+        public static void StopLocationService(Context context)
+        {
+            try
+            {
+                LocationForegroundService.Stop(context);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainApplication] Failed to stop location service: {ex.Message}");
+            }
         }
     }
 }

@@ -113,11 +113,15 @@
                 <Border.Shadow>
                     <Shadow Brush="Black" Offset="0,4" Opacity="0.3" Radius="10"/>
                 </Border.Shadow>
-                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
                     <Label Text="🎵" FontSize="20" VerticalOptions="Center"/>
-                    <Label x:Name="AudioTitleLabel" Grid.Column="1" Text="Đang phát..." TextColor="White" FontSize="14" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation"/>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label x:Name="AudioTitleLabel" Text="Đang phát..." TextColor="White" FontSize="14" FontAttributes="Bold" LineBreakMode="TailTruncation"/>
+                        <Label x:Name="AudioQueueCountLabel" Text="" TextColor="#94A3B8" FontSize="11" IsVisible="False"/>
+                    </VerticalStackLayout>
                     <Button x:Name="AudioPlayPauseBtn" Grid.Column="2" Text="⏸" BackgroundColor="Transparent" TextColor="White" FontSize="18" Padding="0" Clicked="OnToggleAudioClicked"/>
-                    <Button Grid.Column="3" Text="❌" BackgroundColor="Transparent" TextColor="#94A3B8" FontSize="16" Padding="0" Clicked="OnStopAudioClicked"/>
+                    <Button Grid.Column="3" Text="⏭" BackgroundColor="Transparent" TextColor="White" FontSize="18" Padding="0" Clicked="OnSkipAudioClicked"/>
+                    <Button Grid.Column="4" Text="❌" BackgroundColor="Transparent" TextColor="#94A3B8" FontSize="16" Padding="0" Clicked="OnStopAudioClicked"/>
                 </Grid>
             </Border>
         </ContentView>
