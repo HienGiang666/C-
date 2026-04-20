@@ -73,12 +73,6 @@
                 </Grid>
             </Border>
 
-            <!-- Emulator Mock Buttons -->
-            <VerticalStackLayout x:Name="EmulatorUI" IsVisible="True" VerticalOptions="Center" HorizontalOptions="Center" Spacing="20" BackgroundColor="#AA000000" Padding="20">
-                <Label x:Name="TestModeLabel" Text="(Test Mode)" TextColor="White" HorizontalOptions="Center"/>
-                <Button Text="{Binding [MockScan1], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan1Clicked"/>
-                <Button Text="{Binding [MockScan2], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" Clicked="OnMockScan2Clicked"/>
-            </VerticalStackLayout>
         </Grid>
 
         <!-- Bottom instruction -->

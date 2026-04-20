@@ -7,6 +7,7 @@ namespace TourApp.Mobile.Views;
 
 [QueryProperty(nameof(PoiIdQuery), "poiId")]
 [QueryProperty(nameof(TourIdQuery), "tourId")]
+[QueryProperty(nameof(FromQRQuery), "fromQR")]
 public partial class MapPage : ContentPage
 {
     private readonly LocationService _locationService;
@@ -22,6 +23,7 @@ public partial class MapPage : ContentPage
     private string? _pendingMapPoisJson;
     private int? _pendingPoiId = null;
     private int? _pendingTourId = null;
+    private bool _triggerFromQR = false;
 
     // Query properties for navigation
     public string PoiIdQuery
@@ -45,6 +47,15 @@ public partial class MapPage : ContentPage
                 _pendingTourId = id;
                 System.Diagnostics.Debug.WriteLine($"[MapPage] Received tourId from query: {id}");
             }
+        }
+    }
+
+    public string FromQRQuery
+    {
+        set
+        {
+            _triggerFromQR = value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Received fromQR: {_triggerFromQR}");
         }
     }
 
@@ -211,6 +222,14 @@ public partial class MapPage : ContentPage
                     {
                         MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
                         MapWebView.Eval($"highlightPoi({poi.Id});");
+                    }
+
+                    // Nếu đến từ QR scan, tự động phát audio
+                    if (_triggerFromQR)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MapPage] Auto-playing audio for QR-scanned POI: {poi.Name}");
+                        _ = _geofenceService.TriggerFromQRAsync(poi);
+                        _triggerFromQR = false; // Reset flag sau khi xử lý
                     }
                 });
             }

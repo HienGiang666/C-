@@ -28,8 +28,6 @@ public partial class QRScannerPage : ContentPage
     {
         base.OnAppearing();
 
-        TestModeLabel.Text = $"({LanguageService.GetString("DemoCode")})";
-
         if (SupportsCameraScan && DeviceInfo.DeviceType == DeviceType.Physical)
         {
             // Real device - request permission and init camera
@@ -37,8 +35,7 @@ public partial class QRScannerPage : ContentPage
         }
         else
         {
-            // Windows or Emulator - show mock UI only
-            EmulatorUI.IsVisible = true;
+            // Windows or Emulator - camera not available
             FlashButton.IsVisible = false;
             CameraContainer.IsVisible = false;
         }
@@ -52,7 +49,7 @@ public partial class QRScannerPage : ContentPage
         var activity = MauiApplication.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView as Android.App.Activity;
         if (activity == null)
         {
-            ShowEmulatorUI();
+            CameraContainer.IsVisible = false;
             return;
         }
 
@@ -76,7 +73,7 @@ public partial class QRScannerPage : ContentPage
             }
             else
             {
-                ShowEmulatorUI();
+                CameraContainer.IsVisible = false;
                 await DisplayAlert(LanguageService.GetString("Error"), "Cần quyền camera để quét QR", LanguageService.GetString("OK"));
             }
         }
@@ -84,13 +81,6 @@ public partial class QRScannerPage : ContentPage
         _hasPermission = true;
         InitializeCamera();
 #endif
-    }
-
-    private void ShowEmulatorUI()
-    {
-        EmulatorUI.IsVisible = true;
-        FlashButton.IsVisible = false;
-        CameraContainer.IsVisible = false;
     }
 
     protected override void OnDisappearing()
@@ -133,7 +123,7 @@ public partial class QRScannerPage : ContentPage
             if (cameraType == null)
             {
                 Debug.WriteLine("[QRScanner] ERROR: CameraBarcodeReaderView type not found in any assembly!");
-                ShowEmulatorUI();
+                CameraContainer.IsVisible = false;
                 return;
             }
 
@@ -143,7 +133,7 @@ public partial class QRScannerPage : ContentPage
             if (_cameraReader == null)
             {
                 Debug.WriteLine("[QRScanner] ERROR: Failed to create camera instance!");
-                ShowEmulatorUI();
+                CameraContainer.IsVisible = false;
                 return;
             }
 
@@ -182,7 +172,6 @@ public partial class QRScannerPage : ContentPage
                 CameraContainer.IsVisible = true;
                 CameraContainer.BackgroundColor = Colors.Transparent;
 
-                EmulatorUI.IsVisible = false;
                 FlashButton.IsVisible = true;
 
                 Debug.WriteLine("[QRScanner] Camera initialized successfully!");
@@ -190,13 +179,13 @@ public partial class QRScannerPage : ContentPage
             else
             {
                 Debug.WriteLine("[QRScanner] ERROR: Camera reader is not a View!");
-                ShowEmulatorUI();
+                CameraContainer.IsVisible = false;
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[QRScanner] Failed to initialize camera: {ex}");
-            ShowEmulatorUI();
+            CameraContainer.IsVisible = false;
         }
 #endif
     }
@@ -261,7 +250,7 @@ public partial class QRScannerPage : ContentPage
                 Vibrate();
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
-                    await Shell.Current.GoToAsync($"//MapPage?poiId={poiId}");
+                    await Shell.Current.GoToAsync($"//MapPage?poiId={poiId}&fromQR=true");
                 });
             }
             else
@@ -338,15 +327,4 @@ public partial class QRScannerPage : ContentPage
 #endif
     }
 
-    private async void OnMockScan1Clicked(object sender, EventArgs e)
-    {
-        Vibrate();
-        await Shell.Current.GoToAsync("//MapPage?poiId=1"); // Ốc Xiên Quán
-    }
-
-    private async void OnMockScan2Clicked(object sender, EventArgs e)
-    {
-        Vibrate();
-        await Shell.Current.GoToAsync("//MapPage?poiId=3"); // Lẩu Bò
-    }
 }
