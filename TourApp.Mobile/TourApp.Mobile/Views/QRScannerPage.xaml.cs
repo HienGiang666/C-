@@ -94,7 +94,7 @@ public partial class QRScannerPage : ContentPage
             {
                 await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
-                    await DisplayAlert("Lỗi", "Mã QR không hợp lệ. Vui lòng thử lại.", "OK");
+                    await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("QRInvalid"), LanguageService.GetString("OK"));
                     cameraBarcodeReader.IsDetecting = true;
                 });
             }

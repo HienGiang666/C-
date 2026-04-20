@@ -87,6 +87,7 @@ namespace TourApp.Mobile
             
             builder.Services.AddTransient<Views.Auth.LoginPage>();
             builder.Services.AddTransient<Views.Auth.SignUpPage>();
+            builder.Services.AddTransient<Views.QRScannerPage>();
 
             // Initialize LanguageService for localization
             LanguageService.Initialize();
