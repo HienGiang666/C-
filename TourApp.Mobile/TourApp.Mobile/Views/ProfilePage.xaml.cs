@@ -34,7 +34,7 @@ public partial class ProfilePage : ContentPage
             var langName = _languages?.FirstOrDefault(l => l.Code == newLang)?.NativeName 
                            ?? LanguageService.GetLanguageName(newLang);
             LanguageLabel.Text = langName;
-            
+
             // Notify user about language change
             System.Diagnostics.Debug.WriteLine($"[ProfilePage] UI updated to language: {newLang}");
         });
@@ -170,31 +170,6 @@ public partial class ProfilePage : ContentPage
         {
             ApiService.BaseUrl = result.Trim();
             await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("ServerIPUpdated"), LanguageService.GetString("OK"));
-        }
-    }
-
-    private async void OnAppLockSettingsTapped(object sender, EventArgs e)
-    {
-        bool hasPin = Preferences.Default.ContainsKey("app_lock_pin");
-        if (hasPin)
-        {
-            var action = await DisplayActionSheet("Cài đặt khóa ứng dụng", "Đóng", null, "Đổi mã PIN", "Tắt khóa ứng dụng");
-            if (action == "Đổi mã PIN")
-            {
-                await Navigation.PushModalAsync(new AppLockPage(1));
-            }
-            else if (action == "Tắt khóa ứng dụng")
-            {
-                await Navigation.PushModalAsync(new AppLockPage(3));
-            }
-        }
-        else
-        {
-            bool confirm = await DisplayAlert("Khóa ứng dụng", "Bạn muốn cài đặt mã PIN để bảo vệ ứng dụng?", "Cài đặt", "Hủy");
-            if (confirm)
-            {
-                await Navigation.PushModalAsync(new AppLockPage(1));
-            }
         }
     }
 

@@ -70,27 +70,11 @@ namespace TourApp.Mobile
 
             {
 
-                if (Preferences.Default.ContainsKey("app_lock_pin"))
+                startPage = new AppShell();
 
-                {
+                // Bắt đầu session tracking ngay vì đã đăng nhập
 
-                    startPage = new Views.AppLockPage(0);
-
-                    // StartSession sẽ được gọi sau khi unlock
-
-                }
-
-                else
-
-                {
-
-                    startPage = new AppShell();
-
-                    // Bắt đầu session tracking ngay vì đã đăng nhập
-
-                    UserSessionService.StartSession(AuthService.CurrentUser!.Id, AuthService.CurrentUser!.FullName ?? AuthService.CurrentUser!.Username);
-
-                }
+                UserSessionService.StartSession(AuthService.CurrentUser!.Id, AuthService.CurrentUser!.FullName ?? AuthService.CurrentUser!.Username);
 
             }
 

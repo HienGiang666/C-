@@ -223,7 +223,16 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 Gợi ý Lộ trình", ["SeeMore"] = "Xem thêm >", ["TopPlaces"] = "Top Nổi Bật",
                 ["SearchFood"] = "Tìm quán ăn...", ["DiscoverTours"] = "Khám Phá Tour", ["SearchTour"] = "Tìm tour...", ["StartTour"] = "Bắt đầu Tour",
                 ["SearchMap"] = "Tìm quán ăn, điểm tham quan...", ["Search"] = "Tìm", ["ListenAudio"] = "🔊 Nghe", ["Directions"] = "🗺️ Đường đi", ["Close"] = "❌ Đóng",
-                ["TourDetailTitle"] = "Chi tiết Tour", ["Introduction"] = "Giới thiệu", ["Destinations"] = "Các điểm đến", ["DownloadOfflineAudio"] = "⬇️ Tải Audio Offline", ["ViewMap"] = "Xem Bản Đồ", ["BookTour"] = "Đặt Tour"
+                ["TourDetailTitle"] = "Chi tiết Tour", ["Introduction"] = "Giới thiệu", ["Destinations"] = "Các điểm đến", ["DownloadOfflineAudio"] = "⬇️ Tải Audio Offline", ["ViewMap"] = "Xem Bản Đồ", ["BookTour"] = "Đặt Tour",
+                // ChangePasswordPage keys
+                ["CurrentPassword"] = "Mật khẩu hiện tại", ["CurrentPasswordPlaceholder"] = "Nhập mật khẩu hiện tại",
+                ["NewPassword"] = "Mật khẩu mới", ["NewPasswordPlaceholder"] = "Nhập mật khẩu mới (tối thiểu 6 ký tự)",
+                ["ConfirmNewPassword"] = "Xác nhận mật khẩu mới", ["ConfirmPasswordPlaceholder"] = "Nhập lại mật khẩu mới",
+                ["ChangePasswordButton"] = "Đổi mật khẩu",
+                // UserBookingsPage keys
+                ["NoBookings"] = "Bạn chưa đặt tour nào.",
+                ["TourDate"] = "Ngày đi: ", ["Participants"] = "Số người: ", ["TotalPrice"] = "Tổng tiền: ",
+                ["Status"] = "Trạng thái: ", ["BookingDate"] = "Đặt ngày"
             };
             
             var enDict = new Dictionary<string, string>
@@ -241,7 +250,16 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 Suggested Tours", ["SeeMore"] = "See more >", ["TopPlaces"] = "Top Rated",
                 ["SearchFood"] = "Search food...", ["DiscoverTours"] = "Discover Tours", ["SearchTour"] = "Search tours...", ["StartTour"] = "Start Tour",
                 ["SearchMap"] = "Search places, tours...", ["Search"] = "Search", ["ListenAudio"] = "🔊 Listen", ["Directions"] = "🗺️ Directions", ["Close"] = "❌ Close",
-                ["TourDetailTitle"] = "Tour Details", ["Introduction"] = "Introduction", ["Destinations"] = "Destinations", ["DownloadOfflineAudio"] = "⬇️ Download Offline Audio", ["ViewMap"] = "View Map", ["BookTour"] = "Book Tour"
+                ["TourDetailTitle"] = "Tour Details", ["Introduction"] = "Introduction", ["Destinations"] = "Destinations", ["DownloadOfflineAudio"] = "⬇️ Download Offline Audio", ["ViewMap"] = "View Map", ["BookTour"] = "Book Tour",
+                // ChangePasswordPage keys
+                ["CurrentPassword"] = "Current Password", ["CurrentPasswordPlaceholder"] = "Enter current password",
+                ["NewPassword"] = "New Password", ["NewPasswordPlaceholder"] = "Enter new password (min 6 chars)",
+                ["ConfirmNewPassword"] = "Confirm New Password", ["ConfirmPasswordPlaceholder"] = "Re-enter new password",
+                ["ChangePasswordButton"] = "Change Password",
+                // UserBookingsPage keys
+                ["NoBookings"] = "You haven't booked any tours yet.",
+                ["TourDate"] = "Tour Date: ", ["Participants"] = "Participants: ", ["TotalPrice"] = "Total: ",
+                ["Status"] = "Status: ", ["BookingDate"] = "Booked on"
             };
 
             var zhDict = new Dictionary<string, string>(enDict)
@@ -259,7 +277,16 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 推荐路线", ["SeeMore"] = "查看更多 >", ["TopPlaces"] = "热门推荐",
                 ["SearchFood"] = "搜索餐厅...", ["DiscoverTours"] = "探索旅游", ["SearchTour"] = "搜索旅游...", ["StartTour"] = "开始旅游",
                 ["SearchMap"] = "搜索餐厅、景点...", ["Search"] = "搜索", ["ListenAudio"] = "🔊 收听", ["Directions"] = "🗺️ 导航", ["Close"] = "❌ 关闭",
-                ["TourDetailTitle"] = "旅游详情", ["Introduction"] = "简介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ 下载离线音频", ["ViewMap"] = "查看地图", ["BookTour"] = "预订旅游"
+                ["TourDetailTitle"] = "旅游详情", ["Introduction"] = "简介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ 下载离线音频", ["ViewMap"] = "查看地图", ["BookTour"] = "预订旅游",
+                // ChangePasswordPage keys
+                ["CurrentPassword"] = "当前密码", ["CurrentPasswordPlaceholder"] = "请输入当前密码",
+                ["NewPassword"] = "新密码", ["NewPasswordPlaceholder"] = "请输入新密码（至少6个字符）",
+                ["ConfirmNewPassword"] = "确认新密码", ["ConfirmPasswordPlaceholder"] = "请再次输入新密码",
+                ["ChangePasswordButton"] = "修改密码",
+                // UserBookingsPage keys
+                ["NoBookings"] = "您还没有预订任何旅游。",
+                ["TourDate"] = "出发日期：", ["Participants"] = "人数：", ["TotalPrice"] = "总价：",
+                ["Status"] = "状态：", ["BookingDate"] = "预订日期"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
@@ -277,7 +304,16 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 おすすめルート", ["SeeMore"] = "もっと見る >", ["TopPlaces"] = "人気スポット",
                 ["SearchFood"] = "レストラン検索...", ["DiscoverTours"] = "ツアーを探す", ["SearchTour"] = "ツアー検索...", ["StartTour"] = "ツアー開始",
                 ["SearchMap"] = "レストラン、観光地を検索...", ["Search"] = "検索", ["ListenAudio"] = "🔊 再生", ["Directions"] = "🗺️ 経路", ["Close"] = "❌ 閉じる",
-                ["TourDetailTitle"] = "ツアー詳細", ["Introduction"] = "紹介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ オフライン音声DL", ["ViewMap"] = "地図を見る", ["BookTour"] = "ツアー予約"
+                ["TourDetailTitle"] = "ツアー詳細", ["Introduction"] = "紹介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ オフライン音声DL", ["ViewMap"] = "地図を見る", ["BookTour"] = "ツアー予約",
+                // ChangePasswordPage keys
+                ["CurrentPassword"] = "現在のパスワード", ["CurrentPasswordPlaceholder"] = "現在のパスワードを入力",
+                ["NewPassword"] = "新しいパスワード", ["NewPasswordPlaceholder"] = "新しいパスワードを入力（6文字以上）",
+                ["ConfirmNewPassword"] = "新しいパスワードの確認", ["ConfirmPasswordPlaceholder"] = "新しいパスワードを再入力",
+                ["ChangePasswordButton"] = "パスワード変更",
+                // UserBookingsPage keys
+                ["NoBookings"] = "まだツアーを予約していません。",
+                ["TourDate"] = "ツアー日：", ["Participants"] = "参加人数：", ["TotalPrice"] = "合計：",
+                ["Status"] = "ステータス：", ["BookingDate"] = "予約日"
             };
 
             _resources["vi"] = fallbackDict;
