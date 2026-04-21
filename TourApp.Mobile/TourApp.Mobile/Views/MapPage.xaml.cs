@@ -7,6 +7,7 @@ namespace TourApp.Mobile.Views;
 
 [QueryProperty(nameof(PoiIdQuery), "poiId")]
 [QueryProperty(nameof(TourIdQuery), "tourId")]
+[QueryProperty(nameof(FromQRQuery), "fromQR")]
 public partial class MapPage : ContentPage
 {
     private readonly LocationService _locationService;
@@ -22,6 +23,7 @@ public partial class MapPage : ContentPage
     private string? _pendingMapPoisJson;
     private int? _pendingPoiId = null;
     private int? _pendingTourId = null;
+    private bool _triggerFromQR = false;
 
     // Query properties for navigation
     public string PoiIdQuery
@@ -45,6 +47,15 @@ public partial class MapPage : ContentPage
                 _pendingTourId = id;
                 System.Diagnostics.Debug.WriteLine($"[MapPage] Received tourId from query: {id}");
             }
+        }
+    }
+
+    public string FromQRQuery
+    {
+        set
+        {
+            _triggerFromQR = value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Received fromQR: {_triggerFromQR}");
         }
     }
 
@@ -83,6 +94,11 @@ public partial class MapPage : ContentPage
                 if (_isJsMapReady)
                     MapWebView.Eval($"highlightPoi({poiId});");
             };
+
+#if ANDROID
+            // Enable foreground service for better background tracking on Android
+            _locationService.SetUseForegroundService(true);
+#endif
         }
         catch (Exception ex)
         {
@@ -120,8 +136,8 @@ public partial class MapPage : ContentPage
                     System.Diagnostics.Debug.WriteLine($"[MapPage] POI load faulted: {t.Exception}");
             }, TaskContinuationOptions.OnlyOnFaulted);
 
-            // Bắt đầu tracking GPS
-            await _locationService.StartTracking();
+            // Bắt đầu tracking GPS với background support
+            await _locationService.StartTrackingWithForegroundAsync();
 
             // Xử lý pending POI ID nếu có (khi navigate từ tab khác)
             if (_pendingPoiId.HasValue && _isJsMapReady && _pois != null)
@@ -183,7 +199,8 @@ public partial class MapPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        _locationService.StopTracking();
+        // Dừng GPS tracking (với foreground service trên Android)
+        _locationService.StopTrackingWithForeground();
         // Dừng audio thuyết minh khi rời khỏi trang
         AudioPlayerService.Instance.Stop();
         // Dừng TTS (Text-to-Speech) nếu đang phát
@@ -211,6 +228,14 @@ public partial class MapPage : ContentPage
                     {
                         MapWebView.Eval($"map.flyTo({{center: [{poi.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {poi.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
                         MapWebView.Eval($"highlightPoi({poi.Id});");
+                    }
+
+                    // Nếu đến từ QR scan, tự động phát audio
+                    if (_triggerFromQR)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MapPage] Auto-playing audio for QR-scanned POI: {poi.Name}");
+                        _ = _geofenceService.TriggerFromQRAsync(poi);
+                        _triggerFromQR = false; // Reset flag sau khi xử lý
                     }
                 });
             }
@@ -543,6 +568,7 @@ public partial class MapPage : ContentPage
     {
         base.OnNavigatedTo(args);
         AudioPlayerService.Instance.PropertyChanged += OnAudioPlayerPropertyChanged;
+        AudioPlayerService.Instance.QueueChanged += OnAudioQueueChanged;
         UpdateAudioPlayerUI();
     }
 
@@ -550,6 +576,12 @@ public partial class MapPage : ContentPage
     {
         base.OnNavigatingFrom(args);
         AudioPlayerService.Instance.PropertyChanged -= OnAudioPlayerPropertyChanged;
+        AudioPlayerService.Instance.QueueChanged -= OnAudioQueueChanged;
+    }
+
+    private void OnAudioQueueChanged(object? sender, EventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateAudioPlayerUI);
     }
 
     private void OnAudioPlayerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -560,11 +592,22 @@ public partial class MapPage : ContentPage
     private void UpdateAudioPlayerUI()
     {
         var svc = AudioPlayerService.Instance;
-        if (svc.IsPlaying || !string.IsNullOrEmpty(svc.CurrentAudioTitle))
+        if (svc.IsPlaying || !string.IsNullOrEmpty(svc.CurrentAudioTitle) || svc.HasItemsInQueue)
         {
             FloatingAudioPlayer.IsVisible = true;
             AudioTitleLabel.Text = svc.CurrentAudioTitle;
             AudioPlayPauseBtn.Text = svc.IsPlaying ? "⏸" : "▶";
+            
+            // Update queue count
+            if (svc.QueueCount > 0)
+            {
+                AudioQueueCountLabel.Text = $"+{svc.QueueCount} trong hàng đợi";
+                AudioQueueCountLabel.IsVisible = true;
+            }
+            else
+            {
+                AudioQueueCountLabel.IsVisible = false;
+            }
         }
         else
         {
@@ -579,7 +622,12 @@ public partial class MapPage : ContentPage
 
     private void OnStopAudioClicked(object? sender, EventArgs e)
     {
-        AudioPlayerService.Instance.Stop();
+        AudioPlayerService.Instance.StopAndClear();
+    }
+
+    private void OnSkipAudioClicked(object? sender, EventArgs e)
+    {
+        AudioPlayerService.Instance.SkipCurrent();
     }
 
     private async void OnSearchClicked(object? sender, EventArgs e)

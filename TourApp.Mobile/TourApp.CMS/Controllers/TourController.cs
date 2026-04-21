@@ -159,7 +159,6 @@ public class TourController : Controller
                 RestaurantCount = stopIds.Count,
                 StopPoiIds = stopIds
             };
-            ViewBag.PoisJson = JsonSerializer.Serialize(await FetchPoisForSessionAsync());
             return View(vm);
         }
         catch
@@ -176,8 +175,16 @@ public class TourController : Controller
         SanitizeTourNumbers(vm.Tour);
         NormalizeStops(vm);
 
+        // Log debug
+        System.Diagnostics.Debug.WriteLine($"[Edit] coverImage: {coverImage?.FileName}, Length: {coverImage?.Length}");
+        
         if (!ModelState.IsValid)
+        {
+            var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            TempData["error"] = "Validation failed: " + errors;
+            System.Diagnostics.Debug.WriteLine($"[Edit] ModelState invalid: {errors}");
             return View(vm);
+        }
 
         try
         {

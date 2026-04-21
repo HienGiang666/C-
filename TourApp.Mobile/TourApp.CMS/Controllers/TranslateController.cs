@@ -17,8 +17,20 @@ public class TranslateController : ControllerBase
 {
     private static readonly HttpClient _http = new()
     {
-        Timeout = TimeSpan.FromSeconds(10)
+        Timeout = TimeSpan.FromSeconds(15)
     };
+
+    static TranslateController()
+    {
+        // Suppress all unobserved task exceptions from this controller
+        TaskScheduler.UnobservedTaskException += (sender, e) =>
+        {
+            if (e.Exception?.InnerException is HttpRequestException)
+            {
+                e.SetObserved();
+            }
+        };
+    }
 
     [HttpGet]
     public async Task<IActionResult> Translate(
@@ -82,7 +94,7 @@ public class TranslateController : ControllerBase
         var libreUrls = new[]
         {
             "https://libretranslate.de/translate",
-            "https://translate.argosopentech.com/translate"
+            "https://libretranslate.com/translate"
         };
 
         foreach (var url in libreUrls)
@@ -101,7 +113,8 @@ public class TranslateController : ControllerBase
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 Console.WriteLine($"[LibreTranslate] Trying {url}...");
-                using var response = await _http.PostAsync(url, content);
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+                using var response = await _http.PostAsync(url, content, cts.Token);
 
                 var raw = await response.Content.ReadAsStringAsync();
                 var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
@@ -143,9 +156,17 @@ public class TranslateController : ControllerBase
 
                 Console.WriteLine($"[LibreTranslate] {url} JSON parsed but no translatedText");
             }
+            catch (HttpRequestException ex) when (ex.InnerException is System.Net.Sockets.SocketException)
+            {
+                Console.WriteLine($"[LibreTranslate] {url} Network error (DNS/Connection): {ex.Message}");
+            }
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine($"[LibreTranslate] {url} Timeout");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"[LibreTranslate] {url} Exception: {ex.Message}");
+                Console.WriteLine($"[LibreTranslate] {url} Exception: {ex.GetType().Name}: {ex.Message}");
             }
         }
 
@@ -159,11 +180,22 @@ public class TranslateController : ControllerBase
             var url =
                 $"https://translate.googleapis.com/translate_a/single?client=gtx&sl={Uri.EscapeDataString(source)}&tl={Uri.EscapeDataString(target)}&dt=t&q={Uri.EscapeDataString(text)}";
 
-            return await _http.GetStringAsync(url);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            return await _http.GetStringAsync(url, cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("[Google Translate] Timeout");
+            return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"[Google Translate] Network error: {ex.Message}");
+            return null;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Google Translate] Failed: {ex.Message}");
+            Console.WriteLine($"[Google Translate] Failed: {ex.GetType().Name}: {ex.Message}");
             return null;
         }
     }

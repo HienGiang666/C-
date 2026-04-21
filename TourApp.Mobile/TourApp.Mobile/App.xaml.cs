@@ -262,7 +262,7 @@ namespace TourApp.Mobile
 
                 {
 
-                    await Shell.Current.GoToAsync($"//poi/{poiId}");
+                    await Shell.Current.GoToAsync($"//MapPage?poiId={poiId}&fromQR=true");
 
                     System.Diagnostics.Debug.WriteLine($"[DeepLink] Navigated to POI {poiId}");
 

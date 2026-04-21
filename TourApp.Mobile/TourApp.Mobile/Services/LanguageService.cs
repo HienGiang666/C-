@@ -214,7 +214,7 @@ namespace TourApp.Mobile.Services
                 ["EmailRequired"] = "Vui lòng nhập email", ["ResetCodeRequired"] = "Vui lòng nhập mã reset", ["NewPasswordRequired"] = "Vui lòng nhập mật khẩu mới",
                 ["UsernamePlaceholder"] = "Vui lòng nhập tài khoản", ["PasswordPlaceholder"] = "Vui lòng nhập mật khẩu",
                 ["PasswordTooShort"] = "Mật khẩu phải có ít nhất 6 ký tự", ["PasswordMismatch"] = "Mật khẩu xác nhận không khớp", ["ServerError"] = "Lỗi kết nối",
-                ["SendCode"] = "Gửi mã", ["ResetPasswordButton"] = "Đặt lại mật khẩu", ["ResetCodeDemo"] = "Mã reset (demo):", ["DemoCode"] = "Mã demo",
+                ["SendCode"] = "Gửi mã", ["ResetPasswordButton"] = "Đặt lại mật khẩu",
                 ["Login"] = "Đăng nhập", ["LoginButton"] = "Đăng nhập", ["SignUp"] = "Đăng ký", ["RegisterButton"] = "Đăng ký", ["ForgotPassword"] = "Quên mật khẩu?", ["GuestLogin"] = "Đăng nhập khách", ["Email"] = "Email", ["Password"] = "Mật khẩu",
                 ["Home"] = "Trang chủ", ["Tours"] = "Tour", ["Map"] = "Bản đồ", ["Profile"] = "Hồ sơ",
                 ["TabHome"] = "Trang chủ", ["TabFood"] = "Quán ăn", ["TabMap"] = "Bản đồ", ["TabTour"] = "Tour", ["TabProfile"] = "Tôi",
@@ -236,8 +236,7 @@ namespace TourApp.Mobile.Services
                 // QR Scanner keys
                 ["QRScannerTitle"] = "Quét mã QR", ["ScanQRInstruction"] = "Đưa mã QR vào khung để quét",
                 ["QRHelpText"] = "Mã QR thường được dán tại các điểm tham quan",
-                ["QRInvalid"] = "Mã QR không hợp lệ. Vui lòng thử lại.",
-                ["MockScan1"] = "Giả lập: Quét Ốc Xiên Quán", ["MockScan2"] = "Giả lập: Quét Lẩu Bò"
+                ["QRInvalid"] = "Mã QR không hợp lệ. Vui lòng thử lại."
             };
             
             var enDict = new Dictionary<string, string>
@@ -246,7 +245,7 @@ namespace TourApp.Mobile.Services
                 ["EmailRequired"] = "Please enter email", ["ResetCodeRequired"] = "Please enter reset code", ["NewPasswordRequired"] = "Please enter new password",
                 ["UsernamePlaceholder"] = "Please enter username", ["PasswordPlaceholder"] = "Please enter password",
                 ["PasswordTooShort"] = "Password must be at least 6 characters", ["PasswordMismatch"] = "Passwords do not match", ["ServerError"] = "Connection Error",
-                ["SendCode"] = "Send Code", ["ResetPasswordButton"] = "Reset Password", ["ResetCodeDemo"] = "Reset Code (demo):", ["DemoCode"] = "Demo Code",
+                ["SendCode"] = "Send Code", ["ResetPasswordButton"] = "Reset Password",
                 ["Login"] = "Login", ["LoginButton"] = "Login", ["SignUp"] = "Sign Up", ["RegisterButton"] = "Sign Up", ["ForgotPassword"] = "Forgot Password?", ["GuestLogin"] = "Guest Login", ["Email"] = "Email", ["Password"] = "Password",
                 ["Home"] = "Home", ["Tours"] = "Tours", ["Map"] = "Map", ["Profile"] = "Profile",
                 ["TabHome"] = "Home", ["TabFood"] = "Food", ["TabMap"] = "Map", ["TabTour"] = "Tour", ["TabProfile"] = "Me",
@@ -268,8 +267,7 @@ namespace TourApp.Mobile.Services
                 // QR Scanner keys
                 ["QRScannerTitle"] = "Scan QR Code", ["ScanQRInstruction"] = "Point QR code at the frame to scan",
                 ["QRHelpText"] = "QR codes are usually placed at tourist attractions",
-                ["QRInvalid"] = "Invalid QR code. Please try again.",
-                ["MockScan1"] = "Mock: Scan Ốc Xiên Quán", ["MockScan2"] = "Mock: Scan Lẩu Bò"
+                ["QRInvalid"] = "Invalid QR code. Please try again."
             };
 
             var zhDict = new Dictionary<string, string>(enDict)
@@ -278,7 +276,7 @@ namespace TourApp.Mobile.Services
                 ["EmailRequired"] = "请输入邮箱", ["ResetCodeRequired"] = "请输入重置码", ["NewPasswordRequired"] = "请输入新密码",
                 ["UsernamePlaceholder"] = "请输入用户名", ["PasswordPlaceholder"] = "请输入密码",
                 ["PasswordTooShort"] = "密码至少6个字符", ["PasswordMismatch"] = "确认密码不匹配", ["ServerError"] = "连接错误",
-                ["SendCode"] = "发送验证码", ["ResetPasswordButton"] = "重置密码", ["ResetCodeDemo"] = "重置码(演示):", ["DemoCode"] = "演示码",
+                ["SendCode"] = "发送验证码", ["ResetPasswordButton"] = "重置密码",
                 ["Login"] = "登录", ["LoginButton"] = "登录", ["SignUp"] = "注册", ["RegisterButton"] = "注册", ["ForgotPassword"] = "忘记密码?", ["GuestLogin"] = "游客登录", ["Email"] = "邮箱", ["Password"] = "密码",
                 ["Home"] = "首页", ["Tours"] = "旅游", ["Map"] = "地图", ["Profile"] = "个人",
                 ["TabHome"] = "首页", ["TabFood"] = "美食", ["TabMap"] = "地图", ["TabTour"] = "旅游", ["TabProfile"] = "我的",
@@ -300,8 +298,7 @@ namespace TourApp.Mobile.Services
                 // QR Scanner keys
                 ["QRScannerTitle"] = "扫描二维码", ["ScanQRInstruction"] = "将二维码对准框内进行扫描",
                 ["QRHelpText"] = "二维码通常贴在旅游景点",
-                ["QRInvalid"] = "二维码无效。请重试。",
-                ["MockScan1"] = "模拟：扫描 Ốc Xiên Quán", ["MockScan2"] = "模拟：扫描 Lẩu Bò"
+                ["QRInvalid"] = "二维码无效。请重试。"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
@@ -310,7 +307,7 @@ namespace TourApp.Mobile.Services
                 ["EmailRequired"] = "メールアドレスを入力してください", ["ResetCodeRequired"] = "リセットコードを入力してください", ["NewPasswordRequired"] = "新しいパスワードを入力してください",
                 ["UsernamePlaceholder"] = "ユーザー名を入力してください", ["PasswordPlaceholder"] = "パスワードを入力してください",
                 ["PasswordTooShort"] = "パスワードは6文字以上", ["PasswordMismatch"] = "確認パスワードが一致しません", ["ServerError"] = "接続エラー",
-                ["SendCode"] = "コード送信", ["ResetPasswordButton"] = "パスワードリセット", ["ResetCodeDemo"] = "リセットコード(デモ):", ["DemoCode"] = "デモコード",
+                ["SendCode"] = "コード送信", ["ResetPasswordButton"] = "パスワードリセット",
                 ["Login"] = "ログイン", ["LoginButton"] = "ログイン", ["SignUp"] = "サインアップ", ["RegisterButton"] = "サインアップ", ["ForgotPassword"] = "パスワードを忘れた?", ["GuestLogin"] = "ゲストログイン", ["Email"] = "メール", ["Password"] = "パスワード",
                 ["Home"] = "ホーム", ["Tours"] = "ツアー", ["Map"] = "マップ", ["Profile"] = "プロフィール",
                 ["TabHome"] = "ホーム", ["TabFood"] = "グルメ", ["TabMap"] = "マップ", ["TabTour"] = "ツアー", ["TabProfile"] = "マイ",
@@ -332,8 +329,7 @@ namespace TourApp.Mobile.Services
                 // QR Scanner keys
                 ["QRScannerTitle"] = "QRコードをスキャン", ["ScanQRInstruction"] = "QRコードをフレーム内に合わせてスキャン",
                 ["QRHelpText"] = "QRコードは通常、観光地に設置されています",
-                ["QRInvalid"] = "無効なQRコードです。もう一度お試しください。",
-                ["MockScan1"] = "模擬：Ốc Xiên Quánをスキャン", ["MockScan2"] = "模擬：Lẩu Bòをスキャン"
+                ["QRInvalid"] = "無効なQRコードです。もう一度お試しください。"
             };
 
             _resources["vi"] = fallbackDict;
