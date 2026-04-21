@@ -131,6 +131,84 @@ public class HomeController : Controller
         return View();
     }
 
+    public async Task<IActionResult> ThongKe()
+    {
+        ViewData["Title"] = "Thống kê";
+
+        var narrationStats = new NarrationStatsViewModel();
+        var userLocationStats = new UserLocationStatsViewModel();
+        var durationStats = new DurationStatsViewModel();
+
+        try
+        {
+            var client = _clientFactory.CreateClient("TourApi");
+            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            // Analytics data
+            var narrationStatsTask = client.GetAsync("api/narrationlog/stats");
+            var userLocationStatsTask = client.GetAsync("api/userlocation/stats");
+            var durationStatsTask = client.GetAsync("api/narrationlog/duration-stats");
+
+            await Task.WhenAll(narrationStatsTask, userLocationStatsTask, durationStatsTask);
+
+            if (narrationStatsTask.Result.IsSuccessStatusCode)
+            {
+                var stats = await narrationStatsTask.Result.Content.ReadFromJsonAsync<NarrationStatsResponse>(options);
+                if (stats != null)
+                {
+                    narrationStats.TotalPlays = stats.total;
+                    narrationStats.TopPOIs = stats.topPoi?.Select(p => new TopPOIViewModel 
+                    { 
+                        PoiId = p.poiId, 
+                        PoiName = p.poiName, 
+                        Count = p.count 
+                    }).ToList() ?? new List<TopPOIViewModel>();
+                }
+            }
+
+            if (userLocationStatsTask.Result.IsSuccessStatusCode)
+            {
+                var stats = await userLocationStatsTask.Result.Content.ReadFromJsonAsync<UserLocationStatsResponse>(options);
+                if (stats != null)
+                {
+                    userLocationStats.OnlineNow = stats.onlineNow;
+                    userLocationStats.Active24h = stats.active24h;
+                    userLocationStats.OnlineLocations = stats.onlineLocations?.Select(l => new OnlineLocationViewModel
+                    {
+                        DeviceId = l.deviceId,
+                        Latitude = l.latitude,
+                        Longitude = l.longitude,
+                        Timestamp = l.timestamp,
+                        SessionId = l.sessionId
+                    }).ToList() ?? new List<OnlineLocationViewModel>();
+                }
+            }
+
+            if (durationStatsTask.Result.IsSuccessStatusCode)
+            {
+                var stats = await durationStatsTask.Result.Content.ReadFromJsonAsync<DurationStatsResponse>(options);
+                if (stats != null)
+                {
+                    durationStats.GlobalAverageFormatted = stats.globalAverageFormatted;
+                    durationStats.POIDurations = stats.poiDurations?.Select(p => new POIDurationViewModel
+                    {
+                        PoiId = p.poiId,
+                        PoiName = p.poiName,
+                        AvgDurationFormatted = p.avgDurationFormatted,
+                        TotalListens = p.totalListens
+                    }).ToList() ?? new List<POIDurationViewModel>();
+                }
+            }
+        }
+        catch { }
+
+        ViewBag.NarrationStats = narrationStats;
+        ViewBag.UserLocationStats = userLocationStats;
+        ViewBag.DurationStats = durationStats;
+
+        return View();
+    }
+
     public IActionResult Privacy()
     {
         ViewData["Title"] = "Chính sách bảo mật";
