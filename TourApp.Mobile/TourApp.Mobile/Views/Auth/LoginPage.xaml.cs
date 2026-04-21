@@ -46,10 +46,22 @@ public partial class LoginPage : ContentPage
 
             if (result.Success && result.User != null)
             {
-                // Navigate to main app
-                MainThread.BeginInvokeOnMainThread(() => {
-                    AppNavigation.SetRootPage(new AppShell());
-                });
+                // Kiểm tra nếu có booking đang dang dở
+                if (PendingBookingService.HasPendingBooking())
+                {
+                    var pending = PendingBookingService.PendingBooking!;
+                    MainThread.BeginInvokeOnMainThread(() => {
+                        // Navigate về BookingPage với TourId đã lưu
+                        Shell.Current.GoToAsync($"booking?tourId={pending.TourId}");
+                    });
+                }
+                else
+                {
+                    // Navigate to main app bình thường
+                    MainThread.BeginInvokeOnMainThread(() => {
+                        AppNavigation.SetRootPage(new AppShell());
+                    });
+                }
             }
             else
             {

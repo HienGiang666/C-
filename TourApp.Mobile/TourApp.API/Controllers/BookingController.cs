@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourApp.API.Data;
@@ -30,9 +31,27 @@ public class BookingController : ControllerBase
         return booking;
     }
 
+    /// <summary>
+    /// POST /api/booking
+    /// Chỉ khách hàng đã đăng nhập mới được đặt tour
+    /// </summary>
     [HttpPost]
+    [Authorize] // Yêu cầu đăng nhập
     public async Task<ActionResult<Booking>> CreateBooking(Booking booking)
     {
+        // Lấy UserId từ token đăng nhập
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int authUserId))
+        {
+            return Unauthorized(new { message = "Vui lòng đăng nhập để đặt tour" });
+        }
+        
+        // Đảm bảo UserId trong booking khớp với user đang đăng nhập
+        if (booking.UserId != authUserId)
+        {
+            return Forbid(); // Không được đặt hộ người khác
+        }
+        
         // Auto-generate Code nếu chưa có
         if (string.IsNullOrEmpty(booking.Code))
         {
@@ -46,8 +65,13 @@ public class BookingController : ControllerBase
                 .Max() + 1;
             booking.Code = $"BK-{nextNum}";
         }
+        
+        booking.BookingDate = DateTime.Now;
+        booking.Status = "Pending"; // Mặc định chờ xác nhận
+        
         _context.Bookings.Add(booking);
         await _context.SaveChangesAsync();
+        
         return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
     }
 

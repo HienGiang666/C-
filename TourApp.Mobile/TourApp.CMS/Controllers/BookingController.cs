@@ -97,31 +97,8 @@ public class BookingController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    public IActionResult Create()
-    {
-        ViewData["Title"] = "Tạo Booking mới";
-        return View();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Create(Booking booking)
-    {
-        try
-        {
-            var client = _clientFactory.CreateClient("TourApi");
-            var response = await client.PostAsJsonAsync("api/booking", booking);
-
-            if (response.IsSuccessStatusCode)
-            {
-                _activityLogger.LogActivity(HttpContext, "Create", "Booking", null, $"Tour:{booking.TourId} User:{booking.UserId}");
-                TempData["success"] = "Tạo booking thành công!";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-        catch { }
-        TempData["error"] = "Lỗi khi tạo booking!";
-        return View(booking);
-    }
+    // Note: Chỉ khách hàng mới được đặt tour (qua Mobile App)
+    // Admin chỉ được quyền xem, chỉnh sửa status và hủy booking
 
     [HttpPost]
     public async Task<IActionResult> UpdateStatus(int id, string status)
