@@ -54,7 +54,20 @@ namespace TourApp.Mobile
                 startPage = new NavigationPage(new Views.Auth.LoginPage());
             }
 
-            return new Window(startPage);
+            var window = new Window(startPage);
+            window.Destroying += async (_, __) =>
+            {
+                try
+                {
+                    await UserSessionService.StopSessionAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[App] Window.Destroying error: {ex.Message}");
+                }
+            };
+
+            return window;
         }
 
 

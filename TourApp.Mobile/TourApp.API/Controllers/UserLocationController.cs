@@ -7,6 +7,19 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace TourApp.API.Controllers;
 
+public class UserSessionRequest
+{
+    public int? UserId { get; set; }
+    public string? GuestId { get; set; }
+    public bool IsOnline { get; set; }
+    public string? Name { get; set; }
+    public string? DeviceInfo { get; set; }
+    public string? Platform { get; set; }
+    public string? Version { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+}
+
 [Route("api/[controller]")]
 [ApiController]
 public class UserLocationController : ControllerBase
@@ -53,6 +66,54 @@ public class UserLocationController : ControllerBase
     }
 
     /// <summary>
+    /// Mobile app gọi khi mở app / heartbeat để giữ trạng thái online
+    /// </summary>
+    [HttpPost("session")]
+    public async Task<ActionResult<UserLocationLog>> UpdateSession([FromBody] UserSessionRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest("Request body is required.");
+        }
+
+        var deviceId = !string.IsNullOrWhiteSpace(request.GuestId)
+            ? request.GuestId
+            : request.UserId?.ToString();
+
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            return BadRequest("UserId or GuestId is required.");
+        }
+
+        var log = new UserLocationLog
+        {
+            DeviceId = deviceId,
+            SessionId = request.GuestId ?? request.UserId?.ToString(),
+            Latitude = request.Latitude ?? 0,
+            Longitude = request.Longitude ?? 0,
+            Timestamp = DateTime.Now,
+            IsActive = request.IsOnline
+        };
+
+        _context.UserLocationLogs.Add(log);
+        await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.All.SendAsync(request.IsOnline ? "UserOnline" : "UserOffline", new
+        {
+            log.DeviceId,
+            log.SessionId,
+            log.Timestamp,
+            log.IsActive,
+            request.Name,
+            request.DeviceInfo,
+            request.Platform,
+            request.Version
+        });
+
+        return Ok(log);
+    }
+
+    /// <summary>
     /// GET /api/userlocation/stats
     /// Trả về thống kê người dùng đang online (theo Timestamp gần nhất trong 1 phút)
     /// và tổng số device unique trong 24h qua
@@ -74,9 +135,11 @@ public class UserLocationController : ControllerBase
             .Select(g => g.First()) // Log mới nhất của mỗi device
             .ToList();
         
-        // Online = log mới nhất trong vòng 1 phút
+        // Online = log mới nhất trong vòng 1 phút, trạng thái active, và có tọa độ hợp lệ
         var onlineDevices = latestByDevice
-            .Where(l => l.Timestamp >= oneMinuteAgo)
+            .Where(l => l.Timestamp >= oneMinuteAgo
+                        && l.IsActive
+                        && !(l.Latitude == 0 && l.Longitude == 0))
             .ToList();
         
         var onlineNow = onlineDevices.Count;

@@ -326,6 +326,7 @@ public partial class MapPage : ContentPage
         if (location == null) return;
         
         _lastLocation = location;
+        UserSessionService.UpdateLocation(location.Latitude, location.Longitude);
 
         bool shouldCheckGeofence = true;
         if (_lastCheckedLocation != null)
@@ -372,6 +373,7 @@ public partial class MapPage : ContentPage
             }
         });
     }
+
 
     private void OnPoiTriggered(object? sender, POI poi)
     {
