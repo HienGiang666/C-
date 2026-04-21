@@ -24,6 +24,33 @@ public partial class BookingPage : ContentPage
         }
     }
 
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        RestorePendingBookingIfExists();
+    }
+
+    private void RestorePendingBookingIfExists()
+    {
+        // Khôi phục state từ pending booking sau khi login
+        if (PendingBookingService.HasPendingBooking() && 
+            PendingBookingService.PendingBooking?.TourId == _tourId)
+        {
+            var pending = PendingBookingService.PendingBooking!;
+            
+            _participants = pending.Participants;
+            
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                ParticipantsLabel.Text = _participants.ToString();
+                TourDatePicker.Date = pending.TourDate;
+                if (!string.IsNullOrEmpty(pending.Notes))
+                    NotesEditor.Text = pending.Notes;
+                UpdateTotalPrice();
+            });
+        }
+    }
+
     public BookingPage()
     {
         InitializeComponent();
@@ -88,12 +115,38 @@ public partial class BookingPage : ContentPage
 
     private async void OnConfirmBookingClicked(object sender, EventArgs e)
     {
+        // Check nếu đang ở chế độ khách (chưa đăng nhập)
         if (!AuthService.IsLoggedIn || AuthService.CurrentUser == null)
         {
-            await DisplayAlert("Lỗi", "Vui lòng đăng nhập để đặt tour", "OK");
+            // Lưu thông tin booking đang dang dở để sau khi login sẽ tiếp tục
+            PendingBookingService.Save(
+                _tourId,
+                _participants,
+                TourDatePicker.Date,
+                NotesEditor.Text,
+                _tourPrice * _participants
+            );
+
+            var result = await DisplayAlert(
+                "Yêu cầu đăng nhập",
+                "Bạn cần đăng nhập để đặt tour. Đăng nhập ngay?",
+                "Đăng nhập",
+                "Hủy"
+            );
+
+            if (result)
+            {
+                // Chuyển về trang login
+                await Shell.Current.Navigation.PushAsync(new Auth.LoginPage());
+            }
             return;
         }
 
+        await SubmitBookingAsync();
+    }
+
+    private async Task SubmitBookingAsync()
+    {
         if (_currentTour == null) return;
 
         ConfirmBookingButton.IsEnabled = false;
@@ -102,7 +155,7 @@ public partial class BookingPage : ContentPage
         var booking = new Booking
         {
             TourId = _currentTour.Id,
-            UserId = AuthService.CurrentUser.Id,
+            UserId = AuthService.CurrentUser!.Id,
             NumberOfParticipants = _participants,
             TourDate = TourDatePicker.Date,
             BookingDate = DateTime.Now,
@@ -115,6 +168,8 @@ public partial class BookingPage : ContentPage
 
         if (result.Success)
         {
+            // Xóa pending booking nếu có
+            PendingBookingService.Clear();
             await DisplayAlert("Thành công", "Cảm ơn bạn đã đặt tour. Vui lòng đợi quản trị viên xác nhận!", "OK");
             await Shell.Current.Navigation.PopToRootAsync();
         }
