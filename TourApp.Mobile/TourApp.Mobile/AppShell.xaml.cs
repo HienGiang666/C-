@@ -41,9 +41,17 @@ namespace TourApp.Mobile
             }
         }
         
-        ~AppShell()
+        protected override void OnDisappearing()
         {
-            LanguageService.LanguageChanged -= OnLanguageChanged;
+            base.OnDisappearing();
+            try
+            {
+                LanguageService.LanguageChanged -= OnLanguageChanged;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AppShell] OnDisappearing error: {ex.Message}");
+            }
         }
     }
 }

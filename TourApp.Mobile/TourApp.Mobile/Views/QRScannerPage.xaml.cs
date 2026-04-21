@@ -15,7 +15,6 @@ public partial class QRScannerPage : ContentPage
     private bool _isFlashOn = false;
     private bool _isProcessing = false;
     private object? _cameraReader = null;
-    private bool _hasPermission = false;
 
     private bool SupportsCameraScan => DeviceInfo.Platform != DevicePlatform.WinUI;
 
@@ -57,7 +56,6 @@ public partial class QRScannerPage : ContentPage
 
         if (ContextCompat.CheckSelfPermission(activity, cameraPermission) == Permission.Granted)
         {
-            _hasPermission = true;
             await MainThread.InvokeOnMainThreadAsync(() => InitializeCamera());
         }
         else
@@ -68,7 +66,6 @@ public partial class QRScannerPage : ContentPage
             await Task.Delay(500);
             if (ContextCompat.CheckSelfPermission(activity, cameraPermission) == Permission.Granted)
             {
-                _hasPermission = true;
                 await MainThread.InvokeOnMainThreadAsync(() => InitializeCamera());
             }
             else
@@ -78,7 +75,6 @@ public partial class QRScannerPage : ContentPage
             }
         }
 #else
-        _hasPermission = true;
         InitializeCamera();
 #endif
     }
@@ -86,7 +82,19 @@ public partial class QRScannerPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        StopCamera();
+        try
+        {
+            // Stop animation
+            this.AbortAnimation("ScanLineAnimation");
+            
+            // Stop camera
+            StopCamera();
+            _isProcessing = false;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QRScanner] OnDisappearing error: {ex.Message}");
+        }
     }
 
     private void InitializeCamera()
@@ -199,23 +207,72 @@ public partial class QRScannerPage : ContentPage
             {
                 var cameraType = _cameraReader.GetType();
                 cameraType.GetProperty("IsDetecting")?.SetValue(_cameraReader, false);
+                
+                // Unsubscribe from events
+                var eventInfo = cameraType.GetEvent("BarcodesDetected");
+                if (eventInfo != null)
+                {
+                    var handlerMethod = this.GetType().GetMethod("OnBarcodesDetectedInternal");
+                    if (handlerMethod != null)
+                    {
+                        try
+                        {
+                            var handler = Delegate.CreateDelegate(eventInfo.EventHandlerType!, this, handlerMethod);
+                            eventInfo.RemoveEventHandler(_cameraReader, handler);
+                        }
+                        catch { }
+                    }
+                }
+                
+                // Dispose if possible
+                if (_cameraReader is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+                
                 _cameraReader = null;
             }
+            
+            // Clear camera container
+            if (CameraContainer != null)
+            {
+                CameraContainer.Children.Clear();
+                CameraContainer.IsVisible = false;
+            }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QRScanner] StopCamera error: {ex.Message}");
+        }
 #endif
     }
 
     private void StartScanLineAnimation()
     {
-        var animation = new Animation(v => ScanLine.TranslationY = v, 0, 200);
-        animation.Commit(this, "ScanLineAnimation", 16, 2000, Easing.Linear, (v, c) =>
+        try
         {
-            if (!c)
+            // Check if page is still active
+            if (Navigation?.NavigationStack?.LastOrDefault() != this)
+                return;
+                
+            var animation = new Animation(v => 
             {
-                MainThread.BeginInvokeOnMainThread(() => StartScanLineAnimation());
-            }
-        }, () => true);
+                if (ScanLine != null)
+                    ScanLine.TranslationY = v;
+            }, 0, 200);
+            
+            animation.Commit(this, "ScanLineAnimation", 16, 2000, Easing.Linear, (v, c) =>
+            {
+                if (!c && ScanLine != null)
+                {
+                    MainThread.BeginInvokeOnMainThread(() => StartScanLineAnimation());
+                }
+            }, () => false); // Don't repeat automatically - use callback
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QRScanner] Animation error: {ex.Message}");
+        }
     }
 
 #if ANDROID || IOS

@@ -122,6 +122,8 @@ namespace TourApp.Mobile.Services
         /// </summary>
         public async Task SpeakNarrationAsync(POI poi, string? overrideLang = null)
         {
+            if (poi == null) return;
+
             try
             {
                 // Dừng TTS (Text-to-Speech) nếu đang phát
@@ -130,20 +132,36 @@ namespace TourApp.Mobile.Services
                 var token = _ttsCts.Token;
 
                 var lang = overrideLang ?? CurrentLanguage;
-                
+
                 // 1. Try to fetch MP3 Audio from API
-                var audio = await _apiService.GetAudioByPoiAsync(poi.Id, lang);
+                Audio? audio = null;
+                try
+                {
+                    audio = await _apiService.GetAudioByPoiAsync(poi.Id, lang);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GeofenceService] Failed to get audio: {ex.Message}");
+                }
+
                 if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
                 {
-                    var audioUrl = audio.AudioPath.StartsWith("http") 
-                        ? audio.AudioPath 
+                    var audioUrl = audio.AudioPath.StartsWith("http")
+                        ? audio.AudioPath
                         : ApiService.BaseUrl + audio.AudioPath;
-                        
-                    await AudioPlayerService.Instance.PlayFromUrlAsync(audioUrl, poi.Name ?? "Audio");
-                    
-                    // Log metrics
-                    _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "geofence");
-                    return; // Successfully played real audio
+
+                    try
+                    {
+                        await AudioPlayerService.Instance.PlayFromUrlAsync(audioUrl, poi.Name ?? "Audio");
+                        // Log metrics
+                        _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "geofence");
+                        return; // Successfully played real audio
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GeofenceService] Failed to play audio: {ex.Message}");
+                        // Continue to TTS fallback
+                    }
                 }
 
                 // 2. Fallback to TTS if no MP3 found
@@ -151,21 +169,32 @@ namespace TourApp.Mobile.Services
                 if (string.IsNullOrWhiteSpace(script)) return;
 
                 var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
-                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script.Substring(0, Math.Min(50, script.Length))}...");
+                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script[..Math.Min(50, script.Length)]}...");
 
-                var locales = await TextToSpeech.Default.GetLocalesAsync();
-                var matchedLocale = locales.FirstOrDefault(l =>
-                    l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
-
-                var options = new SpeechOptions
+                try
                 {
-                    Pitch = 1.0f,
-                    Volume = 1.0f,
-                    Locale = matchedLocale 
-                };
+                    var locales = await TextToSpeech.Default.GetLocalesAsync();
+                    var matchedLocale = locales?.FirstOrDefault(l =>
+                        l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
 
-                await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
-                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence_tts");
+                    var options = new SpeechOptions
+                    {
+                        Pitch = 1.0f,
+                        Volume = 1.0f,
+                        Locale = matchedLocale
+                    };
+
+                    await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
+                    _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence_tts");
+                }
+                catch (FeatureNotSupportedException)
+                {
+                    System.Diagnostics.Debug.WriteLine("[TTS] Not supported on this device");
+                }
+                catch (PermissionException)
+                {
+                    System.Diagnostics.Debug.WriteLine("[TTS] Permission denied");
+                }
             }
             catch (OperationCanceledException)
             {

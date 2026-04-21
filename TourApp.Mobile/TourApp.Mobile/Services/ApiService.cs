@@ -395,32 +395,94 @@ namespace TourApp.Mobile.Services
         private static async Task<T> TryFetch<T>(
             string path,
             Func<string, T> parse,
-            Func<T> fallback)
+            Func<T> fallback,
+            int maxRetries = 2) where T : notnull
         {
-            try
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                var response = await GetClient().GetAsync(path, cts.Token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
+                try
                 {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5 + attempt * 2)); // Increase timeout per retry
+                    var response = await GetClient().GetAsync(path, cts.Token).ConfigureAwait(false);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                        return parse(body);
+                    }
+                    
+                    // Retry on 5xx errors or 429 (too many requests)
+                    if ((int)response.StatusCode >= 500 || (int)response.StatusCode == 429)
+                    {
+                        if (attempt < maxRetries - 1)
+                        {
+                            var delay = TimeSpan.FromMilliseconds(100 * Math.Pow(2, attempt)); // Exponential backoff: 100ms, 200ms
+                            Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}, retrying in {delay.TotalMilliseconds}ms...");
+                            await Task.Delay(delay);
+                            continue;
+                        }
+                    }
+                    
                     Debug.WriteLine($"[ApiService] {path}: HTTP {(int)response.StatusCode}");
                     return fallback();
                 }
+                catch (OperationCanceledException)
+                {
+                    if (attempt < maxRetries - 1)
+                    {
+                        Debug.WriteLine($"[ApiService] {path}: timeout, retrying...");
+                        continue;
+                    }
+                    Debug.WriteLine($"[ApiService] {path}: timeout after {maxRetries} attempts");
+                    return fallback();
+                }
+                catch (HttpRequestException ex) when (attempt < maxRetries - 1)
+                {
+                    var delay = TimeSpan.FromMilliseconds(100 * Math.Pow(2, attempt));
+                    Debug.WriteLine($"[ApiService] {path}: network error (attempt {attempt + 1}), retrying in {delay.TotalMilliseconds}ms... Error: {ex.Message}");
+                    await Task.Delay(delay);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
+                    return fallback();
+                }
+            }
+            
+            return fallback();
+        }
 
-                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
-                return parse(body);
-            }
-            catch (OperationCanceledException)
+        /// <summary>
+        /// Execute a function with retry logic using exponential backoff
+        /// </summary>
+        public static async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, int maxRetries = 3) where T : notnull
+        {
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                Debug.WriteLine($"[ApiService] {path}: timeout");
-                return fallback();
+                try
+                {
+                    return await operation();
+                }
+                catch (Exception ex) when (attempt < maxRetries - 1 && IsRetryableException(ex))
+                {
+                    var delay = TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt)); // 200ms, 400ms, 800ms
+                    Debug.WriteLine($"[ApiService] Operation failed (attempt {attempt + 1}), retrying in {delay.TotalMilliseconds}ms...");
+                    await Task.Delay(delay);
+                }
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[ApiService] {path}: {ex.Message}");
-                return fallback();
-            }
+            
+            // Last attempt - let it throw if it fails
+            return await operation();
+        }
+
+        private static bool IsRetryableException(Exception ex)
+        {
+            return ex is HttpRequestException || 
+                   ex is OperationCanceledException ||
+                   ex is TimeoutException ||
+                   (ex is System.Net.Sockets.SocketException socketEx && 
+                    (socketEx.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut ||
+                     socketEx.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionRefused));
         }
 
         [DebuggerNonUserCode]
@@ -441,18 +503,31 @@ namespace TourApp.Mobile.Services
                 (_, cert, _, errors) =>
                     cert?.Issuer == "CN=localhost" ||
                     errors == System.Net.Security.SslPolicyErrors.None;
+            // Enable automatic decompression and connection pooling
+            h.AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate;
             handler = h;
 #else
-            handler = new HttpClientHandler
+            var socketHandler = new SocketsHttpHandler
             {
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+                ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5), // Refresh connections every 5 minutes for DNS changes
+                MaxConnectionsPerServer = 10,
+                EnableMultipleHttp2Connections = true,
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             };
+            handler = socketHandler;
 #endif
-            return new HttpClient(handler)
+            var client = new HttpClient(handler)
             {
                 BaseAddress = new Uri(baseUrl),
-                Timeout = TimeSpan.FromSeconds(8) // Oppo A31 dễ treo nếu timeout vô hạn
+                Timeout = TimeSpan.FromSeconds(15) // Increased timeout for slower networks
             };
+            
+            // Add default headers
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+            
+            return client;
         }
         // ===== LANGUAGE / TRANSLATION SYNC =====
 

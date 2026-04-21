@@ -40,16 +40,31 @@ public partial class TourPage : ContentPage
         _ = LoadToursAsync();
     }
     
-    ~TourPage()
+    protected override void OnDisappearing()
     {
-        LanguageService.LanguageChanged -= OnLanguageChanged;
+        base.OnDisappearing();
+        try
+        {
+            LanguageService.LanguageChanged -= OnLanguageChanged;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TourPage] OnDisappearing error: {ex.Message}");
+        }
     }
     
     private void OnLanguageChanged(object? sender, string newLang)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            UpdateLocalizedText();
+            try
+            {
+                UpdateLocalizedText();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TourPage] OnLanguageChanged error: {ex.Message}");
+            }
         });
     }
     

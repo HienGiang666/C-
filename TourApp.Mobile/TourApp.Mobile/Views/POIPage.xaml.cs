@@ -38,16 +38,31 @@ public partial class POIPage : ContentPage
         _ = LoadPoisAsync();
     }
     
-    ~POIPage()
+    protected override void OnDisappearing()
     {
-        LanguageService.LanguageChanged -= OnLanguageChanged;
+        base.OnDisappearing();
+        try
+        {
+            LanguageService.LanguageChanged -= OnLanguageChanged;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[POIPage] OnDisappearing error: {ex.Message}");
+        }
     }
     
     private void OnLanguageChanged(object? sender, string newLang)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            UpdateLocalizedText();
+            try
+            {
+                UpdateLocalizedText();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[POIPage] OnLanguageChanged error: {ex.Message}");
+            }
         });
     }
     
@@ -96,41 +111,57 @@ public partial class POIPage : ContentPage
     
     private async void OnSearchCompleted(object sender, EventArgs e)
     {
-        if (sender is Entry searchEntry)
+        if (sender is not Entry searchEntry) return;
+        
+        var query = searchEntry.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(query))
         {
-            var query = searchEntry.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(query))
+            // Reset to show all
+            if (_allPois != null)
             {
-                // Reset to show all
-                if (_allPois != null)
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    MainThread.BeginInvokeOnMainThread(() =>
+                    try
                     {
                         POIs.Clear();
                         foreach (var poi in _allPois.Where(p => p.IsActive))
                         {
                             POIs.Add(poi);
                         }
-                    });
-                }
-                return;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[POIPage] Search reset error: {ex.Message}");
+                    }
+                });
             }
-            
+            return;
+        }
+        
+        try
+        {
             // Filter POIs
             var filtered = _allPois?.Where(p => 
-                p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                p.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                p.Address.Contains(query, StringComparison.OrdinalIgnoreCase))
+                p.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                p.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) == true ||
+                p.Address?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
                 .ToList();
                 
             if (filtered?.Any() == true)
             {
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    POIs.Clear();
-                    foreach (var poi in filtered)
+                    try
                     {
-                        POIs.Add(poi);
+                        POIs.Clear();
+                        foreach (var poi in filtered)
+                        {
+                            POIs.Add(poi);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[POIPage] Search filter error: {ex.Message}");
                     }
                 });
             }
@@ -140,6 +171,10 @@ public partial class POIPage : ContentPage
                     LanguageService.GetString("NoResults", query), 
                     LanguageService.GetString("OK"));
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[POIPage] Search error: {ex.Message}");
         }
     }
     

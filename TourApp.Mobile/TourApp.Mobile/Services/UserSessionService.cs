@@ -11,7 +11,6 @@ namespace TourApp.Mobile.Services
         private static CancellationTokenSource? _heartbeatCts;
         private static int? _currentUserId;
         private static string? _currentGuestId;
-        private static bool _isRunning;
 
         /// <summary>
         /// Bắt đầu session tracking cho user đăng nhập hoặc khách
@@ -25,7 +24,6 @@ namespace TourApp.Mobile.Services
             {
                 _currentUserId = userId;
                 _currentGuestId = guestId;
-                _isRunning = true;
 
                 // Dừng heartbeat cũ nếu có
                 _heartbeatCts?.Cancel();
@@ -52,11 +50,8 @@ namespace TourApp.Mobile.Services
         {
             try
             {
-                _isRunning = false;
                 _heartbeatCts?.Cancel();
-
                 await SendSessionAsync(false, null);
-
                 Debug.WriteLine("[UserSessionService] Session stopped");
             }
             catch (Exception ex)
@@ -67,15 +62,13 @@ namespace TourApp.Mobile.Services
 
         private static async Task RunHeartbeatAsync(string name, CancellationToken ct)
         {
-            while (!ct.IsCancellationRequested && _isRunning)
+            while (!ct.IsCancellationRequested)
             {
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(30), ct);
-                    if (!ct.IsCancellationRequested && _isRunning)
-                    {
+                    if (!ct.IsCancellationRequested)
                         await SendSessionAsync(true, name);
-                    }
                 }
                 catch (OperationCanceledException)
                 {
