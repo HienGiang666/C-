@@ -206,7 +206,7 @@ public class HomeController : Controller
         ViewBag.UserLocationStats = userLocationStats;
         ViewBag.DurationStats = durationStats;
 
-        return View();
+        return View("Statistics");
     }
 
     public IActionResult Privacy()
