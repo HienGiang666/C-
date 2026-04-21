@@ -111,6 +111,7 @@ public partial class HomePage : ContentPage
             
             // Load POIs
             _allPois = await _apiService.GetAllPOIsAsync();
+            System.Diagnostics.Debug.WriteLine($"[HomePage] Loaded {_allPois?.Count ?? 0} POIs");
             if (_allPois?.Any() == true)
             {
                 MainThread.BeginInvokeOnMainThread(() =>
@@ -118,6 +119,7 @@ public partial class HomePage : ContentPage
                     MockPois.Clear();
                     foreach (var poi in _allPois.Take(10))
                     {
+                        System.Diagnostics.Debug.WriteLine($"[HomePage] POI {poi.Id}: {poi.Name}, ImageUrl={poi.ImageUrl ?? "null"}");
                         MockPois.Add(new MockItem 
                         { 
                             Name = poi.Name ?? "Unknown", 

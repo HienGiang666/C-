@@ -275,22 +275,50 @@ public partial class QRScannerPage : ContentPage
 
     private static int ParsePoiIdFromQr(string qrText)
     {
-        // Format: tourapp://poi/3
-        if (qrText.StartsWith("tourapp://poi/", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(qrText)) return -1;
+
+        var qrValue = qrText.Trim();
+
+        // Nếu có pipe | (fallback URL), lấy phần đầu tiên
+        var pipeIndex = qrValue.IndexOf('|');
+        if (pipeIndex > 0)
+            qrValue = qrValue.Substring(0, pipeIndex).Trim();
+
+        // Format: tourapp://poi/3 hoặc tourapp://poi/3?lat=...&lng=...
+        if (qrValue.StartsWith("tourapp://poi/", StringComparison.OrdinalIgnoreCase))
         {
-            var idStr = qrText.Replace("tourapp://poi/", "", StringComparison.OrdinalIgnoreCase).Trim();
+            var afterPrefix = qrValue.Substring("tourapp://poi/".Length).Trim();
+            // Lấy phần trước dấu ? nếu có query params
+            var queryIndex = afterPrefix.IndexOf('?');
+            var idStr = queryIndex > 0 ? afterPrefix.Substring(0, queryIndex) : afterPrefix;
             if (int.TryParse(idStr, out int id)) return id;
         }
 
         // Format: chỉ số: "3"
-        if (int.TryParse(qrText.Trim(), out int directId)) return directId;
+        if (int.TryParse(qrValue, out int directId)) return directId;
 
         // Format: URL có ?id=3
         try
         {
-            var uri = new Uri(qrText);
+            var uri = new Uri(qrValue);
             var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
             if (int.TryParse(q["id"], out int qId)) return qId;
+        }
+        catch { }
+
+        // Format: https://tourapp.vn/poi/3
+        try
+        {
+            if (qrValue.Contains("/poi/"))
+            {
+                var poiIndex = qrValue.IndexOf("/poi/", StringComparison.OrdinalIgnoreCase);
+                var afterPoi = qrValue.Substring(poiIndex + "/poi/".Length).Trim();
+                var slashIndex = afterPoi.IndexOf('/');
+                var queryIdx = afterPoi.IndexOf('?');
+                var endIdx = slashIndex > 0 ? slashIndex : (queryIdx > 0 ? queryIdx : afterPoi.Length);
+                var idPart = afterPoi.Substring(0, endIdx).Trim();
+                if (int.TryParse(idPart, out int webId)) return webId;
+            }
         }
         catch { }
 

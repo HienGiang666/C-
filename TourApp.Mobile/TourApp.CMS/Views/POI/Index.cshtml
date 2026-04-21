@@ -177,15 +177,26 @@
         
         // Gọi API lấy QR
         fetch(`/POI/GenerateQR/${poiId}`)
-            .then(response => response.json())
+            .then(async response => {
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 currentQrData = data.qrCode;
                 document.getElementById('qrCodeContainer').innerHTML = 
                     `<img src="${data.qrCode}" alt="QR Code" class="img-fluid" style="max-width: 250px;">`;
             })
             .catch(error => {
+                console.error('[QR] Error:', error);
                 document.getElementById('qrCodeContainer').innerHTML = 
-                    '<div class="text-danger">Lỗi tạo QR code</div>';
+                    `<div class="text-danger">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <div>Lỗi tạo QR code</div>
+                        <small class="text-muted">${error.message}</small>
+                    </div>`;
             });
     }
 

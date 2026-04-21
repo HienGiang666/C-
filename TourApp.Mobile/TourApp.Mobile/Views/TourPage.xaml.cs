@@ -72,7 +72,8 @@ public partial class TourPage : ContentPage
         {
             await ApiService.AutoDiscoverApiAsync();
             _allTours = await _apiService.GetAllToursAsync();
-            
+            System.Diagnostics.Debug.WriteLine($"[TourPage] Loaded {_allTours?.Count ?? 0} tours");
+
             if (_allTours?.Any() == true)
             {
                 MainThread.BeginInvokeOnMainThread(() =>
@@ -80,6 +81,7 @@ public partial class TourPage : ContentPage
                     Tours.Clear();
                     foreach (var tour in _allTours.Where(t => t.IsActive))
                     {
+                        System.Diagnostics.Debug.WriteLine($"[TourPage] Tour {tour.Id}: {tour.Name}, ImageUrl={tour.ImageUrl ?? "null"}");
                         Tours.Add(tour);
                     }
                 });

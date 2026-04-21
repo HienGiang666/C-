@@ -362,7 +362,7 @@ public class POIController : Controller
     {
         var client = _clientFactory.CreateClient("TourApi");
         var response = await client.GetAsync($"api/POI/{id}");
-        
+
         if (!response.IsSuccessStatusCode)
             return NotFound(new { error = "POI not found" });
 
@@ -370,28 +370,22 @@ public class POIController : Controller
         if (poi == null)
             return NotFound(new { error = "POI not found" });
 
-        // Tạo deep link cho app: tourapp://poi/{id}?action=openAndPlay
-        // Hoặc nếu app chưa cài, redirect tới store
-        var qrContent = $"tourapp://poi/{id}?lat={poi.Latitude}&lng={poi.Longitude}&action=openAndPlay";
-        
-        // Thêm web fallback URL
-        var webFallback = $"https://tourapp.vn/poi/{id}";
-        var fullContent = $"{qrContent}|{webFallback}";
+        // Format đơn giản: tourapp://poi/{id} - dễ quét, ít lỗi
+        var qrContent = $"tourapp://poi/{id}";
 
-        // Tạo QR code
+        // Tạo QR code với ECCLevel M (medium) thay vì Q để QR nhỏ hơn
         using var qrGenerator = new QRCodeGenerator();
-        using var qrData = qrGenerator.CreateQrCode(fullContent, QRCodeGenerator.ECCLevel.Q);
+        using var qrData = qrGenerator.CreateQrCode(qrContent, QRCodeGenerator.ECCLevel.M);
         using var qrCode = new PngByteQRCode(qrData);
-        var qrBytes = qrCode.GetGraphic(20);
-        
+        var qrBytes = qrCode.GetGraphic(10);
+
         var base64Image = Convert.ToBase64String(qrBytes);
-        
-        return Ok(new { 
+
+        return Ok(new {
             qrCode = $"data:image/png;base64,{base64Image}",
             poiId = id,
             poiName = poi.Name,
-            deepLink = qrContent,
-            webFallback = webFallback
+            deepLink = qrContent
         });
     }
 }
