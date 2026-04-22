@@ -138,11 +138,11 @@ public class UserLocationController : ControllerBase
             .Select(g => g.First()) // Log mới nhất của mỗi device
             .ToList();
         
-        // Online = log mới nhất trong vòng 1 phút, trạng thái active, và có tọa độ hợp lệ
+        // Online = log mới nhất trong vòng 1 phút và trạng thái active
+        // (Không yêu cầu tọa độ - user có thể online mà chưa có GPS)
         var onlineDevices = latestByDevice
             .Where(l => l.Timestamp >= oneMinuteAgo
-                        && l.IsActive
-                        && !(l.Latitude == 0 && l.Longitude == 0))
+                        && l.IsActive)
             .ToList();
         
         var onlineNow = onlineDevices.Count;

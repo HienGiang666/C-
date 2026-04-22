@@ -32,6 +32,11 @@ namespace TourApp.Mobile.Services
 
         public event EventHandler<POI>? PoiTriggered;
         public event EventHandler<int>? HighlightRequested;
+        /// <summary>
+        /// Fired when TTS locale is not found or may not work properly.
+        /// Parameter: requested language code (e.g., "vi")
+        /// </summary>
+        public event EventHandler<string>? TtsLocaleNotFound;
 
         // Map language code → TTS locale
         private static readonly Dictionary<string, string> LangToLocale = new()
@@ -165,23 +170,53 @@ namespace TourApp.Mobile.Services
                 }
 
                 // 2. Fallback to TTS if no MP3 found
-                var script = poi.GetScript(lang);
-                if (string.IsNullOrWhiteSpace(script)) return;
+                var rawScript = poi.GetScript(lang);
+                if (string.IsNullOrWhiteSpace(rawScript)) return;
+
+                // Strip HTML tags and normalize whitespace
+                var script = System.Text.RegularExpressions.Regex.Replace(rawScript, "<[^>]+>", "")
+                    .Replace("&nbsp;", " ")
+                    .Replace("&amp;", "&")
+                    .Replace("&lt;", "<")
+                    .Replace("&gt;", ">")
+                    .Trim();
+                script = System.Text.RegularExpressions.Regex.Replace(script, "\\s+", " ");
 
                 var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
-                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script[..Math.Min(50, script.Length)]}...");
+                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script='{script[..Math.Min(50, script.Length)]}...'");
 
                 try
                 {
                     var locales = await TextToSpeech.Default.GetLocalesAsync();
-                    var matchedLocale = locales?.FirstOrDefault(l =>
-                        l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
+                    var localeList = locales?.ToList() ?? new();
+
+                    // Try multiple matching strategies
+                    var matchedLocale = localeList.FirstOrDefault(l =>
+                        l.Language.Equals(lang, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Name.Equals(localeName, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Name.StartsWith(localeName, StringComparison.OrdinalIgnoreCase));
+
+                    // Log available locales for debugging
+                    if (matchedLocale == null)
+                    {
+                        var availableLangs = string.Join(", ", localeList.Select(l => $"{l.Language}({l.Name})").Take(10));
+                        System.Diagnostics.Debug.WriteLine($"[TTS] WARNING: No locale matched for '{lang}'/'{localeName}'");
+                        System.Diagnostics.Debug.WriteLine($"[TTS] Available: {availableLangs}... (total: {localeList.Count})");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TTS] Matched locale: {matchedLocale.Name} ({matchedLocale.Language})");
+                    }
 
                     var options = new SpeechOptions
                     {
                         Pitch = 1.0f,
                         Volume = 1.0f,
-                        Locale = matchedLocale
+                        Locale = matchedLocale // null is OK - will use device default
                     };
 
                     await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);

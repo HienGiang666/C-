@@ -2,6 +2,7 @@ using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
 using System.Text.Json;
 using Microsoft.Maui.Media;
+using Microsoft.Maui.Devices.Sensors;
 
 namespace TourApp.Mobile.Views;
 
@@ -515,8 +516,24 @@ public partial class MapPage : ContentPage
         var origin = _locationService.MockLocation ?? _lastLocation;
         if (origin == null)
         {
-            await DisplayAlert("GPS", "Chưa xác định được vị trí của bạn.", "OK");
-            return;
+            // Thử lấy vị trí hiện tại một lần nữa
+            await DisplayAlert("GPS", "Đang xác định vị trí của bạn...", "OK");
+            try
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                origin = await Geolocation.Default.GetLocationAsync(request);
+                if (origin != null)
+                {
+                    _lastLocation = origin;
+                }
+            }
+            catch { }
+            
+            if (origin == null)
+            {
+                await DisplayAlert("GPS", "Vui lòng bật GPS và đảm bảo đang ở ngoài trời hoặc khu vực có thu sóng GPS tốt.", "OK");
+                return;
+            }
         }
 
         BottomSheetView.IsVisible = false;

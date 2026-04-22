@@ -60,7 +60,16 @@
                                     <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
                                 </Border.Shadow>
                                 <Grid RowDefinitions="120,Auto">
-                                    <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill"/>
+                                    <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill">
+                                        <Image.Triggers>
+                                            <DataTrigger TargetType="Image" Binding="{Binding ImageUrl}" Value="">
+                                                <Setter Property="Source" Value="dotnet_bot.png" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Image" Binding="{Binding ImageUrl}" Value="{x:Null}">
+                                                <Setter Property="Source" Value="dotnet_bot.png" />
+                                            </DataTrigger>
+                                        </Image.Triggers>
+                                    </Image>
                                     <VerticalStackLayout Grid.Row="1" Padding="15">
                                         <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14" TextColor="Black"/>
                                         <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>

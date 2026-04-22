@@ -22,6 +22,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 
+// Đăng ký HttpContextAccessor để lấy request info
+builder.Services.AddHttpContextAccessor();
+
 // === SIGNALR - Real-time tracking ===
 builder.Services.AddSignalR();
 
@@ -88,6 +91,33 @@ app.UseCors("AllowAll");
 
 // [DISABLED] Phone kết nối qua HTTP → nếu redirect sang HTTPS sẽ fail
 // app.UseHttpsRedirection();
+
+// Serve ảnh từ thư mục uploads của CMS project (nếu tồn tại)
+var cmsProjectPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "TourApp.CMS"));
+if (Directory.Exists(cmsProjectPath))
+{
+    var cmsUploadsPath = Path.Combine(cmsProjectPath, "wwwroot", "uploads");
+    Directory.CreateDirectory(cmsUploadsPath);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(cmsUploadsPath),
+        RequestPath = "/uploads"
+    });
+    Console.WriteLine($"[StaticFiles] Serving uploads from: {cmsUploadsPath}");
+}
+else
+{
+    // Fallback: tạo thư mục uploads trong API project nếu CMS chưa có
+    var apiUploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+    Directory.CreateDirectory(apiUploadsPath);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(apiUploadsPath),
+        RequestPath = "/uploads"
+    });
+    Console.WriteLine($"[StaticFiles] Created and serving uploads from: {apiUploadsPath}");
+}
+
 app.UseAuthorization();
 
 // === SIGNALR Hub endpoint ===

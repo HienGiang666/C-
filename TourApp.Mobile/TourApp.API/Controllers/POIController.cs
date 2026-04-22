@@ -12,11 +12,46 @@ public class POIController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly BusinessKeyService _keyService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public POIController(AppDbContext context, BusinessKeyService keyService)
+    public POIController(AppDbContext context, BusinessKeyService keyService, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _keyService = keyService;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    /// <summary>
+    /// Chuyển đổi URL localhost trong ImageUrl thành URL public
+    /// </summary>
+    private string? FixImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return imageUrl;
+        
+        // Thay thế localhost:7031 bằng địa chỉ server thực tế
+        if (imageUrl.Contains("localhost:7031"))
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request != null)
+            {
+                var baseUrl = $"{request.Scheme}://{request.Host}";
+                return imageUrl.Replace("https://localhost:7031", baseUrl)
+                               .Replace("http://localhost:7031", baseUrl);
+            }
+        }
+        return imageUrl;
+    }
+
+    /// <summary>
+    /// Áp dụng FixImageUrl cho tất cả POIs
+    /// </summary>
+    private IEnumerable<POI> FixImageUrls(IEnumerable<POI> pois)
+    {
+        foreach (var poi in pois)
+        {
+            poi.ImageUrl = FixImageUrl(poi.ImageUrl);
+        }
+        return pois;
     }
 
     [HttpGet]
@@ -27,16 +62,18 @@ public class POIController : ControllerBase
             q = q.Where(p => p.ApprovalStatus == "Approved" && p.IsActive);
         if (ownerUserId.HasValue)
             q = q.Where(p => p.OwnerUserId == ownerUserId.Value);
-        return await q.OrderBy(p => p.Code).ThenBy(p => p.Id).ToListAsync();
+        var pois = await q.OrderBy(p => p.Code).ThenBy(p => p.Id).ToListAsync();
+        return Ok(FixImageUrls(pois));
     }
 
     [HttpGet("pending")]
     public async Task<ActionResult<IEnumerable<POI>>> GetPendingPOIs()
     {
-        return await _context.POIs.Include(p => p.Audios).Include(p => p.Translations).AsSplitQuery()
+        var pois = await _context.POIs.Include(p => p.Audios).Include(p => p.Translations).AsSplitQuery()
             .Where(p => p.ApprovalStatus == "Pending")
             .OrderByDescending(p => p.Id) // Sắp xếp cái mới nhất (ID lớn nhất) lên đầu
             .ToListAsync();
+        return Ok(FixImageUrls(pois));
     }
 
     [HttpGet("{id}")]
@@ -48,6 +85,8 @@ public class POIController : ControllerBase
         {
             return NotFound("Không tìm thấy địa điểm!");
         }
+        
+        poi.ImageUrl = FixImageUrl(poi.ImageUrl);
 
         return poi;
     }

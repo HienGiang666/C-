@@ -254,6 +254,14 @@ namespace TourApp.Mobile.Services
         {
             if (_useAndroidForegroundService)
             {
+                // Must request location permissions BEFORE starting foreground service (Android 10+ requirement)
+                var status = await RequestLocationPermissionsAsync();
+                if (status != PermissionStatus.Granted)
+                {
+                    System.Diagnostics.Debug.WriteLine("[LocationService] GPS permission denied, cannot start foreground service.");
+                    return;
+                }
+
                 // Request notification permission for foreground service (Android 13+)
                 if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Tiramisu)
                 {
