@@ -26,6 +26,18 @@ namespace TourApp.Mobile
 
             // ─────────────────────────────────────────────────────────────────
             InitializeComponent();
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ApiService.AutoDiscoverApiAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[App] API auto-discovery failed: {ex.Message}");
+                }
+            });
         }
 
 
