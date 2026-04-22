@@ -12,15 +12,26 @@ namespace TourApp.Mobile.Services
     {
         public event EventHandler<Location>? LocationChanged;
         private bool _isTracking = false;
+        private readonly object _trackingLock = new();
         private CancellationTokenSource? _trackingCts;
 
         public bool IsMocking { get; set; } = false;
         public Location? MockLocation { get; set; }
-        public bool IsTracking => _isTracking;
+        public bool IsTracking 
+        { 
+            get 
+            { 
+                lock (_trackingLock) return _isTracking; 
+            } 
+        }
 
         public async Task StartTracking()
         {
-            if (_isTracking) return;
+            lock (_trackingLock)
+            {
+                if (_isTracking) return;
+                _isTracking = true;
+            }
 
             try
             {
@@ -29,10 +40,13 @@ namespace TourApp.Mobile.Services
                 if (status != PermissionStatus.Granted)
                 {
                     System.Diagnostics.Debug.WriteLine("[LocationService] GPS permission denied.");
+                    lock (_trackingLock) _isTracking = false;
                     return;
                 }
 
-                _isTracking = true;
+                // Dispose old CTS if exists
+                _trackingCts?.Cancel();
+                _trackingCts?.Dispose();
                 _trackingCts = new CancellationTokenSource();
 
                 System.Diagnostics.Debug.WriteLine("[LocationService] Starting background GPS tracking...");
@@ -41,6 +55,7 @@ namespace TourApp.Mobile.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[LocationService] StartTracking error: {ex}");
+                lock (_trackingLock) _isTracking = false;
             }
         }
 
@@ -117,9 +132,10 @@ namespace TourApp.Mobile.Services
         {
             Task.Run(async () =>
             {
-                var token = _trackingCts?.Token ?? CancellationToken.None;
+                var cts = _trackingCts; // Capture reference locally
+                var token = cts?.Token ?? CancellationToken.None;
                 
-                while (_isTracking && !token.IsCancellationRequested)
+                while (IsTracking && !token.IsCancellationRequested)
                 {
                     try
                     {
@@ -131,14 +147,16 @@ namespace TourApp.Mobile.Services
                         }
                         else
                         {
-                            // Use Best accuracy for better background tracking
+                            // Use Medium accuracy for better battery life
                             var request = new GeolocationRequest(
-                                GeolocationAccuracy.Best, 
-                                TimeSpan.FromSeconds(10)
+                                GeolocationAccuracy.Medium,
+                                TimeSpan.FromSeconds(8)
                             );
                             
-                            // Add cancellation token support
-                            location = await Geolocation.Default.GetLocationAsync(request, token).ConfigureAwait(false);
+                            // Add cancellation token support with timeout
+                            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutCts.Token);
+                            location = await Geolocation.Default.GetLocationAsync(request, linkedCts.Token).ConfigureAwait(false);
                         }
 
                         if (location != null)
@@ -168,10 +186,10 @@ namespace TourApp.Mobile.Services
                         // Không re-throw — loop tiếp tục chạy
                     }
 
-                    // 5s polling for responsive geofence detection
+                    // 8s polling for better battery life
                     try
                     {
-                        await Task.Delay(5000, token).ConfigureAwait(false);
+                        await Task.Delay(8000, token).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
@@ -191,7 +209,10 @@ namespace TourApp.Mobile.Services
         public void StopTracking()
         {
             System.Diagnostics.Debug.WriteLine("[LocationService] Stopping tracking...");
-            _isTracking = false;
+            lock (_trackingLock)
+            {
+                _isTracking = false;
+            }
             _trackingCts?.Cancel();
             _trackingCts?.Dispose();
             _trackingCts = null;

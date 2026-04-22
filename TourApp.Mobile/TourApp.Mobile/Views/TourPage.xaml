@@ -3,9 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:TourApp.Mobile.Models"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
+             xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
              x:Class="TourApp.Mobile.Views.TourPage"
              BackgroundColor="#F5F6F8"
              Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <converters:UrlToImageSourceConverter x:Key="UrlToImageConverter" />
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header Content -->
@@ -52,7 +57,7 @@
                                     <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
                                 </Border.Shadow>
                                 <VerticalStackLayout>
-                                    <Image Source="media__1775454533773.jpg" HeightRequest="150" Aspect="AspectFill"/>
+                                    <Image Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" HeightRequest="150" Aspect="AspectFill"/>
                                     <VerticalStackLayout Padding="20" Spacing="10">
                                         <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="18" TextColor="Black"/>
                                         <Label Text="{Binding Description}" FontSize="13" TextColor="#888" LineBreakMode="WordWrap" MaxLines="2"/>

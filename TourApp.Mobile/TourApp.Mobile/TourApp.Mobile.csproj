@@ -4,6 +4,7 @@
 		<DefaultItemExcludes>$(DefaultItemExcludes);TourApp.API\**;TourApp.CMS\**;TourApp.Mobile\**</DefaultItemExcludes>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<NoWarn>CA1416;CS1591;CS0618;CS8602;CS8604;CS8625</NoWarn>
 		<TargetFrameworks>net9.0-android</TargetFrameworks>
 
 		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net9.0-ios;net9.0-maccatalyst</TargetFrameworks>

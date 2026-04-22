@@ -30,13 +30,22 @@ public partial class ProfilePage : ContentPage
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            // Update language label display
-            var langName = _languages?.FirstOrDefault(l => l.Code == newLang)?.NativeName 
-                           ?? LanguageService.GetLanguageName(newLang);
-            LanguageLabel.Text = langName;
+            try
+            {
+                if (LanguageLabel == null) return;
+                
+                // Update language label display
+                var langName = _languages?.FirstOrDefault(l => l.Code == newLang)?.NativeName 
+                               ?? LanguageService.GetLanguageName(newLang);
+                LanguageLabel.Text = langName;
 
-            // Notify user about language change
-            System.Diagnostics.Debug.WriteLine($"[ProfilePage] UI updated to language: {newLang}");
+                // Notify user about language change
+                System.Diagnostics.Debug.WriteLine($"[ProfilePage] UI updated to language: {newLang}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ProfilePage] OnLanguageChanged error: {ex.Message}");
+            }
         });
     }
 

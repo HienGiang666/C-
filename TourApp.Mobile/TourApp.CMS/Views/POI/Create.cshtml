@@ -45,7 +45,9 @@
                     <p class="small text-muted mb-3">Bán kính quét mặc định <strong>20 m</strong>, độ ưu tiên <strong>1</strong> (hệ thống áp dụng tự động).</p>
                     <div class="mb-3">
                         <label class="form-label fw-medium">Ảnh đại diện <span class="text-danger">*</span></label>
-                        <input type="file" name="uploadImage" class="form-control" accept="image/*" required />
+                        <input type="file" name="uploadImage" class="form-control mb-2" accept="image/*" />
+                        <input type="url" name="imageUrl" class="form-control" placeholder="Hoặc dán URL ảnh ở đây" />
+                        <small class="text-muted">Bạn có thể tải file lên hoặc nhập link ảnh trực tiếp.</small>
                     </div>
                     <div class="mb-3">
                         <div class="form-check form-switch">

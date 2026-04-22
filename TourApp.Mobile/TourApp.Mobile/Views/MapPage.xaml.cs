@@ -323,7 +323,10 @@ public partial class MapPage : ContentPage
 
     private void OnLocationChanged(object? sender, Location location)
     {
+        if (location == null) return;
+        
         _lastLocation = location;
+        UserSessionService.UpdateLocation(location.Latitude, location.Longitude);
 
         bool shouldCheckGeofence = true;
         if (_lastCheckedLocation != null)
@@ -338,28 +341,39 @@ public partial class MapPage : ContentPage
         if (shouldCheckGeofence)
         {
             _lastCheckedLocation = location;
-            _ = Task.Run(() => _geofenceService.CheckGeofences(location));
+            if (_geofenceService != null)
+            {
+                _ = Task.Run(() => _geofenceService.CheckGeofences(location));
+            }
         }
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            if (_isJsMapReady)
+            try
             {
-                MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
-            }
+                if (_isJsMapReady && MapWebView != null)
+                {
+                    MapWebView.Eval($"updateUserLocation({location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
+                }
 
-            if (BottomSheetView.IsVisible && _currentPoi != null)
+                if (BottomSheetView?.IsVisible == true && _currentPoi != null && PoiDistanceLabel != null)
+                {
+                    var dist = Location.CalculateDistance(
+                        location.Latitude, location.Longitude,
+                        _currentPoi.Latitude, _currentPoi.Longitude,
+                        DistanceUnits.Kilometers) * 1000;
+                    PoiDistanceLabel.Text = dist < 1000
+                        ? $"• {(int)dist}m từ bạn"
+                        : $"• {dist / 1000:F1}km từ bạn";
+                }
+            }
+            catch (Exception ex)
             {
-                var dist = Location.CalculateDistance(
-                    location.Latitude, location.Longitude,
-                    _currentPoi.Latitude, _currentPoi.Longitude,
-                    DistanceUnits.Kilometers) * 1000;
-                PoiDistanceLabel.Text = dist < 1000
-                    ? $"• {(int)dist}m từ bạn"
-                    : $"• {dist / 1000:F1}km từ bạn";
+                System.Diagnostics.Debug.WriteLine($"[MapPage] OnLocationChanged UI error: {ex.Message}");
             }
         });
     }
+
 
     private void OnPoiTriggered(object? sender, POI poi)
     {
@@ -368,42 +382,77 @@ public partial class MapPage : ContentPage
 
     private void ShowPoiDetails(POI poi)
     {
+        if (poi == null) return;
+        
         _currentPoi = poi;
-        PoiNameLabel.Text = poi.Name;
-        PoiDescLabel.Text = poi.GetLocalizedDescription(LanguageService.CurrentLanguage);
-        PoiRatingLabel.Text = $"⭐ {poi.Rating:F1}";
-        PoiDistanceLabel.Text = $"• {poi.Radius}m bán kính";
-
-        if (_lastLocation != null)
+        
+        // All UI updates must be on main thread with null checks
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            var dist = Location.CalculateDistance(
-                _lastLocation.Latitude, _lastLocation.Longitude,
-                poi.Latitude, poi.Longitude,
-                DistanceUnits.Kilometers) * 1000;
-            PoiDistanceLabel.Text = dist < 1000 ? $"• {(int)dist}m từ bạn" : $"• {dist / 1000:F1}km từ bạn";
-        }
+            try
+            {
+                if (PoiNameLabel != null)
+                    PoiNameLabel.Text = poi.Name;
+                if (PoiDescLabel != null)
+                    PoiDescLabel.Text = poi.GetLocalizedDescription(LanguageService.CurrentLanguage);
+                if (PoiRatingLabel != null)
+                    PoiRatingLabel.Text = $"⭐ {poi.Rating:F1}";
+                if (PoiDistanceLabel != null)
+                    PoiDistanceLabel.Text = $"• {poi.Radius}m bán kính";
 
-        PoiImage.Source = !string.IsNullOrEmpty(poi.ImageUrl)
-            ? ImageSource.FromUri(new Uri(poi.ImageUrl))
-            : null;
+                if (_lastLocation != null && PoiDistanceLabel != null)
+                {
+                    var dist = Location.CalculateDistance(
+                        _lastLocation.Latitude, _lastLocation.Longitude,
+                        poi.Latitude, poi.Longitude,
+                        DistanceUnits.Kilometers) * 1000;
+                    PoiDistanceLabel.Text = dist < 1000 ? $"• {(int)dist}m từ bạn" : $"• {dist / 1000:F1}km từ bạn";
+                }
 
-        bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
-        FavBtn.Text = isFav ? "❤️" : "🤍";
+                if (PoiImage != null)
+                {
+                    PoiImage.Source = !string.IsNullOrEmpty(poi.ImageUrl)
+                        ? ImageSource.FromUri(new Uri(poi.ImageUrl))
+                        : null;
+                }
 
-        BottomSheetView.IsVisible = true;
+                bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
+                if (FavBtn != null)
+                    FavBtn.Text = isFav ? "❤️" : "🤍";
+
+                if (BottomSheetView != null)
+                    BottomSheetView.IsVisible = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] ShowPoiDetails error: {ex.Message}");
+            }
+        });
     }
 
     private void OnMapWebViewNavigating(object? sender, WebNavigatingEventArgs e)
     {
+        if (e == null) return;
+        
         System.Diagnostics.Debug.WriteLine($"[MapWebView Navigation] URL: {e.Url}");
 
-        if (e.Url.StartsWith("http://map/ready", StringComparison.OrdinalIgnoreCase))
+        if (e.Url?.StartsWith("http://map/ready", StringComparison.OrdinalIgnoreCase) == true)
         {
             e.Cancel = true;
             _isJsMapReady = true;
-            TryRefreshMapMarkers();
-            // Process pending POI if POIs are already loaded
-            ProcessPendingPoiId();
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                try
+                {
+                    TryRefreshMapMarkers();
+                    // Process pending POI if POIs are already loaded
+                    ProcessPendingPoiId();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Map ready error: {ex.Message}");
+                }
+            });
             return;
         }
 
@@ -557,11 +606,21 @@ public partial class MapPage : ContentPage
 
     private void OnCloseSheetClicked(object? sender, EventArgs e)
     {
-        BottomSheetView.IsVisible = false;
-        // Dừng audio thuyết minh khi đóng chi tiết quán
-        AudioPlayerService.Instance.Stop();
-        // Dừng TTS (Text-to-Speech) nếu đang phát
-        _geofenceService.CancelTTS();
+        try
+        {
+            if (BottomSheetView != null)
+                BottomSheetView.IsVisible = false;
+            
+            // Dừng audio thuyết minh khi đóng chi tiết quán
+            AudioPlayerService.Instance.Stop();
+            
+            // Dừng TTS (Text-to-Speech) nếu đang phát
+            _geofenceService?.CancelTTS();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] OnCloseSheetClicked error: {ex.Message}");
+        }
     }
 
     protected override void OnNavigatedTo(NavigatedToEventArgs args)
@@ -591,27 +650,40 @@ public partial class MapPage : ContentPage
 
     private void UpdateAudioPlayerUI()
     {
-        var svc = AudioPlayerService.Instance;
-        if (svc.IsPlaying || !string.IsNullOrEmpty(svc.CurrentAudioTitle) || svc.HasItemsInQueue)
+        try
         {
-            FloatingAudioPlayer.IsVisible = true;
-            AudioTitleLabel.Text = svc.CurrentAudioTitle;
-            AudioPlayPauseBtn.Text = svc.IsPlaying ? "⏸" : "▶";
+            var svc = AudioPlayerService.Instance;
+            if (svc == null) return;
             
-            // Update queue count
-            if (svc.QueueCount > 0)
+            if (FloatingAudioPlayer == null) return;
+            
+            if (svc.IsPlaying || !string.IsNullOrEmpty(svc.CurrentAudioTitle) || svc.HasItemsInQueue)
             {
-                AudioQueueCountLabel.Text = $"+{svc.QueueCount} trong hàng đợi";
-                AudioQueueCountLabel.IsVisible = true;
+                FloatingAudioPlayer.IsVisible = true;
+                if (AudioTitleLabel != null)
+                    AudioTitleLabel.Text = svc.CurrentAudioTitle;
+                if (AudioPlayPauseBtn != null)
+                    AudioPlayPauseBtn.Text = svc.IsPlaying ? "⏸" : "▶";
+                
+                // Update queue count
+                if (svc.QueueCount > 0 && AudioQueueCountLabel != null)
+                {
+                    AudioQueueCountLabel.Text = $"+{svc.QueueCount} trong hàng đợi";
+                    AudioQueueCountLabel.IsVisible = true;
+                }
+                else if (AudioQueueCountLabel != null)
+                {
+                    AudioQueueCountLabel.IsVisible = false;
+                }
             }
             else
             {
-                AudioQueueCountLabel.IsVisible = false;
+                FloatingAudioPlayer.IsVisible = false;
             }
         }
-        else
+        catch (Exception ex)
         {
-            FloatingAudioPlayer.IsVisible = false;
+            System.Diagnostics.Debug.WriteLine($"[MapPage] UpdateAudioPlayerUI error: {ex.Message}");
         }
     }
 
@@ -793,14 +865,26 @@ public partial class MapPage : ContentPage
 
     private void TryRefreshMapMarkers()
     {
-        if (!_isJsMapReady || string.IsNullOrWhiteSpace(_pendingMapPoisJson))
+        if (!_isJsMapReady || string.IsNullOrWhiteSpace(_pendingMapPoisJson) || MapWebView == null)
             return;
 
         var poisJson = _pendingMapPoisJson;
         _pendingMapPoisJson = null;
 
-        MainThread.BeginInvokeOnMainThread(() =>
-            MapWebView.Eval($"refreshMarkers({poisJson});"));
+        try
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (MapWebView != null && _isJsMapReady)
+                {
+                    MapWebView.Eval($"refreshMarkers({poisJson});");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] TryRefreshMapMarkers error: {ex.Message}");
+        }
     }
 
     private static string BuildMapHtml(string poisJson)

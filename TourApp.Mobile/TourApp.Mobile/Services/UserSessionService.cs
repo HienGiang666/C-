@@ -11,7 +11,8 @@ namespace TourApp.Mobile.Services
         private static CancellationTokenSource? _heartbeatCts;
         private static int? _currentUserId;
         private static string? _currentGuestId;
-        private static bool _isRunning;
+        private static double? _currentLatitude;
+        private static double? _currentLongitude;
 
         /// <summary>
         /// Bắt đầu session tracking cho user đăng nhập hoặc khách
@@ -19,13 +20,14 @@ namespace TourApp.Mobile.Services
         /// <param name="userId">ID user (null nếu là khách)</param>
         /// <param name="name">Tên hiển thị</param>
         /// <param name="guestId">ID khách (nếu là khách)</param>
-        public static void StartSession(int? userId, string name, string? guestId = null)
+        public static void StartSession(int? userId, string name, string? guestId = null, double? latitude = null, double? longitude = null)
         {
             try
             {
                 _currentUserId = userId;
                 _currentGuestId = guestId;
-                _isRunning = true;
+                _currentLatitude = latitude;
+                _currentLongitude = longitude;
 
                 // Dừng heartbeat cũ nếu có
                 _heartbeatCts?.Cancel();
@@ -52,11 +54,8 @@ namespace TourApp.Mobile.Services
         {
             try
             {
-                _isRunning = false;
                 _heartbeatCts?.Cancel();
-
                 await SendSessionAsync(false, null);
-
                 Debug.WriteLine("[UserSessionService] Session stopped");
             }
             catch (Exception ex)
@@ -65,17 +64,18 @@ namespace TourApp.Mobile.Services
             }
         }
 
+        /// <summary>
+        /// Cập nhật vị trí hiện tại mà không khởi động lại session/heartbeat
+        /// </summary>
         private static async Task RunHeartbeatAsync(string name, CancellationToken ct)
         {
-            while (!ct.IsCancellationRequested && _isRunning)
+            while (!ct.IsCancellationRequested)
             {
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(30), ct);
-                    if (!ct.IsCancellationRequested && _isRunning)
-                    {
+                    if (!ct.IsCancellationRequested)
                         await SendSessionAsync(true, name);
-                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -86,6 +86,12 @@ namespace TourApp.Mobile.Services
                     Debug.WriteLine($"[UserSessionService] Heartbeat error: {ex.Message}");
                 }
             }
+        }
+
+        public static void UpdateLocation(double latitude, double longitude)
+        {
+            _currentLatitude = latitude;
+            _currentLongitude = longitude;
         }
 
         private static async Task SendSessionAsync(bool isOnline, string? name)
@@ -107,6 +113,8 @@ namespace TourApp.Mobile.Services
                     DeviceInfo = DeviceInfo.Name,
                     Platform = DeviceInfo.Platform.ToString(),
                     Version = DeviceInfo.Version.ToString(),
+                    Latitude = _currentLatitude,
+                    Longitude = _currentLongitude,
                     Timestamp = DateTime.UtcNow
                 };
 

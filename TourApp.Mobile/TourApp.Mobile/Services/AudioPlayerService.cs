@@ -14,16 +14,32 @@ public class AudioQueueItem
     public DateTime EnqueuedAt { get; set; } = DateTime.Now;
 }
 
-public class AudioPlayerService : INotifyPropertyChanged
+public class AudioPlayerService : INotifyPropertyChanged, IDisposable
 {
     private static AudioPlayerService? _instance;
-    public static AudioPlayerService Instance => _instance ??= new AudioPlayerService();
+    private static readonly object _instanceLock = new();
+    public static AudioPlayerService Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                lock (_instanceLock)
+                {
+                    _instance ??= new AudioPlayerService();
+                }
+            }
+            return _instance;
+        }
+    }
 
     private IAudioPlayer? _player;
     private readonly IAudioManager _audioManager;
     private readonly HttpClient _httpClient;
     private readonly ConcurrentQueue<AudioQueueItem> _audioQueue = new();
     private bool _isProcessingQueue = false;
+    private readonly object _processingLock = new();
+    private CancellationTokenSource? _playbackCts;
 
     private bool _isPlaying;
     public bool IsPlaying
@@ -83,9 +99,29 @@ public class AudioPlayerService : INotifyPropertyChanged
         QueueChanged?.Invoke(this, EventArgs.Empty);
         Debug.WriteLine($"[AudioPlayerService] Enqueued: {item.Title}, Queue count: {QueueCount}");
 
-        if (!_isProcessingQueue && !IsPlaying)
+        bool shouldStartProcessing = false;
+        lock (_processingLock)
         {
-            _ = ProcessQueueAsync();
+            if (!_isProcessingQueue && !IsPlaying)
+            {
+                _isProcessingQueue = true;
+                shouldStartProcessing = true;
+            }
+        }
+
+        if (shouldStartProcessing)
+        {
+            try
+            {
+                await ProcessQueueAsync();
+            }
+            finally
+            {
+                lock (_processingLock)
+                {
+                    _isProcessingQueue = false;
+                }
+            }
         }
     }
 
@@ -98,17 +134,34 @@ public class AudioPlayerService : INotifyPropertyChanged
         UpdateQueueCount();
         QueueChanged?.Invoke(this, EventArgs.Empty);
 
-        if (!_isProcessingQueue && !IsPlaying)
+        bool shouldStartProcessing = false;
+        lock (_processingLock)
         {
-            _ = ProcessQueueAsync();
+            if (!_isProcessingQueue && !IsPlaying)
+            {
+                _isProcessingQueue = true;
+                shouldStartProcessing = true;
+            }
+        }
+
+        if (shouldStartProcessing)
+        {
+            try
+            {
+                await ProcessQueueAsync();
+            }
+            finally
+            {
+                lock (_processingLock)
+                {
+                    _isProcessingQueue = false;
+                }
+            }
         }
     }
 
     private async Task ProcessQueueAsync()
     {
-        if (_isProcessingQueue) return;
-        _isProcessingQueue = true;
-
         Debug.WriteLine($"[AudioPlayerService] Starting queue processing, items: {QueueCount}");
 
         while (_audioQueue.TryDequeue(out var item))
@@ -118,7 +171,15 @@ public class AudioPlayerService : INotifyPropertyChanged
 
             try
             {
-                await PlayItemAsync(item);
+                _playbackCts?.Cancel();
+                _playbackCts?.Dispose();
+                _playbackCts = new CancellationTokenSource();
+                
+                await PlayItemAsync(item, _playbackCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("[AudioPlayerService] Playback cancelled");
             }
             catch (Exception ex)
             {
@@ -126,11 +187,10 @@ public class AudioPlayerService : INotifyPropertyChanged
             }
         }
 
-        _isProcessingQueue = false;
         Debug.WriteLine("[AudioPlayerService] Queue processing completed");
     }
 
-    private async Task PlayItemAsync(AudioQueueItem item)
+    private async Task PlayItemAsync(AudioQueueItem item, CancellationToken cancellationToken = default)
     {
         Debug.WriteLine($"[AudioPlayerService] Playing: {item.Title}");
         
@@ -142,17 +202,20 @@ public class AudioPlayerService : INotifyPropertyChanged
 
         if (!File.Exists(localFile))
         {
-            var response = await _httpClient.GetAsync(item.Url);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, cancellationToken);
+            
+            var response = await _httpClient.GetAsync(item.Url, linkedCts.Token);
             if (!response.IsSuccessStatusCode)
             {
                 Debug.WriteLine($"[AudioPlayerService] Failed to load audio: {response.StatusCode}");
                 return;
             }
 
-            using (var stream = await response.Content.ReadAsStreamAsync())
+            using (var stream = await response.Content.ReadAsStreamAsync(linkedCts.Token))
             using (var fileStream = File.Create(localFile))
             {
-                await stream.CopyToAsync(fileStream);
+                await stream.CopyToAsync(fileStream, linkedCts.Token);
             }
         }
         else
@@ -160,23 +223,40 @@ public class AudioPlayerService : INotifyPropertyChanged
             Debug.WriteLine($"[AudioPlayerService] Playing from cache: {cacheFileName}");
         }
 
-        var localStream = File.OpenRead(localFile);
-        _player = _audioManager.CreatePlayer(localStream);
-        
-        var tcs = new TaskCompletionSource<bool>();
-        
-        _player.PlaybackEnded += (s, e) => 
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Stream? localStream = null;
+        try
         {
-            IsPlaying = false;
-            ItemCompleted?.Invoke(this, item);
-            PlaybackEnded?.Invoke(this, EventArgs.Empty);
-            tcs.TrySetResult(true);
-        };
+            localStream = File.OpenRead(localFile);
+            _player = _audioManager.CreatePlayer(localStream);
+            
+            var tcs = new TaskCompletionSource<bool>();
+            
+            using var reg = cancellationToken.Register(() => 
+            {
+                tcs.TrySetCanceled();
+                _player?.Stop();
+            });
+            
+            _player.PlaybackEnded += (s, e) => 
+            {
+                IsPlaying = false;
+                ItemCompleted?.Invoke(this, item);
+                PlaybackEnded?.Invoke(this, EventArgs.Empty);
+                tcs.TrySetResult(true);
+            };
 
-        _player.Play();
-        IsPlaying = true;
+            _player.Play();
+            IsPlaying = true;
 
-        await tcs.Task;
+            await tcs.Task;
+        }
+        catch
+        {
+            localStream?.Dispose();
+            throw;
+        }
     }
 
     public void SkipCurrent()
@@ -201,6 +281,22 @@ public class AudioPlayerService : INotifyPropertyChanged
     {
         Stop();
         ClearQueue();
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            _playbackCts?.Cancel();
+            _playbackCts?.Dispose();
+            Stop();
+            _httpClient?.Dispose();
+            while (_audioQueue.TryDequeue(out _)) { }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AudioPlayerService] Dispose error: {ex.Message}");
+        }
     }
 
     private void UpdateQueueCount()
@@ -234,15 +330,32 @@ public class AudioPlayerService : INotifyPropertyChanged
 
     public void Stop()
     {
-        if (_player != null)
+        try
         {
-            _player.Stop();
-            _player.Dispose();
-            _player = null;
+            _playbackCts?.Cancel();
+            _playbackCts?.Dispose();
+            _playbackCts = null;
+            
+            if (_player != null)
+            {
+                _player.Stop();
+                _player.Dispose();
+                _player = null;
+            }
         }
-        IsPlaying = false;
-        CurrentAudioTitle = string.Empty;
-        _isProcessingQueue = false;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AudioPlayerService] Stop error: {ex.Message}");
+        }
+        finally
+        {
+            IsPlaying = false;
+            CurrentAudioTitle = string.Empty;
+            lock (_processingLock)
+            {
+                _isProcessingQueue = false;
+            }
+        }
     }
 
     public async Task PrecacheAudioAsync(string url)

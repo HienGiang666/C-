@@ -15,7 +15,6 @@ public partial class QRScannerPage : ContentPage
     private bool _isFlashOn = false;
     private bool _isProcessing = false;
     private object? _cameraReader = null;
-    private bool _hasPermission = false;
 
     private bool SupportsCameraScan => DeviceInfo.Platform != DevicePlatform.WinUI;
 
@@ -57,7 +56,6 @@ public partial class QRScannerPage : ContentPage
 
         if (ContextCompat.CheckSelfPermission(activity, cameraPermission) == Permission.Granted)
         {
-            _hasPermission = true;
             await MainThread.InvokeOnMainThreadAsync(() => InitializeCamera());
         }
         else
@@ -68,7 +66,6 @@ public partial class QRScannerPage : ContentPage
             await Task.Delay(500);
             if (ContextCompat.CheckSelfPermission(activity, cameraPermission) == Permission.Granted)
             {
-                _hasPermission = true;
                 await MainThread.InvokeOnMainThreadAsync(() => InitializeCamera());
             }
             else
@@ -78,7 +75,6 @@ public partial class QRScannerPage : ContentPage
             }
         }
 #else
-        _hasPermission = true;
         InitializeCamera();
 #endif
     }
@@ -86,7 +82,19 @@ public partial class QRScannerPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        StopCamera();
+        try
+        {
+            // Stop animation
+            this.AbortAnimation("ScanLineAnimation");
+            
+            // Stop camera
+            StopCamera();
+            _isProcessing = false;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QRScanner] OnDisappearing error: {ex.Message}");
+        }
     }
 
     private void InitializeCamera()
@@ -199,23 +207,72 @@ public partial class QRScannerPage : ContentPage
             {
                 var cameraType = _cameraReader.GetType();
                 cameraType.GetProperty("IsDetecting")?.SetValue(_cameraReader, false);
+                
+                // Unsubscribe from events
+                var eventInfo = cameraType.GetEvent("BarcodesDetected");
+                if (eventInfo != null)
+                {
+                    var handlerMethod = this.GetType().GetMethod("OnBarcodesDetectedInternal");
+                    if (handlerMethod != null)
+                    {
+                        try
+                        {
+                            var handler = Delegate.CreateDelegate(eventInfo.EventHandlerType!, this, handlerMethod);
+                            eventInfo.RemoveEventHandler(_cameraReader, handler);
+                        }
+                        catch { }
+                    }
+                }
+                
+                // Dispose if possible
+                if (_cameraReader is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+                
                 _cameraReader = null;
             }
+            
+            // Clear camera container
+            if (CameraContainer != null)
+            {
+                CameraContainer.Children.Clear();
+                CameraContainer.IsVisible = false;
+            }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QRScanner] StopCamera error: {ex.Message}");
+        }
 #endif
     }
 
     private void StartScanLineAnimation()
     {
-        var animation = new Animation(v => ScanLine.TranslationY = v, 0, 200);
-        animation.Commit(this, "ScanLineAnimation", 16, 2000, Easing.Linear, (v, c) =>
+        try
         {
-            if (!c)
+            // Check if page is still active
+            if (Navigation?.NavigationStack?.LastOrDefault() != this)
+                return;
+                
+            var animation = new Animation(v => 
             {
-                MainThread.BeginInvokeOnMainThread(() => StartScanLineAnimation());
-            }
-        }, () => true);
+                if (ScanLine != null)
+                    ScanLine.TranslationY = v;
+            }, 0, 200);
+            
+            animation.Commit(this, "ScanLineAnimation", 16, 2000, Easing.Linear, (v, c) =>
+            {
+                if (!c && ScanLine != null)
+                {
+                    MainThread.BeginInvokeOnMainThread(() => StartScanLineAnimation());
+                }
+            }, () => false); // Don't repeat automatically - use callback
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[QRScanner] Animation error: {ex.Message}");
+        }
     }
 
 #if ANDROID || IOS
@@ -275,22 +332,50 @@ public partial class QRScannerPage : ContentPage
 
     private static int ParsePoiIdFromQr(string qrText)
     {
-        // Format: tourapp://poi/3
-        if (qrText.StartsWith("tourapp://poi/", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(qrText)) return -1;
+
+        var qrValue = qrText.Trim();
+
+        // Nếu có pipe | (fallback URL), lấy phần đầu tiên
+        var pipeIndex = qrValue.IndexOf('|');
+        if (pipeIndex > 0)
+            qrValue = qrValue.Substring(0, pipeIndex).Trim();
+
+        // Format: tourapp://poi/3 hoặc tourapp://poi/3?lat=...&lng=...
+        if (qrValue.StartsWith("tourapp://poi/", StringComparison.OrdinalIgnoreCase))
         {
-            var idStr = qrText.Replace("tourapp://poi/", "", StringComparison.OrdinalIgnoreCase).Trim();
+            var afterPrefix = qrValue.Substring("tourapp://poi/".Length).Trim();
+            // Lấy phần trước dấu ? nếu có query params
+            var queryIndex = afterPrefix.IndexOf('?');
+            var idStr = queryIndex > 0 ? afterPrefix.Substring(0, queryIndex) : afterPrefix;
             if (int.TryParse(idStr, out int id)) return id;
         }
 
         // Format: chỉ số: "3"
-        if (int.TryParse(qrText.Trim(), out int directId)) return directId;
+        if (int.TryParse(qrValue, out int directId)) return directId;
 
         // Format: URL có ?id=3
         try
         {
-            var uri = new Uri(qrText);
+            var uri = new Uri(qrValue);
             var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
             if (int.TryParse(q["id"], out int qId)) return qId;
+        }
+        catch { }
+
+        // Format: https://tourapp.vn/poi/3
+        try
+        {
+            if (qrValue.Contains("/poi/"))
+            {
+                var poiIndex = qrValue.IndexOf("/poi/", StringComparison.OrdinalIgnoreCase);
+                var afterPoi = qrValue.Substring(poiIndex + "/poi/".Length).Trim();
+                var slashIndex = afterPoi.IndexOf('/');
+                var queryIdx = afterPoi.IndexOf('?');
+                var endIdx = slashIndex > 0 ? slashIndex : (queryIdx > 0 ? queryIdx : afterPoi.Length);
+                var idPart = afterPoi.Substring(0, endIdx).Trim();
+                if (int.TryParse(idPart, out int webId)) return webId;
+            }
         }
         catch { }
 

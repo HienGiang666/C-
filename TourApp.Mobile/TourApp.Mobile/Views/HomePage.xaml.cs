@@ -57,16 +57,31 @@ public partial class HomePage : ContentPage
         BindingContext = this;
     }
     
-    ~HomePage()
+    protected override void OnDisappearing()
     {
-        LanguageService.LanguageChanged -= OnLanguageChanged;
+        base.OnDisappearing();
+        try
+        {
+            LanguageService.LanguageChanged -= OnLanguageChanged;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HomePage] OnDisappearing error: {ex.Message}");
+        }
     }
     
     private void OnLanguageChanged(object? sender, string newLang)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            UpdateLocalizedText();
+            try
+            {
+                UpdateLocalizedText();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[HomePage] OnLanguageChanged error: {ex.Message}");
+            }
         });
     }
     
@@ -86,18 +101,27 @@ public partial class HomePage : ContentPage
     {
         base.OnAppearing();
         
-        // Update username label with current user's name
-        if (AuthService.CurrentUser != null)
+        try
         {
-            UserNameLabel.Text = AuthService.CurrentUser.DisplayName;
+            // Update username label with current user's name
+            if (UserNameLabel == null) return;
+            
+            if (AuthService.CurrentUser != null)
+            {
+                UserNameLabel.Text = AuthService.CurrentUser.DisplayName;
+            }
+            else
+            {
+                UserNameLabel.Text = LanguageService.GetString("AppName");
+            }
+            
+            // Refresh localized text
+            UpdateLocalizedText();
         }
-        else
+        catch (Exception ex)
         {
-            UserNameLabel.Text = LanguageService.GetString("AppName");
+            System.Diagnostics.Debug.WriteLine($"[HomePage] OnAppearing error: {ex.Message}");
         }
-        
-        // Refresh localized text
-        UpdateLocalizedText();
     }
     
     private async Task LoadDataAsync()
@@ -111,6 +135,7 @@ public partial class HomePage : ContentPage
             
             // Load POIs
             _allPois = await _apiService.GetAllPOIsAsync();
+            System.Diagnostics.Debug.WriteLine($"[HomePage] Loaded {_allPois?.Count ?? 0} POIs");
             if (_allPois?.Any() == true)
             {
                 MainThread.BeginInvokeOnMainThread(() =>
@@ -118,6 +143,7 @@ public partial class HomePage : ContentPage
                     MockPois.Clear();
                     foreach (var poi in _allPois.Take(10))
                     {
+                        System.Diagnostics.Debug.WriteLine($"[HomePage] POI {poi.Id}: {poi.Name}, ImageUrl={poi.ImageUrl ?? "null"}");
                         MockPois.Add(new MockItem 
                         { 
                             Name = poi.Name ?? "Unknown", 

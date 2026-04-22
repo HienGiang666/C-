@@ -40,16 +40,31 @@ public partial class TourPage : ContentPage
         _ = LoadToursAsync();
     }
     
-    ~TourPage()
+    protected override void OnDisappearing()
     {
-        LanguageService.LanguageChanged -= OnLanguageChanged;
+        base.OnDisappearing();
+        try
+        {
+            LanguageService.LanguageChanged -= OnLanguageChanged;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TourPage] OnDisappearing error: {ex.Message}");
+        }
     }
     
     private void OnLanguageChanged(object? sender, string newLang)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            UpdateLocalizedText();
+            try
+            {
+                UpdateLocalizedText();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TourPage] OnLanguageChanged error: {ex.Message}");
+            }
         });
     }
     
@@ -72,7 +87,8 @@ public partial class TourPage : ContentPage
         {
             await ApiService.AutoDiscoverApiAsync();
             _allTours = await _apiService.GetAllToursAsync();
-            
+            System.Diagnostics.Debug.WriteLine($"[TourPage] Loaded {_allTours?.Count ?? 0} tours");
+
             if (_allTours?.Any() == true)
             {
                 MainThread.BeginInvokeOnMainThread(() =>
@@ -80,6 +96,7 @@ public partial class TourPage : ContentPage
                     Tours.Clear();
                     foreach (var tour in _allTours.Where(t => t.IsActive))
                     {
+                        System.Diagnostics.Debug.WriteLine($"[TourPage] Tour {tour.Id}: {tour.Name}, ImageUrl={tour.ImageUrl ?? "null"}");
                         Tours.Add(tour);
                     }
                 });
