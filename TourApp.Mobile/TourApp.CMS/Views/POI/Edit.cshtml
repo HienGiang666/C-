@@ -119,8 +119,9 @@
                                     <img src="@Model.ImageUrl" alt="Current Image" class="img-thumbnail" style="max-height: 100px" />
                                 </div>
                             }
-                            <input type="file" name="uploadImage" class="form-control" accept="image/*" />
-                            <small class="text-muted">Bỏ trống nếu muốn giữ nguyên ảnh hiện tại.</small>
+                            <input type="file" name="uploadImage" class="form-control mb-2" accept="image/*" />
+                            <input type="url" name="imageUrl" class="form-control" value="@Model.ImageUrl" placeholder="Hoặc dán URL ảnh ở đây" />
+                            <small class="text-muted">Bỏ trống nếu muốn giữ nguyên ảnh hiện tại. Có thể tải file lên hoặc nhập link ảnh.</small>
                         </div>
                         <div class="mb-3">
                             <div class="form-check form-switch">
