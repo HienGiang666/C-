@@ -36,7 +36,7 @@ namespace TourApp.Mobile.Services
                 // Gọi API báo online ngay lập tức (fire and forget)
                 _ = Task.Run(async () => await SendSessionAsync(true, name));
 
-                // Bắt đầu heartbeat mỗi 30 giây
+                // Bắt đầu heartbeat mỗi 5 giây để cập nhật online nhanh hơn
                 _ = Task.Run(async () => await RunHeartbeatAsync(name, _heartbeatCts.Token));
 
                 Debug.WriteLine($"[UserSessionService] Session started - UserId: {userId}, GuestId: {guestId}, Name: {name}");
@@ -73,7 +73,7 @@ namespace TourApp.Mobile.Services
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(30), ct);
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                     if (!ct.IsCancellationRequested)
                         await SendSessionAsync(true, name);
                 }

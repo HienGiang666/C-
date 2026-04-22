@@ -124,32 +124,27 @@ public class UserLocationController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+        var fifteenSecondsAgo = DateTime.Now.AddSeconds(-15); // 15 giây thay vì 1 phút để phát hiện offline nhanh hơn
         var since24h = DateTime.Now.AddHours(-24);
         
-        // Lấy tất cả logs trong 24h, group by DeviceId, lấy log mới nhất mỗi device
-        var recentLogs = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= since24h)
-            .OrderByDescending(l => l.Timestamp)
+        // Tối ưu: Query online users trực tiếp - chỉ lấy log mới nhất trong 15 giây
+        var onlineLogs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= fifteenSecondsAgo && l.IsActive)
+            .GroupBy(l => l.DeviceId)
+            .Select(g => g.OrderByDescending(l => l.Timestamp).First())
             .ToListAsync();
         
-        var latestByDevice = recentLogs
-            .GroupBy(l => l.DeviceId)
-            .Select(g => g.First()) // Log mới nhất của mỗi device
-            .ToList();
+        // Query active24h - chỉ lấy count unique devices
+        var active24h = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .Select(l => l.DeviceId)
+            .Distinct()
+            .CountAsync();
         
-        // Online = log mới nhất trong vòng 1 phút và trạng thái active
-        // (Không yêu cầu tọa độ - user có thể online mà chưa có GPS)
-        var onlineDevices = latestByDevice
-            .Where(l => l.Timestamp >= oneMinuteAgo
-                        && l.IsActive)
-            .ToList();
+        var onlineNow = onlineLogs.Count;
         
-        var onlineNow = onlineDevices.Count;
-        var active24h = latestByDevice.Count;
-        
-        // Vị trí online (dùng log mới nhất trong 1 phút)
-        var onlineLocations = onlineDevices.Select(l => new
+        // Vị trí online
+        var onlineLocations = onlineLogs.Select(l => new
         {
             l.DeviceId,
             l.Latitude,

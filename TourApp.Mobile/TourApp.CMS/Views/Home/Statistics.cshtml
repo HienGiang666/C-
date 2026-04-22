@@ -325,7 +325,7 @@ else
                 document.getElementById('onlineCount').textContent = onlineCount;
             }
             
-            // ===== SIGNALR - Chỉ giữ LocationUpdated (backend chưa có UserOnline/UserOffline) =====
+            // ===== SIGNALR - Real-time events =====
             connection.on('LocationUpdated', function (data) {
                 var deviceId = data.deviceId || data.DeviceId;
                 var lat = data.latitude || data.Latitude;
@@ -345,8 +345,45 @@ else
                 document.getElementById('onlineCount').textContent = onlineCount;
             });
             
-            // NOTE: UserOnline/UserOffline chưa có ở backend - dùng polling thay thế
-            // Polling 30 giây để sync online users
+            // UserOnline - Thêm marker mới ngay lập tức
+            connection.on('UserOnline', function (data) {
+                var deviceId = data.deviceId || data.DeviceId;
+                var lat = data.latitude || data.Latitude || 0;
+                var lng = data.longitude || data.Longitude || 0;
+                
+                // Chỉ thêm marker nếu có tọa độ hợp lệ
+                if (lat !== 0 && lng !== 0) {
+                    if (markers[deviceId]) {
+                        map.removeLayer(markers[deviceId]);
+                    }
+                    
+                    var marker = L.marker([lat, lng], { icon: onlineIcon })
+                        .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Status:</b> Online<br><b>Time:</b> ' + new Date().toLocaleTimeString());
+                    
+                    markers[deviceId] = marker;
+                    if (layerStates.live) marker.addTo(map);
+                    
+                    onlineCount = Object.keys(markers).length;
+                    document.getElementById('onlineCount').textContent = onlineCount;
+                    console.log('[SignalR] User online:', deviceId);
+                }
+            });
+            
+            // UserOffline - Xóa marker ngay lập tức
+            connection.on('UserOffline', function (data) {
+                var deviceId = data.deviceId || data.DeviceId;
+                
+                if (markers[deviceId]) {
+                    map.removeLayer(markers[deviceId]);
+                    delete markers[deviceId];
+                    
+                    onlineCount = Object.keys(markers).length;
+                    document.getElementById('onlineCount').textContent = onlineCount;
+                    console.log('[SignalR] User offline:', deviceId);
+                }
+            });
+            
+            // Polling 5 giây để sync online users (nhanh hơn để đồng bộ với mobile heartbeat)
             function startPolling() {
                 if (pollingInterval) clearInterval(pollingInterval);
                 pollingInterval = setInterval(function() {
@@ -358,7 +395,7 @@ else
                             syncLiveMarkersFromStats(data); // Sync markers
                         })
                         .catch(err => console.error('[Polling] Error:', err));
-                }, 30000); // 30 giây
+                }, 5000); // 5 giây - đồng bộ với mobile heartbeat
             }
             
             // ===== USER HISTORY =====

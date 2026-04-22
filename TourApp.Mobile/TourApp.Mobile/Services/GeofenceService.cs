@@ -108,17 +108,31 @@ namespace TourApp.Mobile.Services
 
         private void TriggerNarration(POI poi)
         {
-            _lastSpokenPoiId = poi.Id;
-            _lastSpokenTime = DateTime.Now;
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            try
             {
-                PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.Id);
-            });
+                _lastSpokenPoiId = poi.Id;
+                _lastSpokenTime = DateTime.Now;
 
-            _ = SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GeofenceService][TriggerNarration] UI error: {ex.Message}");
+                    }
+                });
+
+                _ = SpeakNarrationAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][TriggerNarration] Error: {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -129,6 +143,19 @@ namespace TourApp.Mobile.Services
         {
             if (poi == null) return;
 
+            try
+            {
+                await SpeakNarrationInternalAsync(poi, overrideLang);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][CRASH] SpeakNarrationAsync failed: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][CRASH] Stack: {ex.StackTrace}");
+            }
+        }
+
+        private async Task SpeakNarrationInternalAsync(POI poi, string? overrideLang)
+        {
             try
             {
                 // Dừng TTS (Text-to-Speech) nếu đang phát
@@ -200,12 +227,13 @@ namespace TourApp.Mobile.Services
                         ?? localeList.FirstOrDefault(l =>
                         l.Name.StartsWith(localeName, StringComparison.OrdinalIgnoreCase));
 
-                    // Log available locales for debugging
+                    // Log available locales and notify UI if locale not found
                     if (matchedLocale == null)
                     {
                         var availableLangs = string.Join(", ", localeList.Select(l => $"{l.Language}({l.Name})").Take(10));
                         System.Diagnostics.Debug.WriteLine($"[TTS] WARNING: No locale matched for '{lang}'/'{localeName}'");
                         System.Diagnostics.Debug.WriteLine($"[TTS] Available: {availableLangs}... (total: {localeList.Count})");
+                        MainThread.BeginInvokeOnMainThread(() => TtsLocaleNotFound?.Invoke(this, lang));
                     }
                     else
                     {
@@ -237,7 +265,8 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Stack: {ex.StackTrace}");
             }
         }
 
@@ -261,19 +290,33 @@ namespace TourApp.Mobile.Services
         /// </summary>
         public async Task TriggerFromQRAsync(POI poi)
         {
-            System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
-
-            // Reset cooldown để QR luôn phát được
-            _lastSpokenPoiId = -1;
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            try
             {
-                PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.Id);
-            });
+                System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
 
-            await SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
+                // Reset cooldown để QR luôn phát được
+                _lastSpokenPoiId = -1;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QR][TriggerFromQRAsync] UI error: {ex.Message}");
+                    }
+                });
+
+                await SpeakNarrationAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[QR][TriggerFromQRAsync] Error: {ex.GetType().Name}: {ex.Message}");
+            }
         }
     }
 }

@@ -95,6 +95,15 @@ public partial class MapPage : ContentPage
                 if (_isJsMapReady)
                     MapWebView.Eval($"highlightPoi({poiId});");
             };
+            _geofenceService.TtsLocaleNotFound += (_, lang) =>
+            {
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await DisplayAlert("TTS", 
+                        $"Không tìm thấy giọng đọc cho ngôn ngữ '{lang}'. Vui lòng cài đặt Google Text-to-Speech và tải gói ngôn ngữ tiếng Việt.", 
+                        "OK");
+                });
+            };
 
 #if ANDROID
             // Enable foreground service for better background tracking on Android
