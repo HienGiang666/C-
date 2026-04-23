@@ -60,81 +60,29 @@ namespace TourApp.Mobile.Models
 
         /// <summary>
         /// Lấy Description theo ngôn ngữ đang chọn, fallback về vi.
-        /// Hỗ trợ: vi, en, zh, ja và các biến thể locale (zh-CN, ja-JP, en-US...)
         /// </summary>
         public string GetLocalizedDescription(string lang = "vi")
         {
-            if (string.IsNullOrWhiteSpace(lang) || lang.Equals("vi", StringComparison.OrdinalIgnoreCase)) 
-                return Description ?? "";
-            
-            // Normalize language code (zh-CN → zh, ja-JP → ja, en-US → en)
-            var normalizedLang = lang.Split('-')[0].ToLowerInvariant();
-            
-            // Check if Translations is null or empty
-            if (Translations == null || !Translations.Any())
-            {
-                System.Diagnostics.Debug.WriteLine($"[POI] Translations null/empty for POI {Id}, fallback to vi");
-                return Description ?? "";
-            }
-            
-            // Try exact match first (case-insensitive)
-            var t = Translations.FirstOrDefault(x => 
-                x.Language != null && 
-                x.Language.Equals(lang, StringComparison.OrdinalIgnoreCase));
-            
-            // Try normalized match (zh matches zh-CN, zh-TW, etc.)
-            if (t == null)
-            {
-                t = Translations.FirstOrDefault(x => 
-                    x.Language != null && 
-                    x.Language.Split('-')[0].ToLowerInvariant() == normalizedLang);
-            }
-            
-            if (t != null && !string.IsNullOrWhiteSpace(t.Description))
-            {
-                System.Diagnostics.Debug.WriteLine($"[POI] Found translation for {Id}: {lang} → {t.Description[..Math.Min(30, t.Description.Length)]}...");
-                return t.Description;
-            }
-            
-            System.Diagnostics.Debug.WriteLine($"[POI] No translation for {Id} in {lang}, fallback to vi");
+            if (lang == "vi") return Description ?? "";
+            var t = Translations.FirstOrDefault(x => x.Language == lang);
+            if (t != null && !string.IsNullOrWhiteSpace(t.Description)) return t.Description;
             return Description ?? "";
         }
 
         /// <summary>
         /// Lấy ScriptText theo ngôn ngữ, fallback về "vi", fallback cuối là Description.
-        /// Hỗ trợ các biến thể locale (zh-CN → zh, ja-JP → ja)
         /// </summary>
         public string GetScript(string lang = "vi")
         {
-            if (string.IsNullOrWhiteSpace(lang)) lang = "vi";
-            var normalizedLang = lang.Split('-')[0].ToLowerInvariant();
-            
-            // Try exact match first
-            var audio = Audios?.FirstOrDefault(a => 
-                a.Language != null && 
-                a.Language.Equals(lang, StringComparison.OrdinalIgnoreCase) && 
-                a.IsActive && !string.IsNullOrWhiteSpace(a.ScriptText));
-            
-            // Try normalized match
-            if (audio == null)
-            {
-                audio = Audios?.FirstOrDefault(a => 
-                    a.Language != null && 
-                    a.Language.Split('-')[0].ToLowerInvariant() == normalizedLang && 
-                    a.IsActive && !string.IsNullOrWhiteSpace(a.ScriptText));
-            }
-            
+            var audio = Audios.FirstOrDefault(a => a.Language == lang && a.IsActive && !string.IsNullOrWhiteSpace(a.ScriptText));
             if (audio != null) return audio.ScriptText;
 
             // Fallback về tiếng Việt
-            var viAudio = Audios?.FirstOrDefault(a => 
-                a.Language != null && 
-                a.Language.StartsWith("vi", StringComparison.OrdinalIgnoreCase) && 
-                a.IsActive && !string.IsNullOrWhiteSpace(a.ScriptText));
+            var viAudio = Audios.FirstOrDefault(a => a.Language == "vi" && a.IsActive && !string.IsNullOrWhiteSpace(a.ScriptText));
             if (viAudio != null) return viAudio.ScriptText;
 
             // Fallback cuối: dùng Description
-            return $"Chào mừng bạn đến {Name}. {Description}";
+        return $"Chào mừng bạn đến {Name}. {Description}";
     }
 }
 

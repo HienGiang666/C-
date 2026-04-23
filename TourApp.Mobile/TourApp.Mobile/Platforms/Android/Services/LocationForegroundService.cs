@@ -32,15 +32,7 @@ public class LocationForegroundService : Service
         System.Diagnostics.Debug.WriteLine("[LocationForegroundService] OnStartCommand");
 
         var notification = CreateNotification(_statusText);
-        
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
-        {
-            StartForeground(NOTIFICATION_ID, notification, global::Android.Content.PM.ForegroundService.TypeLocation);
-        }
-        else
-        {
-            StartForeground(NOTIFICATION_ID, notification);
-        }
+        StartForeground(NOTIFICATION_ID, notification);
 
         StartLocationTracking();
 

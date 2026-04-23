@@ -2,7 +2,6 @@ using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
 using System.Text.Json;
 using Microsoft.Maui.Media;
-using Microsoft.Maui.Devices.Sensors;
 
 namespace TourApp.Mobile.Views;
 
@@ -95,23 +94,11 @@ public partial class MapPage : ContentPage
                 if (_isJsMapReady)
                     MapWebView.Eval($"highlightPoi({poiId});");
             };
-            _geofenceService.TtsLocaleNotFound += (_, lang) =>
-            {
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    await DisplayAlert("TTS", 
-                        $"Không tìm thấy giọng đọc cho ngôn ngữ '{lang}'. Vui lòng cài đặt Google Text-to-Speech và tải gói ngôn ngữ tiếng Việt.", 
-                        "OK");
-                });
-            };
 
 #if ANDROID
             // Enable foreground service for better background tracking on Android
             _locationService.SetUseForegroundService(true);
 #endif
-
-            // Subscribe to language changes to refresh POI description
-            LanguageService.LanguageChanged += OnLanguageChanged;
         }
         catch (Exception ex)
         {
@@ -189,25 +176,6 @@ public partial class MapPage : ContentPage
                 });
 
                 _pois = pois;
-                
-                // Debug: Log translation data
-                if (_pois?.Any() == true)
-                {
-                    var samplePoi = _pois.FirstOrDefault(p => p.Translations?.Any() == true);
-                    if (samplePoi != null)
-                    {
-                        var trans = samplePoi.Translations.Select(t => $"{t.Language}:{t.Description?[..Math.Min(20, t.Description?.Length ?? 0)]}");
-                        System.Diagnostics.Debug.WriteLine($"[MapPage] Loaded POI {samplePoi.Id} with translations: {string.Join(", ", trans)}");
-                    }
-                    else
-                    {
-                        var firstPoi = _pois.FirstOrDefault();
-                        if (firstPoi != null)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[MapPage] POI {firstPoi.Id} has {firstPoi.Translations?.Count ?? 0} translations");
-                        }
-                    }
-                }
 
                 // Cập nhật GeofenceService
                 _geofenceService.SetPois(_pois);
@@ -237,34 +205,6 @@ public partial class MapPage : ContentPage
         AudioPlayerService.Instance.Stop();
         // Dừng TTS (Text-to-Speech) nếu đang phát
         _geofenceService.CancelTTS();
-        // Unsubscribe from language changes
-        LanguageService.LanguageChanged -= OnLanguageChanged;
-    }
-    
-    /// <summary>
-    /// Xử lý khi ngôn ngữ thay đổi - refresh mô tả POI nếu bottom sheet đang mở
-    /// </summary>
-    private void OnLanguageChanged(object? sender, string newLang)
-    {
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            try
-            {
-                // Update GeofenceService language
-                _geofenceService.CurrentLanguage = newLang;
-                
-                // Refresh POI description if bottom sheet is visible
-                if (_currentPoi != null && BottomSheetView?.IsVisible == true && PoiDescLabel != null)
-                {
-                    PoiDescLabel.Text = _currentPoi.GetLocalizedDescription(newLang);
-                    System.Diagnostics.Debug.WriteLine($"[MapPage] Refreshed POI description for language: {newLang}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] OnLanguageChanged error: {ex.Message}");
-            }
-        });
     }
     
     /// <summary>
@@ -386,7 +326,6 @@ public partial class MapPage : ContentPage
         if (location == null) return;
         
         _lastLocation = location;
-        UserSessionService.UpdateLocation(location.Latitude, location.Longitude);
 
         bool shouldCheckGeofence = true;
         if (_lastCheckedLocation != null)
@@ -433,7 +372,6 @@ public partial class MapPage : ContentPage
             }
         });
     }
-
 
     private void OnPoiTriggered(object? sender, POI poi)
     {
@@ -575,24 +513,8 @@ public partial class MapPage : ContentPage
         var origin = _locationService.MockLocation ?? _lastLocation;
         if (origin == null)
         {
-            // Thử lấy vị trí hiện tại một lần nữa
-            await DisplayAlert("GPS", "Đang xác định vị trí của bạn...", "OK");
-            try
-            {
-                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
-                origin = await Geolocation.Default.GetLocationAsync(request);
-                if (origin != null)
-                {
-                    _lastLocation = origin;
-                }
-            }
-            catch { }
-            
-            if (origin == null)
-            {
-                await DisplayAlert("GPS", "Vui lòng bật GPS và đảm bảo đang ở ngoài trời hoặc khu vực có thu sóng GPS tốt.", "OK");
-                return;
-            }
+            await DisplayAlert("GPS", "Chưa xác định được vị trí của bạn.", "OK");
+            return;
         }
 
         BottomSheetView.IsVisible = false;

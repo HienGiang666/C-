@@ -53,17 +53,11 @@ namespace TourApp.Mobile.Services
                 var savedLang = CurrentLanguage;
                 SetCulture(savedLang);
                 _isInitialized = true;
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Initialized with language: {savedLang}, resources: {_resources.Count} languages");
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Initialized with language: {savedLang}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Init error: {ex.GetType().Name}: {ex.Message}");
-                // Ensure we have fallback resources even if init fails
-                if (_resources.Count == 0)
-                {
-                    CreateBuiltInFallback();
-                }
-                _isInitialized = true;
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Init error: {ex.Message}");
             }
         }
         
@@ -77,70 +71,42 @@ namespace TourApp.Mobile.Services
             
             System.Diagnostics.Debug.WriteLine($"[LanguageService] Found {resourceNames.Length} embedded resources");
             
-            // Log first few resource names for debugging
-            foreach (var name in resourceNames.Take(10))
-            {
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Resource: {name}");
-            }
-            
-            // Tìm tất cả Strings*.resx files (XML format only, skip .resources binary files)
-            var resxCount = 0;
+            // Tìm tất cả Strings*.resx files
             foreach (var resourceName in resourceNames)
             {
-                // Only process .resx files (XML), skip .resources (binary compiled)
                 if (resourceName.Contains("Strings") && resourceName.EndsWith(".resx"))
                 {
-                    resxCount++;
                     var langCode = ExtractLanguageCode(resourceName);
                     LoadResourceFile(assembly, resourceName, langCode);
                 }
             }
             
-            System.Diagnostics.Debug.WriteLine($"[LanguageService] Processed {resxCount} .resx files, loaded {_resources.Count} languages");
-            
             // Nếu không tìm thấy resource nào, load từ file system (fallback)
             if (_resources.Count == 0)
             {
-                System.Diagnostics.Debug.WriteLine("[LanguageService] No embedded .resx resources found, trying file system...");
+                System.Diagnostics.Debug.WriteLine("[LanguageService] No embedded resources found, trying file system...");
                 LoadResourcesFromFileSystem();
             }
         }
         
         /// <summary>
-        /// Extract language code từ resource name (e.g., "TourApp.Mobile.Resources.Strings.en.resx" -> "en")
+        /// Extract language code từ resource name (e.g., "Strings.en.resx" -> "en")
         /// </summary>
         private static string ExtractLanguageCode(string resourceName)
         {
-            // Remove .resx extension first
-            var nameWithoutExt = resourceName;
-            if (resourceName.EndsWith(".resx"))
+            // Pattern: TourApp.Mobile.Resources.Strings.en.resx hoặc TourApp.Mobile.Resources.Strings.resx
+            var parts = resourceName.Split('.');
+            if (parts.Length >= 2)
             {
-                nameWithoutExt = resourceName.Substring(0, resourceName.Length - 5);
-            }
-            
-            // Pattern: TourApp.Mobile.Resources.Strings.en hoặc TourApp.Mobile.Resources.Strings
-            var parts = nameWithoutExt.Split('.');
-            if (parts.Length >= 1)
-            {
-                var lastPart = parts[^1]; // Last part
-                var secondLastPart = parts.Length >= 2 ? parts[^2] : null;
-                
-                // Case 1: Strings.en (secondLastPart is "Strings", lastPart is "en")
-                if (secondLastPart == "Strings" && !string.IsNullOrEmpty(lastPart))
+                var resxName = parts[^2]; // Tên file trước .resx
+                if (resxName.StartsWith("Strings"))
                 {
-                    return lastPart.ToLower();
-                }
-                
-                // Case 2: Just "Strings" (default language)
-                if (lastPart == "Strings")
-                {
-                    return DefaultLanguage;
-                }
-                
-                // Case 3: Strings_en or other patterns
-                if (lastPart.StartsWith("Strings") && lastPart.Length > 7)
-                {
-                    var langPart = lastPart.Substring(7).Trim('_', '.');
+                    // Strings.resx -> default (vi)
+                    // Strings.en.resx -> en
+                    if (resxName == "Strings") return DefaultLanguage;
+                    
+                    // Strings.en.resx hoặc chỉ "en"
+                    var langPart = resxName.Replace("Strings", "").Trim('.');
                     if (!string.IsNullOrEmpty(langPart))
                         return langPart.ToLower();
                 }
@@ -156,17 +122,7 @@ namespace TourApp.Mobile.Services
             try
             {
                 using var stream = assembly.GetManifestResourceStream(resourceName);
-                if (stream == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LanguageService] Stream null for {resourceName}");
-                    return;
-                }
-                
-                if (stream.Length == 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LanguageService] Stream empty for {resourceName}");
-                    return;
-                }
+                if (stream == null) return;
                 
                 var doc = XDocument.Load(stream);
                 var dict = new Dictionary<string, string>();
@@ -182,19 +138,12 @@ namespace TourApp.Mobile.Services
                     }
                 }
                 
-                if (dict.Count > 0)
-                {
-                    _resources[langCode] = dict;
-                    System.Diagnostics.Debug.WriteLine($"[LanguageService] Loaded {dict.Count} keys for '{langCode}' from {resourceName}");
-                }
-            }
-            catch (System.Xml.XmlException xmlEx)
-            {
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] XML parse error in {resourceName}: {xmlEx.Message}");
+                _resources[langCode] = dict;
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Loaded {dict.Count} keys for '{langCode}' from {resourceName}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to load {resourceName}: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to load {resourceName}: {ex.Message}");
             }
         }
         
@@ -398,33 +347,16 @@ namespace TourApp.Mobile.Services
         {
             try
             {
-                // Validate langCode before creating CultureInfo
-                if (string.IsNullOrWhiteSpace(langCode))
-                {
-                    langCode = DefaultLanguage;
-                }
-                
-                CultureInfo culture;
-                try
-                {
-                    culture = new CultureInfo(langCode);
-                }
-                catch (CultureNotFoundException)
-                {
-                    // Fallback to default if culture not found
-                    System.Diagnostics.Debug.WriteLine($"[LanguageService] Culture '{langCode}' not found, falling back to '{DefaultLanguage}'");
-                    culture = new CultureInfo(DefaultLanguage);
-                }
-                
+                var culture = new CultureInfo(langCode);
                 Thread.CurrentThread.CurrentCulture = culture;
                 Thread.CurrentThread.CurrentUICulture = culture;
                 CultureInfo.DefaultThreadCurrentCulture = culture;
                 CultureInfo.DefaultThreadCurrentUICulture = culture;
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Culture set to: {culture.Name}");
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Culture set to: {langCode}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to set culture: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to set culture: {ex.Message}");
             }
         }
         
@@ -497,42 +429,16 @@ namespace TourApp.Mobile.Services
         {
             try
             {
-                // Defer sync if platform application not ready (e.g., during startup)
-                var app = IPlatformApplication.Current;
-                if (app == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("[LanguageService] IPlatformApplication.Current is null, deferring GeofenceService sync");
-                    // Defer sync to later when app is ready
-                    Task.Run(async () =>
-                    {
-                        await Task.Delay(2000); // Wait 2 seconds for app to initialize
-                        MainThread.BeginInvokeOnMainThread(() => SyncWithGeofenceService(lang));
-                    });
-                    return;
-                }
-                
-                var services = app.Services;
-                if (services == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("[LanguageService] Services is null, skipping GeofenceService sync");
-                    return;
-                }
-                
-                var geofence = services.GetService<GeofenceService>();
+                var geofence = IPlatformApplication.Current?.Services.GetService<GeofenceService>();
                 if (geofence != null)
                 {
                     geofence.CurrentLanguage = lang;
                     System.Diagnostics.Debug.WriteLine($"[LanguageService] Synced GeofenceService language to: {lang}");
                 }
             }
-            catch (InvalidOperationException)
-            {
-                // Service provider not built yet, ignore
-                System.Diagnostics.Debug.WriteLine("[LanguageService] Service provider not ready, skipping GeofenceService sync");
-            }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to sync GeofenceService: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to sync GeofenceService: {ex.Message}");
             }
         }
         

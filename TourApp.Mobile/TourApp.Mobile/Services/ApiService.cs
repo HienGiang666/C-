@@ -6,13 +6,8 @@ namespace TourApp.Mobile.Services
 {
     public class ApiService
     {
-        // Ưu tiên các địa chỉ phổ biến để app mobile luôn tìm được API
-        // - Android emulator: 10.0.2.2
-        // - Máy local: localhost
-        // - Mạng LAN: IP Wi‑Fi hiện tại của máy dev
-        private const string DefaultLanUrl = "http://172.24.35.150:5254";
-        private const string AndroidEmulatorUrl = "http://10.0.2.2:5254";
-        private const string LocalhostUrl = "http://localhost:5254";
+        // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
+        private const string DefaultUrl = "http://10.89.192.150:5254";
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
@@ -24,7 +19,7 @@ namespace TourApp.Mobile.Services
 
         public static string BaseUrl
         {
-            get => Preferences.Default.Get("api_base_url", DefaultLanUrl);
+            get => Preferences.Default.Get("api_base_url", DefaultUrl);
             set
             {
                 var normalized = value.TrimEnd('/');
@@ -64,67 +59,43 @@ namespace TourApp.Mobile.Services
         {
             var myIp = GetLocalIpAddress();
             Debug.WriteLine($"[ApiService] Start Auto Discovery... (This device IP: {myIp ?? "Unknown"})");
+            Debug.WriteLine($"[ApiService] Looking for API server in local network...");
             
             var subnet = GetLocalSubnet();
+            var ipsToTest = new List<string>();
 
-            // 1. Ưu tiên #1: Thử URL đã lưu trước (fast path - thường đã đúng)
-            if (!string.IsNullOrWhiteSpace(BaseUrl))
-            {
-                Debug.WriteLine($"[ApiService] Trying saved BaseUrl: {BaseUrl}");
-                var savedResult = await TestUrlQuickAsync(BaseUrl, ct);
-                if (savedResult != null)
-                {
-                    Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS (saved URL): {savedResult}");
-                    return; // Giữ nguyên BaseUrl, không cần quét subnet
-                }
-            }
-
-            // 2. Emulator ưu tiên
+            // 1. Emulator ưu tiên hàng đầu
             if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
             {
-                var emuUrls = new[] { AndroidEmulatorUrl, "http://10.0.2.2:7244", LocalhostUrl };
-                foreach (var url in emuUrls)
-                {
-                    var res = await TestUrlQuickAsync(url, ct);
-                    if (res != null)
-                    {
-                        BaseUrl = res;
-                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS (emulator): {res}");
-                        return;
-                    }
-                }
+                ipsToTest.Add("http://10.0.2.2:5254");
+                ipsToTest.Add("http://10.0.2.2:7244");
             }
             else
             {
-                // Phone thật: thử localhost và default LAN
-                var quickUrls = new[] { LocalhostUrl, DefaultLanUrl };
-                foreach (var url in quickUrls)
+                // Phone thật: ưu tiên DefaultUrl và BaseUrl trước
+                ipsToTest.Add(DefaultUrl);
+                Debug.WriteLine($"[ApiService] Will try DefaultUrl: {DefaultUrl}");
+                
+                if (BaseUrl != DefaultUrl && !string.IsNullOrWhiteSpace(BaseUrl))
                 {
-                    var res = await TestUrlQuickAsync(url, ct);
-                    if (res != null)
-                    {
-                        BaseUrl = res;
-                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS (quick): {res}");
-                        return;
-                    }
+                    ipsToTest.Add(BaseUrl);
+                    Debug.WriteLine($"[ApiService] Will try saved BaseUrl: {BaseUrl}");
                 }
             }
 
-            // 3. Chỉ quét subnet nếu các URL trên đều fail
+            // 2. Quét subnet rộng hơn (1-50 trước, nếu không thấy thì quét tiếp)
             Debug.WriteLine($"[ApiService] Scanning subnet {subnet}.1-50...");
-            var ipsToTest = new List<string>();
-            for (int i = 1; i <= 20; i++) // Giảm từ 50 xuống 20 để nhanh hơn
+            for (int i = 1; i <= 50; i++)
             {
                 ipsToTest.Add($"http://{subnet}.{i}:5254");
-                ipsToTest.Add($"https://{subnet}.{i}:7244");
             }
 
-            // Batch testing (10 url cùng lúc thay vì 5)
-            for (int i = 0; i < ipsToTest.Count; i += 10)
+            // Batch testing (hỗn hợp 5 url cùng lúc)
+            for (int i = 0; i < ipsToTest.Count; i += 5)
             {
                 ct.ThrowIfCancellationRequested();
                 
-                var batch = ipsToTest.Skip(i).Take(10).Select(url => TestUrlQuickAsync(url, ct)).ToList();
+                var batch = ipsToTest.Skip(i).Take(5).Select(url => TestUrlQuickAsync(url, ct)).ToList();
                 
                 while (batch.Count > 0)
                 {
@@ -134,13 +105,11 @@ namespace TourApp.Mobile.Services
                     if (res != null)
                     {
                         BaseUrl = res;
-                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS (subnet scan): {res}");
+                        Debug.WriteLine($"[ApiService] Auto-Discovery SUCCESS: {res}");
                         return;
                     }
                 }
             }
-
-            Debug.WriteLine("[ApiService] Auto-Discovery failed, using default URL");
         }
 
         [DebuggerNonUserCode]
@@ -213,12 +182,7 @@ namespace TourApp.Mobile.Services
                 {
                     var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
                     await File.WriteAllTextAsync(cacheFile, body);
-                    var pois = JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new();
-                    foreach (var poi in pois.Take(3))
-                    {
-                        Debug.WriteLine($"[ApiService] POI {poi.Id}: {poi.Name}, ImageUrl={(string.IsNullOrEmpty(poi.ImageUrl) ? "NULL/EMPTY" : poi.ImageUrl)}");
-                    }
-                    return pois;
+                    return JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new();
                 }
             }
             catch (Exception ex)
