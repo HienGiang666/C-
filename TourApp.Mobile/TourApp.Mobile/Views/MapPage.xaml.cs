@@ -109,6 +109,9 @@ public partial class MapPage : ContentPage
             // Enable foreground service for better background tracking on Android
             _locationService.SetUseForegroundService(true);
 #endif
+
+            // Subscribe to language changes to refresh POI description
+            LanguageService.LanguageChanged += OnLanguageChanged;
         }
         catch (Exception ex)
         {
@@ -186,6 +189,25 @@ public partial class MapPage : ContentPage
                 });
 
                 _pois = pois;
+                
+                // Debug: Log translation data
+                if (_pois?.Any() == true)
+                {
+                    var samplePoi = _pois.FirstOrDefault(p => p.Translations?.Any() == true);
+                    if (samplePoi != null)
+                    {
+                        var trans = samplePoi.Translations.Select(t => $"{t.Language}:{t.Description?[..Math.Min(20, t.Description?.Length ?? 0)]}");
+                        System.Diagnostics.Debug.WriteLine($"[MapPage] Loaded POI {samplePoi.Id} with translations: {string.Join(", ", trans)}");
+                    }
+                    else
+                    {
+                        var firstPoi = _pois.FirstOrDefault();
+                        if (firstPoi != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[MapPage] POI {firstPoi.Id} has {firstPoi.Translations?.Count ?? 0} translations");
+                        }
+                    }
+                }
 
                 // Cập nhật GeofenceService
                 _geofenceService.SetPois(_pois);
@@ -215,6 +237,34 @@ public partial class MapPage : ContentPage
         AudioPlayerService.Instance.Stop();
         // Dừng TTS (Text-to-Speech) nếu đang phát
         _geofenceService.CancelTTS();
+        // Unsubscribe from language changes
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+    
+    /// <summary>
+    /// Xử lý khi ngôn ngữ thay đổi - refresh mô tả POI nếu bottom sheet đang mở
+    /// </summary>
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                // Update GeofenceService language
+                _geofenceService.CurrentLanguage = newLang;
+                
+                // Refresh POI description if bottom sheet is visible
+                if (_currentPoi != null && BottomSheetView?.IsVisible == true && PoiDescLabel != null)
+                {
+                    PoiDescLabel.Text = _currentPoi.GetLocalizedDescription(newLang);
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Refreshed POI description for language: {newLang}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] OnLanguageChanged error: {ex.Message}");
+            }
+        });
     }
     
     /// <summary>

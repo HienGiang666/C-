@@ -58,6 +58,12 @@ namespace TourApp.Mobile
                 // Khách đăng nhập - cũng cần start session
                 var guestName = Preferences.Get("guest_name", "Khách");
                 var guestId = Preferences.Get("guest_id", "");
+                // Tạo mới nếu chưa có (đảm bảo mỗi máy có ID duy nhất)
+                if (string.IsNullOrEmpty(guestId))
+                {
+                    guestId = $"guest_{Guid.NewGuid().ToString("N")[..8]}";
+                    Preferences.Set("guest_id", guestId);
+                }
                 startPage = new AppShell();
                 UserSessionService.StartSession(null, guestName, guestId);
             }
@@ -115,6 +121,11 @@ namespace TourApp.Mobile
             {
                 var guestName = Preferences.Get("guest_name", "Khách");
                 var guestId = Preferences.Get("guest_id", "");
+                if (string.IsNullOrEmpty(guestId))
+                {
+                    guestId = $"guest_{Guid.NewGuid().ToString("N")[..8]}";
+                    Preferences.Set("guest_id", guestId);
+                }
                 UserSessionService.StartSession(null, guestName, guestId);
             }
         }

@@ -118,18 +118,18 @@ public class UserLocationController : ControllerBase
 
     /// <summary>
     /// GET /api/userlocation/stats
-    /// Trả về thống kê người dùng đang online (theo Timestamp gần nhất trong 1 phút)
+    /// Trả về thống kê người dùng đang online (theo Timestamp gần nhất trong 30 giây)
     /// và tổng số device unique trong 24h qua
     /// </summary>
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        var fifteenSecondsAgo = DateTime.Now.AddSeconds(-15); // 15 giây thay vì 1 phút để phát hiện offline nhanh hơn
+        var thirtySecondsAgo = DateTime.Now.AddSeconds(-30); // 30 giây để có buffer cho network delay
         var since24h = DateTime.Now.AddHours(-24);
         
-        // Tối ưu: Query online users trực tiếp - chỉ lấy log mới nhất trong 15 giây
+        // Tối ưu: Query online users trực tiếp - chỉ lấy log mới nhất trong 30 giây
         var onlineLogs = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= fifteenSecondsAgo && l.IsActive)
+            .Where(l => l.Timestamp >= thirtySecondsAgo && l.IsActive)
             .GroupBy(l => l.DeviceId)
             .Select(g => g.OrderByDescending(l => l.Timestamp).First())
             .ToListAsync();

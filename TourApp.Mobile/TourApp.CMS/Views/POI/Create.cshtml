@@ -20,14 +20,31 @@
                         <label asp-for="Address" class="form-label fw-medium">Địa chỉ <span class="text-danger">*</span></label>
                         <input asp-for="Address" class="form-control" placeholder="VD: 02 Công xã Paris, Bến Nghé, Quận 1" required />
                     </div>
+                    <!-- Map Picker Section -->
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Vị trí trên bản đồ <span class="text-danger">*</span></label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-outline-secondary" id="btnCurrentLocation">
+                                <i class="fa-solid fa-crosshairs me-2"></i>Lấy vị trí hiện tại
+                            </button>
+                        </div>
+                        <div id="mapPicker" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                        <small class="text-muted mt-1 d-block">
+                            <i class="fa-solid fa-info-circle me-1"></i>Click trên bản đồ để chọn vị trí chính xác.
+                        </small>
+                        <div id="selectedLocationInfo" class="alert alert-info mt-2 d-none small">
+                            <i class="fa-solid fa-check-circle me-2 text-success"></i>
+                            <span>Đã chọn: <strong id="locationText">Chưa chọn</strong></span>
+                        </div>
+                    </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label asp-for="Latitude" class="form-label fw-medium">Vĩ độ (Latitude) <span class="text-danger">*</span></label>
-                            <input asp-for="Latitude" class="form-control" type="number" step="any" min="0.000001" placeholder="10.7769" required />
+                            <input asp-for="Latitude" id="Latitude" class="form-control" type="number" step="any" min="0.000001" placeholder="10.7769" required readonly />
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Longitude" class="form-label fw-medium">Kinh độ (Longitude) <span class="text-danger">*</span></label>
-                            <input asp-for="Longitude" class="form-control" type="number" step="any" min="0.000001" placeholder="106.7009" required />
+                            <input asp-for="Longitude" id="Longitude" class="form-control" type="number" step="any" min="0.000001" placeholder="106.7009" required readonly />
                         </div>
                     </div>
                     <input type="hidden" asp-for="Radius" value="20" />
@@ -69,3 +86,88 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        let map = null;
+        let marker = null;
+        let selectedLat = null;
+        let selectedLng = null;
+
+        // Initialize map on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Default to Ho Chi Minh City center
+            map = L.map('mapPicker').setView([10.7769, 106.7009], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Handle map click
+            map.on('click', function(e) {
+                selectedLat = e.latlng.lat.toFixed(6);
+                selectedLng = e.latlng.lng.toFixed(6);
+                
+                if (marker) {
+                    marker.setLatLng(e.latlng);
+                } else {
+                    marker = L.marker(e.latlng).addTo(map);
+                }
+                
+                // Update form values immediately
+                document.getElementById('Latitude').value = selectedLat;
+                document.getElementById('Longitude').value = selectedLng;
+                document.getElementById('locationText').textContent = selectedLat + ', ' + selectedLng;
+                document.getElementById('selectedLocationInfo').classList.remove('d-none');
+            });
+        });
+
+        // Get current location
+        document.getElementById('btnCurrentLocation').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                this.disabled = true;
+                this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Đang lấy vị trí...';
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        var lat = position.coords.latitude.toFixed(6);
+                        var lng = position.coords.longitude.toFixed(6);
+                        
+                        document.getElementById('Latitude').value = lat;
+                        document.getElementById('Longitude').value = lng;
+                        document.getElementById('locationText').textContent = lat + ', ' + lng + ' (Vị trí hiện tại)';
+                        document.getElementById('selectedLocationInfo').classList.remove('d-none');
+                        
+                        var btn = document.getElementById('btnCurrentLocation');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-crosshairs me-2"></i>Lấy vị trí hiện tại';
+
+                        // Move map to current location and add marker
+                        if (map) {
+                            map.setView([lat, lng], 16);
+                            if (marker) {
+                                marker.setLatLng([lat, lng]);
+                            } else {
+                                marker = L.marker([lat, lng]).addTo(map);
+                            }
+                        }
+                        selectedLat = lat;
+                        selectedLng = lng;
+                    },
+                    function(error) {
+                        alert('Không thể lấy vị trí hiện tại: ' + error.message);
+                        var btn = document.getElementById('btnCurrentLocation');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-crosshairs me-2"></i>Lấy vị trí hiện tại';
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                alert('Trình duyệt không hỗ trợ Geolocation');
+            }
+        });
+    </script>
+}

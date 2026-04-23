@@ -98,6 +98,7 @@ public partial class LoginPage : ContentPage
 
         // Khởi động session cho khách
         var guestId = $"guest_{Guid.NewGuid().ToString("N")[..8]}";
+        Preferences.Set("guest_id", guestId); // Lưu guestId để duy trì ID duy nhất
         UserSessionService.StartSession(null, "Khách", guestId);
 
         // Chuyển đến app chính
