@@ -1,0 +1,31 @@
+# Render Blueprint for TourApp
+services:
+  # PostgreSQL Database (Free tier: 1GB)
+  - type: pserv
+    name: tourapp-postgres
+    runtime: docker
+    repo: https://github.com/render-examples/postgres
+    envVars:
+      - key: POSTGRES_USER
+        value: tourapp
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: tourappdb
+
+  # API Service
+  - type: web
+    name: tourapp-api
+    runtime: docker
+    rootDir: TourApp.API
+    buildCommand: docker build -t tourapp-api .
+    startCommand: docker run -p 8080:8080 tourapp-api
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        fromService:
+          type: pserv
+          name: tourapp-postgres
+          property: connectionString
+    plan: free

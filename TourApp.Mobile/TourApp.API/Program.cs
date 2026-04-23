@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using TourApp.API.Data;
 using TourApp.API.Services;
 using TourApp.API.Hubs;
@@ -35,11 +36,25 @@ builder.Services.AddSwaggerGen();
 // Đăng ký BusinessKeyService (Scoped để dùng DbContext)
 builder.Services.AddScoped<BusinessKeyService>();
 
-// Cấu hình Database — bỏ qua PendingModelChangesWarning khi model đã có cột (ApplySchemaPatches)
-// nhưng chưa có file migration tương ứng, tránh crash tại Migrate().
+// Cấu hình Database — hỗ trợ cả SQL Server và PostgreSQL
+// Tự động chọn provider dựa vào connection string
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    // Kiểm tra nếu connection string là PostgreSQL (chứa các từ khóa PostgreSQL)
+    if (connectionString != null && 
+        (connectionString.Contains("Host=") || connectionString.Contains("Server=postgres") || 
+         connectionString.Contains("Database=postgres") || connectionString.Contains("postgresql://")))
+    {
+        options.UseNpgsql(connectionString);
+    }
+    else
+    {
+        // Mặc định SQL Server cho local development
+        options.UseSqlServer(connectionString);
+    }
+    
     options.ConfigureWarnings(w =>
         w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });

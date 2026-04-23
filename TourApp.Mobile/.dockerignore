@@ -1,0 +1,41 @@
+# .NET build output
+**/bin/
+**/obj/
+**/out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# NuGet
+*.nupkg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local database files
+*.db
+*.mdf
+*.ldf
+
+# Publish
+publish/
+
+# Test results
+TestResults/
+
+# Node modules (if any)
+node_modules/
