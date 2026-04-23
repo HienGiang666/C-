@@ -32,6 +32,11 @@ namespace TourApp.Mobile.Services
 
         public event EventHandler<POI>? PoiTriggered;
         public event EventHandler<int>? HighlightRequested;
+        /// <summary>
+        /// Fired when TTS locale is not found or may not work properly.
+        /// Parameter: requested language code (e.g., "vi")
+        /// </summary>
+        public event EventHandler<string>? TtsLocaleNotFound;
 
         // Map language code → TTS locale
         private static readonly Dictionary<string, string> LangToLocale = new()
@@ -103,17 +108,31 @@ namespace TourApp.Mobile.Services
 
         private void TriggerNarration(POI poi)
         {
-            _lastSpokenPoiId = poi.Id;
-            _lastSpokenTime = DateTime.Now;
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            try
             {
-                PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.Id);
-            });
+                _lastSpokenPoiId = poi.Id;
+                _lastSpokenTime = DateTime.Now;
 
-            _ = SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GeofenceService][TriggerNarration] UI error: {ex.Message}");
+                    }
+                });
+
+                _ = SpeakNarrationAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][TriggerNarration] Error: {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -124,6 +143,19 @@ namespace TourApp.Mobile.Services
         {
             if (poi == null) return;
 
+            try
+            {
+                await SpeakNarrationInternalAsync(poi, overrideLang);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][CRASH] SpeakNarrationAsync failed: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][CRASH] Stack: {ex.StackTrace}");
+            }
+        }
+
+        private async Task SpeakNarrationInternalAsync(POI poi, string? overrideLang)
+        {
             try
             {
                 // Dừng TTS (Text-to-Speech) nếu đang phát
@@ -165,23 +197,54 @@ namespace TourApp.Mobile.Services
                 }
 
                 // 2. Fallback to TTS if no MP3 found
-                var script = poi.GetScript(lang);
-                if (string.IsNullOrWhiteSpace(script)) return;
+                var rawScript = poi.GetScript(lang);
+                if (string.IsNullOrWhiteSpace(rawScript)) return;
+
+                // Strip HTML tags and normalize whitespace
+                var script = System.Text.RegularExpressions.Regex.Replace(rawScript, "<[^>]+>", "")
+                    .Replace("&nbsp;", " ")
+                    .Replace("&amp;", "&")
+                    .Replace("&lt;", "<")
+                    .Replace("&gt;", ">")
+                    .Trim();
+                script = System.Text.RegularExpressions.Regex.Replace(script, "\\s+", " ");
 
                 var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
-                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script[..Math.Min(50, script.Length)]}...");
+                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script='{script[..Math.Min(50, script.Length)]}...'");
 
                 try
                 {
                     var locales = await TextToSpeech.Default.GetLocalesAsync();
-                    var matchedLocale = locales?.FirstOrDefault(l =>
-                        l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
+                    var localeList = locales?.ToList() ?? new();
+
+                    // Try multiple matching strategies
+                    var matchedLocale = localeList.FirstOrDefault(l =>
+                        l.Language.Equals(lang, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Name.Equals(localeName, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Name.StartsWith(localeName, StringComparison.OrdinalIgnoreCase));
+
+                    // Log available locales and notify UI if locale not found
+                    if (matchedLocale == null)
+                    {
+                        var availableLangs = string.Join(", ", localeList.Select(l => $"{l.Language}({l.Name})").Take(10));
+                        System.Diagnostics.Debug.WriteLine($"[TTS] WARNING: No locale matched for '{lang}'/'{localeName}'");
+                        System.Diagnostics.Debug.WriteLine($"[TTS] Available: {availableLangs}... (total: {localeList.Count})");
+                        MainThread.BeginInvokeOnMainThread(() => TtsLocaleNotFound?.Invoke(this, lang));
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TTS] Matched locale: {matchedLocale.Name} ({matchedLocale.Language})");
+                    }
 
                     var options = new SpeechOptions
                     {
                         Pitch = 1.0f,
                         Volume = 1.0f,
-                        Locale = matchedLocale
+                        Locale = matchedLocale // null is OK - will use device default
                     };
 
                     await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
@@ -202,7 +265,8 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Stack: {ex.StackTrace}");
             }
         }
 
@@ -226,19 +290,33 @@ namespace TourApp.Mobile.Services
         /// </summary>
         public async Task TriggerFromQRAsync(POI poi)
         {
-            System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
-
-            // Reset cooldown để QR luôn phát được
-            _lastSpokenPoiId = -1;
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            try
             {
-                PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.Id);
-            });
+                System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
 
-            await SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
+                // Reset cooldown để QR luôn phát được
+                _lastSpokenPoiId = -1;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QR][TriggerFromQRAsync] UI error: {ex.Message}");
+                    }
+                });
+
+                await SpeakNarrationAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[QR][TriggerFromQRAsync] Error: {ex.GetType().Name}: {ex.Message}");
+            }
         }
     }
 }
