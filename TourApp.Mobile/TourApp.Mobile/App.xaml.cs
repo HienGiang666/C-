@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using TourApp.Mobile.Services;
 
 namespace TourApp.Mobile
@@ -32,7 +33,11 @@ namespace TourApp.Mobile
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
+            var timer = Stopwatch.StartNew();
+            Debug.WriteLine("[Startup] CreateWindow started...");
+
             AuthService.LoadSavedSession();
+            Debug.WriteLine($"[Startup] LoadSavedSession done ({timer.ElapsedMilliseconds}ms)");
 
             Page startPage;
             if (AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username))
@@ -54,6 +59,7 @@ namespace TourApp.Mobile
                 startPage = new NavigationPage(new Views.Auth.LoginPage());
             }
 
+            Debug.WriteLine($"[Startup] CreateWindow completed in {timer.ElapsedMilliseconds}ms");
             return new Window(startPage);
         }
 

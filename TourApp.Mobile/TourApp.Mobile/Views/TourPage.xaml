@@ -4,8 +4,9 @@
              xmlns:models="clr-namespace:TourApp.Mobile.Models"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
              xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
+             xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.TourPage"
-             BackgroundColor="#F5F6F8"
+             BackgroundColor="#F5F7FA"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -13,69 +14,72 @@
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
-        <!-- Header Content -->
-        <VerticalStackLayout Grid.Row="0">
-            <Grid>
-                <!-- Orange Header -->
-                <BoxView Color="#FF3D00" HeightRequest="150" VerticalOptions="Start" />
-                
-                <VerticalStackLayout Padding="20,40,20,20">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                        <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
-                            <Label Text="🚩" FontSize="24" />
-                            <Label Text="{Binding [DiscoverTours], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
-                        </HorizontalStackLayout>
-
-                        <!-- QR Scanner button -->
-                        <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
-                            <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnQRScanClicked"/>
-                            </Border.GestureRecognizers>
-                        </Border>
-                    </Grid>
-
-                    <!-- Search Bar -->
-                    <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
-                        <Grid ColumnDefinitions="30,*">
-                            <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
-                            <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchTour], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
-                        </Grid>
+        <!-- Clean White Header -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="White" Padding="20,48,20,18">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+                <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+                    <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 12">
+                        <Label Text="{x:Static helpers:IconFont.Compass}" FontFamily="MaterialIcons" FontSize="20" TextColor="#00B14F" HorizontalOptions="Center" VerticalOptions="Center"/>
                     </Border>
-                </VerticalStackLayout>
+                    <Label Text="{Binding [DiscoverTours], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="20" FontAttributes="Bold" TextColor="#1A1D26" VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+
+                <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="#F0F2F5" StrokeShape="RoundRectangle 12">
+                    <Label Text="{x:Static helpers:IconFont.QrcodeScan}" FontFamily="MaterialIcons" FontSize="20" TextColor="#4A5568" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+                    </Border.GestureRecognizers>
+                </Border>
             </Grid>
+
+            <!-- Search Bar -->
+            <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="48" StrokeShape="RoundRectangle 12">
+                <Grid ColumnDefinitions="30,*">
+                    <Label Grid.Column="0" Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center"/>
+                    <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchTour], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                </Grid>
+            </Border>
         </VerticalStackLayout>
 
         <!-- Main Content -->
         <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
+            <VerticalStackLayout Padding="20,16,20,40">
                 <CollectionView x:Name="TourCollectionView" SelectionMode="Single" SelectionChanged="OnTourSelected">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:Tour">
-                            <Border StrokeThickness="0" Padding="0" Margin="0,0,0,20" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                            <Border StrokeThickness="0" Padding="0" Margin="0,0,0,14" BackgroundColor="White" StrokeShape="RoundRectangle 16">
                                 <Border.Shadow>
-                                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                    <Shadow Brush="#000" Offset="0,2" Radius="10" Opacity="0.06"/>
                                 </Border.Shadow>
                                 <VerticalStackLayout>
-                                    <Image Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" HeightRequest="150" Aspect="AspectFill"/>
-                                    <VerticalStackLayout Padding="20" Spacing="10">
-                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="18" TextColor="Black"/>
-                                        <Label Text="{Binding Description}" FontSize="13" TextColor="#888" LineBreakMode="WordWrap" MaxLines="2"/>
+                                    <Image Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" HeightRequest="170" Aspect="AspectFill"/>
+                                    <VerticalStackLayout Padding="18,14" Spacing="10">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="17" TextColor="#1A1D26"/>
+                                        <Label Text="{Binding Description}" FontSize="13" TextColor="#6B7588" LineBreakMode="WordWrap" MaxLines="2"/>
                                         
                                         <!-- Stats -->
-                                        <Grid ColumnDefinitions="*,*,*" Margin="0,5,0,15">
-                                            <HorizontalStackLayout Grid.Column="0" Spacing="5">
-                                                <Label Text="📍" FontSize="12"/><Label Text="{Binding PoiCount, StringFormat='{0} điểm'}" FontSize="12" TextColor="#444"/>
+                                        <Grid ColumnDefinitions="*,*,*" Margin="0,2,0,0">
+                                            <HorizontalStackLayout Grid.Column="0" Spacing="6">
+                                                <Border WidthRequest="26" HeightRequest="26" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 7">
+                                                    <Label Text="{x:Static helpers:IconFont.MapMarker}" FontFamily="MaterialIcons" FontSize="14" TextColor="#00B14F" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                </Border>
+                                                <Label Text="{Binding PoiCount, StringFormat='{0} điểm'}" FontSize="12" TextColor="#6B7588" VerticalOptions="Center"/>
                                             </HorizontalStackLayout>
-                                            <HorizontalStackLayout Grid.Column="1" Spacing="5">
-                                                <Label Text="🚩" FontSize="12"/><Label Text="{Binding Distance, StringFormat='{0:F1}km'}" FontSize="12" TextColor="#444"/>
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="6">
+                                                <Border WidthRequest="26" HeightRequest="26" StrokeThickness="0" BackgroundColor="#E8F0FE" StrokeShape="RoundRectangle 7">
+                                                    <Label Text="{x:Static helpers:IconFont.Walk}" FontFamily="MaterialIcons" FontSize="14" TextColor="#007AFF" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                </Border>
+                                                <Label Text="{Binding Distance, StringFormat='{0:F1}km'}" FontSize="12" TextColor="#6B7588" VerticalOptions="Center"/>
                                             </HorizontalStackLayout>
-                                            <HorizontalStackLayout Grid.Column="2" Spacing="5">
-                                                <Label Text="⏰" FontSize="12"/><Label Text="{Binding Duration}" FontSize="12" TextColor="#444"/>
+                                            <HorizontalStackLayout Grid.Column="2" Spacing="6">
+                                                <Border WidthRequest="26" HeightRequest="26" StrokeThickness="0" BackgroundColor="#FFF3E0" StrokeShape="RoundRectangle 7">
+                                                    <Label Text="{x:Static helpers:IconFont.ClockOutline}" FontFamily="MaterialIcons" FontSize="14" TextColor="#FF6B00" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                </Border>
+                                                <Label Text="{Binding Duration}" FontSize="12" TextColor="#6B7588" VerticalOptions="Center"/>
                                             </HorizontalStackLayout>
                                         </Grid>
 
-                                        <Button Text="{Binding [StartTour], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="45" Clicked="OnStartTourClicked" CommandParameter="{Binding .}"/>
+                                        <Button Text="{Binding [StartTour], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="46" Clicked="OnStartTourClicked" CommandParameter="{Binding .}"/>
                                     </VerticalStackLayout>
                                 </VerticalStackLayout>
                             </Border>

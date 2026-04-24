@@ -509,12 +509,14 @@ namespace TourApp.Mobile.Services
 #else
             var socketHandler = new SocketsHttpHandler
             {
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5), // Refresh connections every 5 minutes for DNS changes
                 MaxConnectionsPerServer = 10,
                 EnableMultipleHttp2Connections = true,
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             };
+#if WINDOWS
+            socketHandler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+#endif
             handler = socketHandler;
 #endif
             var client = new HttpClient(handler)

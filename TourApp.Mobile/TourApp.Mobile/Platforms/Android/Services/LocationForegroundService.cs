@@ -31,10 +31,25 @@ public class LocationForegroundService : Service
     {
         System.Diagnostics.Debug.WriteLine("[LocationForegroundService] OnStartCommand");
 
-        var notification = CreateNotification(_statusText);
-        StartForeground(NOTIFICATION_ID, notification);
-
-        StartLocationTracking();
+        try
+        {
+            var notification = CreateNotification(_statusText);
+            StartForeground(NOTIFICATION_ID, notification);
+            StartLocationTracking();
+        }
+        catch (Java.Lang.SecurityException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] SecurityException: {ex.Message}");
+            // Permission not granted, stop service
+            StopSelf();
+            return StartCommandResult.NotSticky;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] Error: {ex.Message}");
+            StopSelf();
+            return StartCommandResult.NotSticky;
+        }
 
         return StartCommandResult.Sticky;
     }
@@ -155,6 +170,21 @@ public class LocationForegroundService : Service
     /// </summary>
     public static void Start(Context context)
     {
+        // Check location permission before starting (Android 14+ requirement)
+        if ((int)Build.VERSION.SdkInt >= 34) // Android 14+
+        {
+            var hasLocation = AndroidX.Core.Content.ContextCompat.CheckSelfPermission(
+                context, global::Android.Manifest.Permission.AccessFineLocation) == global::Android.Content.PM.Permission.Granted
+                || AndroidX.Core.Content.ContextCompat.CheckSelfPermission(
+                context, global::Android.Manifest.Permission.AccessCoarseLocation) == global::Android.Content.PM.Permission.Granted;
+
+            if (!hasLocation)
+            {
+                System.Diagnostics.Debug.WriteLine("[LocationForegroundService] Cannot start: Location permission not granted");
+                return;
+            }
+        }
+
         var intent = new Intent(context, typeof(LocationForegroundService));
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.O)

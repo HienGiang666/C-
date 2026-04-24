@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="jl115">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Release/net9.0-android/lp/153/jl/res.zip!/" />
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Release/net9.0-android/lp/153/jl/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

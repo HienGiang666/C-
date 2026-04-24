@@ -2,8 +2,9 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
+             xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.MapPage"
-             Title="🗺 Tour Vĩnh Khánh"
+             Title="Tour Vĩnh Khánh"
              BackgroundColor="White">
 
     <Grid>
@@ -15,16 +16,16 @@
                 BackgroundColor="White" StrokeShape="RoundRectangle 25" StrokeThickness="0"
                 Shadow="{Shadow Brush=Black, Offset='0,4', Opacity=0.12, Radius=10}">
             <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                <Label Text="🔍" FontSize="18" VerticalOptions="Center" Margin="5,0"/>
+                <Label Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center" Margin="5,0"/>
                 <Entry x:Name="SearchEntry"
                        Placeholder="{Binding [SearchMap], Source={x:Static services:LocalizationResourceManager.Instance}}"
                        PlaceholderColor="#94A3B8"
-                       TextColor="#333"
+                       TextColor="#1B1D2A"
                        HorizontalOptions="Fill"
                        BackgroundColor="Transparent"
                        ReturnType="Search"
                        Completed="OnSearchCompleted"/>
-                <Button Text="{Binding [Search], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00" TextColor="White" CornerRadius="16"
+                <Button Text="{Binding [Search], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" CornerRadius="16"
                         HeightRequest="36" Padding="12,0" FontSize="13" Clicked="OnSearchClicked"/>
             </HorizontalStackLayout>
         </Border>
@@ -34,8 +35,10 @@
                 BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
                 VerticalOptions="Start" Margin="0,80,15,0"
                 Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.15, Radius=8}">
-            <Button Text="📍" BackgroundColor="Transparent" FontSize="20" Padding="0"
-                    Clicked="OnRecenterClicked"/>
+            <Label Text="{x:Static helpers:IconFont.CrosshairsGps}" FontFamily="MaterialIcons" FontSize="22" TextColor="#00B14F" HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnRecenterClicked"/>
+            </Border.GestureRecognizers>
         </Border>
 
         <!-- Settings button (đổi IP server) -->
@@ -43,17 +46,21 @@
                 BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
                 VerticalOptions="Start" Margin="0,140,15,0"
                 Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.15, Radius=8}">
-            <Button Text="⚙️" BackgroundColor="Transparent" FontSize="20" Padding="0"
-                    Clicked="OnSettingsClicked"/>
+            <Label Text="{x:Static helpers:IconFont.CogOutline}" FontFamily="MaterialIcons" FontSize="22" TextColor="#4A5568" HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnSettingsClicked"/>
+            </Border.GestureRecognizers>
         </Border>
 
         <!-- QR Scanner button -->
         <Border WidthRequest="48" HeightRequest="48" StrokeShape="RoundRectangle 24"
-                BackgroundColor="#FF3D00" StrokeThickness="0" HorizontalOptions="End"
+                BackgroundColor="#00B14F" StrokeThickness="0" HorizontalOptions="End"
                 VerticalOptions="Start" Margin="0,200,15,0"
                 Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.2, Radius=8}">
-            <Button Text="📷" BackgroundColor="Transparent" FontSize="20" Padding="0"
-                    Clicked="OnQRScanClicked"/>
+            <Label Text="{x:Static helpers:IconFont.QrcodeScan}" FontFamily="MaterialIcons" FontSize="22" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+            </Border.GestureRecognizers>
         </Border>
 
         <ContentView x:Name="BottomSheetView" IsVisible="False" VerticalOptions="End">
@@ -74,14 +81,13 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <Label x:Name="PoiNameLabel" Grid.Column="0" Text="Tên quán"
                                    FontSize="22" FontAttributes="Bold" TextColor="#1E293B"/>
-                            <Button x:Name="FavBtn" Grid.Column="1" Text="🤍" FontSize="20"
-                                    BackgroundColor="Transparent" Padding="0" WidthRequest="40"
+                            <Button x:Name="FavBtn" Grid.Column="1" Text="{x:Static helpers:IconFont.HeartOutline}" FontFamily="MaterialIcons" BackgroundColor="Transparent" TextColor="#4A5568" FontSize="20" Padding="0" WidthRequest="40"
                                     Clicked="OnFavoriteClicked"/>
                         </Grid>
 
                         <!-- Rating row -->
                         <HorizontalStackLayout Spacing="6" Margin="0,4,0,8">
-                            <Label x:Name="PoiRatingLabel" Text="⭐ 4.8" FontSize="14"
+                            <Label x:Name="PoiRatingLabel" Text="{x:Static helpers:IconFont.Star}" FontFamily="MaterialIcons" FontSize="14"
                                    FontAttributes="Bold" TextColor="#F59E0B"/>
                             <Label x:Name="PoiDistanceLabel" Text="• Đang xác định..."
                                    FontSize="13" TextColor="#64748B" VerticalOptions="Center"/>
@@ -92,11 +98,11 @@
 
                         <!-- Action Buttons -->
                         <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-                            <Button Grid.Column="0" Text="{Binding [ListenAudio], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FF3D00"
+                            <Button Grid.Column="0" Text="{Binding [ListenAudio], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F"
                                     TextColor="White" CornerRadius="12" FontAttributes="Bold"
                                     Clicked="OnPlayAudioClicked"/>
-                            <Button Grid.Column="1" Text="{Binding [Directions], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#FFF1E6"
-                                    TextColor="#FF3D00" CornerRadius="12" FontAttributes="Bold"
+                            <Button Grid.Column="1" Text="{Binding [Directions], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#E6F9EE"
+                                    TextColor="#00B14F" CornerRadius="12" FontAttributes="Bold"
                                     Clicked="OnDirectionsClicked"/>
                             <Button Grid.Column="2" Text="{Binding [Close], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#F1F5F9"
                                     TextColor="#64748B" CornerRadius="12"
@@ -114,14 +120,14 @@
                     <Shadow Brush="Black" Offset="0,4" Opacity="0.3" Radius="10"/>
                 </Border.Shadow>
                 <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
-                    <Label Text="🎵" FontSize="20" VerticalOptions="Center"/>
+                    <Label Text="{x:Static helpers:IconFont.MusicNote}" FontFamily="MaterialIcons" FontSize="20" TextColor="#00B14F" VerticalOptions="Center"/>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
                         <Label x:Name="AudioTitleLabel" Text="Đang phát..." TextColor="White" FontSize="14" FontAttributes="Bold" LineBreakMode="TailTruncation"/>
                         <Label x:Name="AudioQueueCountLabel" Text="" TextColor="#94A3B8" FontSize="11" IsVisible="False"/>
                     </VerticalStackLayout>
-                    <Button x:Name="AudioPlayPauseBtn" Grid.Column="2" Text="⏸" BackgroundColor="Transparent" TextColor="White" FontSize="18" Padding="0" Clicked="OnToggleAudioClicked"/>
-                    <Button Grid.Column="3" Text="⏭" BackgroundColor="Transparent" TextColor="White" FontSize="18" Padding="0" Clicked="OnSkipAudioClicked"/>
-                    <Button Grid.Column="4" Text="❌" BackgroundColor="Transparent" TextColor="#94A3B8" FontSize="16" Padding="0" Clicked="OnStopAudioClicked"/>
+                    <Button x:Name="AudioPlayPauseBtn" Grid.Column="2" Text="{x:Static helpers:IconFont.Pause}" FontFamily="MaterialIcons" BackgroundColor="Transparent" TextColor="White" FontSize="22" Padding="0" Clicked="OnToggleAudioClicked"/>
+                    <Button Grid.Column="3" Text="{x:Static helpers:IconFont.SkipNext}" FontFamily="MaterialIcons" BackgroundColor="Transparent" TextColor="White" FontSize="22" Padding="0" Clicked="OnSkipAudioClicked"/>
+                    <Button Grid.Column="4" Text="{x:Static helpers:IconFont.Close}" FontFamily="MaterialIcons" BackgroundColor="Transparent" TextColor="#94A3B8" FontSize="20" Padding="0" Clicked="OnStopAudioClicked"/>
                 </Grid>
             </Border>
         </ContentView>

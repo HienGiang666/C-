@@ -137,7 +137,11 @@ public partial class MapPage : ContentPage
             }, TaskContinuationOptions.OnlyOnFaulted);
 
             // Bắt đầu tracking GPS với background support
+#if ANDROID
             await _locationService.StartTrackingWithForegroundAsync();
+#else
+            await _locationService.StartTracking();
+#endif
 
             // Xử lý pending POI ID nếu có (khi navigate từ tab khác)
             if (_pendingPoiId.HasValue && _isJsMapReady && _pois != null)
@@ -200,7 +204,11 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         // Dừng GPS tracking (với foreground service trên Android)
+#if ANDROID
         _locationService.StopTrackingWithForeground();
+#else
+        _locationService.StopTracking();
+#endif
         // Dừng audio thuyết minh khi rời khỏi trang
         AudioPlayerService.Instance.Stop();
         // Dừng TTS (Text-to-Speech) nếu đang phát
@@ -409,9 +417,7 @@ public partial class MapPage : ContentPage
 
                 if (PoiImage != null)
                 {
-                    PoiImage.Source = !string.IsNullOrEmpty(poi.ImageUrl)
-                        ? ImageSource.FromUri(new Uri(poi.ImageUrl))
-                        : null;
+                    _ = LoadPoiImageAsync(poi.ImageUrl);
                 }
 
                 bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
@@ -1140,5 +1146,29 @@ window.goongLoadTimeout = setTimeout(function() {{
 <link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
 </body>
 </html>";
+    }
+
+    private async Task LoadPoiImageAsync(string? imageUrl)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                MainThread.BeginInvokeOnMainThread(() => PoiImage.Source = null);
+                return;
+            }
+
+            var localPath = await ImageCacheService.GetLocalPathAsync(imageUrl);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                PoiImage.Source = !string.IsNullOrEmpty(localPath) 
+                    ? ImageSource.FromFile(localPath) 
+                    : null;
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Image load error: {ex.Message}");
+        }
     }
 }

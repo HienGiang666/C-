@@ -103,6 +103,23 @@ app.UseCors("AllowAll");
 
 // [DISABLED] Phone kết nối qua HTTP → nếu redirect sang HTTPS sẽ fail
 // app.UseHttpsRedirection();
+
+// Serve ảnh từ CMS wwwroot/uploads (cho mobile app tải ảnh qua API URL)
+var cmsUploadsPath = Path.Combine(app.Environment.ContentRootPath, "..", "TourApp.CMS", "wwwroot", "uploads");
+if (Directory.Exists(cmsUploadsPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Path.GetFullPath(cmsUploadsPath)),
+        RequestPath = "/uploads"
+    });
+    Console.WriteLine($"[Static Files] Serving uploads from: {Path.GetFullPath(cmsUploadsPath)}");
+}
+else
+{
+    Console.WriteLine($"[Static Files] WARNING: CMS uploads not found at {cmsUploadsPath}");
+}
+
 app.UseAuthorization();
 
 // === SIGNALR Hub endpoint ===

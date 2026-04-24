@@ -254,6 +254,20 @@ namespace TourApp.Mobile.Services
         {
             if (_useAndroidForegroundService)
             {
+                // CHECK LOCATION PERMISSION FIRST (required for Android 14+ foreground service)
+                var locStatus = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                if (locStatus != PermissionStatus.Granted)
+                {
+                    locStatus = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+                }
+                if (locStatus != PermissionStatus.Granted)
+                {
+                    System.Diagnostics.Debug.WriteLine("[LocationService] Location permission denied, cannot start foreground service");
+                    // Fall back to standard tracking
+                    await StartTracking();
+                    return;
+                }
+
                 // Request notification permission for foreground service (Android 13+)
                 if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Tiramisu)
                 {
