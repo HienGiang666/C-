@@ -81,7 +81,7 @@ try
 
     DbSeeder.ApplySchemaPatches(context);
     DbSeeder.EnsureBusinessKeyCodes(context);
-    DbSeeder.EnsureBusinessKeyCodes(context); // tour/booking seed có Code = null → gán TR-/BK-
+    DbSeeder.EnsureBusinessKeyCodes(context); // tour/booking seed có Code 02= null → gán TR-/BK-
     DbSeeder.AssignPoiOwnersCuongHien(context);
 }
 catch (Exception ex)

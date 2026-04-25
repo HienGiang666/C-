@@ -97,12 +97,13 @@ else
             });
             
             // ===== SIGNALR SETUP =====
-            // API URL - khớp với port API đang chạy (https://localhost:7244)
-            var apiBaseUrl = 'https://localhost:7244';
+            // API URL - kết nối trực tiếp localhost (CMS và API cùng máy)
+            var apiBaseUrl = '@(ViewBag.ApiBaseUrl ?? "https://localhost:7244")';
             
             var connection = new signalR.HubConnectionBuilder()
                 .withUrl(apiBaseUrl + '/hubs/userlocation')
                 .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Information)
                 .build();
             
             // Cập nhật trạng thái kết nối

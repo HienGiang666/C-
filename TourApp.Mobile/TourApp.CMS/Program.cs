@@ -11,9 +11,10 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<CmsAccessFilter>();
 });
 
+var tourApiBaseUrl = builder.Configuration.GetSection("TourApi:BaseUrl").Value ?? "http://localhost:5254";
 builder.Services.AddHttpClient("TourApi", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5254/");
+    client.BaseAddress = new Uri(tourApiBaseUrl.TrimEnd('/') + "/");
 });
 
 builder.Services.AddDistributedMemoryCache();

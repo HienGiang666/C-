@@ -15,9 +15,9 @@
         <Border Padding="10,5" Margin="15,15,15,0" VerticalOptions="Start" HorizontalOptions="Fill"
                 BackgroundColor="White" StrokeShape="RoundRectangle 25" StrokeThickness="0"
                 Shadow="{Shadow Brush=Black, Offset='0,4', Opacity=0.12, Radius=10}">
-            <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                <Label Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center" Margin="5,0"/>
-                <Entry x:Name="SearchEntry"
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" VerticalOptions="Center">
+                <Label Grid.Column="0" Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center" Margin="5,0"/>
+                <Entry Grid.Column="1" x:Name="SearchEntry"
                        Placeholder="{Binding [SearchMap], Source={x:Static services:LocalizationResourceManager.Instance}}"
                        PlaceholderColor="#94A3B8"
                        TextColor="#1B1D2A"
@@ -25,9 +25,9 @@
                        BackgroundColor="Transparent"
                        ReturnType="Search"
                        Completed="OnSearchCompleted"/>
-                <Button Text="{Binding [Search], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" CornerRadius="16"
+                <Button Grid.Column="2" Text="{Binding [Search], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" CornerRadius="16"
                         HeightRequest="36" Padding="12,0" FontSize="13" Clicked="OnSearchClicked"/>
-            </HorizontalStackLayout>
+            </Grid>
         </Border>
 
         <!-- Re-center GPS button -->
@@ -41,17 +41,6 @@
             </Border.GestureRecognizers>
         </Border>
 
-        <!-- Settings button (đổi IP server) -->
-        <Border WidthRequest="48" HeightRequest="48" StrokeShape="RoundRectangle 24"
-                BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
-                VerticalOptions="Start" Margin="0,140,15,0"
-                Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.15, Radius=8}">
-            <Label Text="{x:Static helpers:IconFont.CogOutline}" FontFamily="MaterialIcons" FontSize="22" TextColor="#4A5568" HorizontalOptions="Center" VerticalOptions="Center"/>
-            <Border.GestureRecognizers>
-                <TapGestureRecognizer Tapped="OnSettingsClicked"/>
-            </Border.GestureRecognizers>
-        </Border>
-
         <!-- QR Scanner button -->
         <Border WidthRequest="48" HeightRequest="48" StrokeShape="RoundRectangle 24"
                 BackgroundColor="#00B14F" StrokeThickness="0" HorizontalOptions="End"
@@ -61,6 +50,24 @@
             <Border.GestureRecognizers>
                 <TapGestureRecognizer Tapped="OnQRScanClicked"/>
             </Border.GestureRecognizers>
+        </Border>
+
+        <!-- Mock Location toggle button -->
+        <Border x:Name="MockToggleBtn" WidthRequest="48" HeightRequest="48" StrokeShape="RoundRectangle 24"
+                BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
+                VerticalOptions="Start" Margin="0,260,15,0"
+                Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.15, Radius=8}">
+            <Label x:Name="MockToggleIcon" Text="{x:Static helpers:IconFont.MapMarker}" FontFamily="MaterialIcons" FontSize="22" TextColor="#4A5568" HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnMockToggleClicked"/>
+            </Border.GestureRecognizers>
+        </Border>
+
+        <!-- Mock mode banner -->
+        <Border x:Name="MockBanner" IsVisible="False" BackgroundColor="#FF6B00" StrokeThickness="0" 
+                StrokeShape="RoundRectangle 12" Padding="12,6" HorizontalOptions="Center" 
+                VerticalOptions="Start" Margin="0,70,0,0">
+            <Label Text="📍 Chế độ giả lập — Chạm bản đồ để di chuyển" FontSize="12" TextColor="White" FontAttributes="Bold"/>
         </Border>
 
         <ContentView x:Name="BottomSheetView" IsVisible="False" VerticalOptions="End">

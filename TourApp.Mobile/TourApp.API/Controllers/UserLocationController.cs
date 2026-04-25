@@ -53,10 +53,37 @@ public class UserLocationController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/userlocation/stats
-    /// Trả về thống kê người dùng đang online (theo Timestamp gần nhất trong 1 phút)
-    /// và tổng số device unique trong 24h qua
+    /// Session endpoint: mobile app gọi khi user online/offline
     /// </summary>
+    [HttpPost("session")]
+    public async Task<IActionResult> SessionUpdate([FromBody] UserSessionRequest request)
+    {
+        var deviceId = request.GuestId ?? $"user_{request.UserId}" ?? "unknown";
+        
+        if (request.IsOnline)
+        {
+            await _hubContext.Clients.All.SendAsync("UserOnline", new
+            {
+                DeviceId = deviceId,
+                SessionId = request.GuestId,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Timestamp = DateTime.Now
+            });
+        }
+        else
+        {
+            await _hubContext.Clients.All.SendAsync("UserOffline", new
+            {
+                DeviceId = deviceId,
+                SessionId = request.GuestId,
+                Timestamp = DateTime.Now
+            });
+        }
+        
+        return Ok(new { success = true });
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {

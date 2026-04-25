@@ -7,7 +7,7 @@ namespace TourApp.Mobile.Services
     public class ApiService
     {
         // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
-        private const string DefaultUrl = "http://10.89.192.150:5254";
+        private const string DefaultUrl = "https://hypocrite-ground-tackle.ngrok-free.dev";
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
