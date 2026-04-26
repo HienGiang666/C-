@@ -896,6 +896,7 @@ public partial class MapPage : ContentPage
 <head>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
 <link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
+<link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
 <style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   body, html {{ width:100%; height:100%; overflow:hidden; background:#f0f2f5; }}
@@ -966,12 +967,20 @@ public partial class MapPage : ContentPage
 
 <div id='map'></div>
 
-<!-- QUAN TRỌNG: Khai báo hàm TRƯỚC khi load CDN
-     Lý do: onerror/onload của script CDN gọi các hàm này ngay khi CDN load xong.
-     Nếu khai báo sau, hàm chưa tồn tại → ReferenceError → map trắng -->
+<!-- QUAN TRỌNG: Khai báo hàm TRƯỚC khi load CDN -->
 <script>
 var map, pois = {poisJson}, userMarker = null, poiMarkers = [];
 var mockModeEnabled = false;
+var useLeaflet = false; // true khi WebGL không khả dụng (giả lập)
+var leafletRouteLayer = null;
+
+function hasWebGL() {{
+  try {{
+    var c = document.createElement('canvas');
+    return !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
+  }} catch(e) {{ return false; }}
+}}
+
 function setMockMode(enabled) {{
   mockModeEnabled = enabled;
   var el = document.getElementById('map');
@@ -980,12 +989,17 @@ function setMockMode(enabled) {{
 
 function onGoongLoadError() {{
   clearTimeout(window.goongLoadTimeout);
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('errmsg').classList.add('show');
+  console.log('[Map] Goong load error — falling back to Leaflet');
+  initLeafletFallback();
 }}
 
 function onGoongLoaded() {{
   clearTimeout(window.goongLoadTimeout);
+  if (!hasWebGL()) {{
+    console.log('[Map] WebGL not available — falling back to Leaflet');
+    initLeafletFallback();
+    return;
+  }}
   try {{
     goongjs.accessToken = '{GoongMaptileKey}';
     map = new goongjs.Map({{
@@ -999,11 +1013,10 @@ function onGoongLoaded() {{
     map.on('load', function() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
-      setTimeout(function() {{
-        window.location.href = 'http://map/ready';
-      }}, 0);
+      setTimeout(function() {{ window.location.href = 'http://map/ready'; }}, 0);
     }});
     map.on('error', function(e) {{
+      console.log('[Map] Goong error:', e);
       document.getElementById('loading').classList.add('hide');
     }});
     map.on('click', function(e) {{
@@ -1011,12 +1024,44 @@ function onGoongLoaded() {{
       window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
     }});
   }} catch(e) {{
-    onGoongLoadError();
+    console.log('[Map] Goong init error:', e);
+    initLeafletFallback();
   }}
+}}
+
+/* ===== LEAFLET FALLBACK (cho giả lập không có WebGL) ===== */
+function initLeafletFallback() {{
+  useLeaflet = true;
+  // Load Leaflet JS dynamically
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  s.onload = function() {{
+    document.getElementById('loading').classList.add('hide');
+    map = L.map('map').setView([10.7596, 106.7018], 16);
+    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }}).addTo(map);
+    map.on('click', function(e) {{
+      if (!mockModeEnabled) return;
+      window.location.href = 'http://map/setmock?lat=' + e.latlng.lat + '&lng=' + e.latlng.lng;
+    }});
+    // Leaflet compat: add loaded() method + flyTo wrapper
+    map.loaded = function() {{ return true; }};
+    patchLeafletFlyTo();
+    addMarkers(pois);
+    setTimeout(function() {{ window.location.href = 'http://map/ready'; }}, 0);
+  }};
+  s.onerror = function() {{
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('errmsg').classList.add('show');
+  }};
+  document.head.appendChild(s);
 }}
 
 function addMarkers(poiList) {{
   if (!map) return;
+  // Remove existing markers
   poiMarkers.forEach(function(marker) {{ marker.remove(); }});
   poiMarkers = [];
 
@@ -1027,107 +1072,96 @@ function addMarkers(poiList) {{
     if (longitude === undefined || longitude === null) longitude = poi.longitude;
     var lat = Number(latitude);
     var lng = Number(longitude);
+    if (!isFinite(lat) || !isFinite(lng)) return;
 
-    if (!isFinite(lat) || !isFinite(lng)) {{
-      console.log('[Marker Skipped] Invalid coordinates');
-      return;
-    }}
-
-    // JSON from C# uses lowercase property names due to [JsonPropertyName(""id"")]
     var poiId = poi.id || poi.poiId || poi.PoiId || poi.Id || 0;
     var poiName = poi.name || poi.PoiName || poi.Name || 'Địa điểm';
 
-    // Create marker element
-    var el = document.createElement('div');
-    el.className = 'poi-marker';
-    el.setAttribute('data-poi-id', poiId);
-    el.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
-    el.innerHTML = '🍽️';
-
-    // Create marker with Goong
-    var marker = new goongjs.Marker(el)
-      .setLngLat([lng, lat])
-      .addTo(map);
-    poiMarkers.push(marker);
-
-    // Log for debugging
-    console.log('[Marker Created] POI ID: ' + poiId + ', Name: ' + poiName);
-
-    // Attach click handler to the DOM element - use capture phase
-    el.addEventListener('click', function(e) {{
-      console.log('[Marker Click Event Fired] POI ID: ' + poiId);
-      e.stopPropagation();
-      // Navigate using standard scheme to ensure WebView catches it
-      window.location.href = 'http://poi/selected?id=' + poiId;
-    }}, false);
-
-    // Make element explicitly clickable
-    el.style.pointerEvents = 'auto';
-    el.style.zIndex = '1000';
+    if (useLeaflet) {{
+      // Leaflet marker
+      var icon = L.divIcon({{ className: 'poi-marker', html: '🍽️', iconSize: [40,40], iconAnchor: [20,20] }});
+      var marker = L.marker([lat, lng], {{ icon: icon }}).addTo(map);
+      marker.on('click', function() {{
+        window.location.href = 'http://poi/selected?id=' + poiId;
+      }});
+      marker.getElement().setAttribute('data-poi-id', poiId);
+      poiMarkers.push(marker);
+    }} else {{
+      // Goong marker
+      var el = document.createElement('div');
+      el.className = 'poi-marker';
+      el.setAttribute('data-poi-id', poiId);
+      el.style.cursor = 'pointer';
+      el.style.pointerEvents = 'auto';
+      el.style.zIndex = '1000';
+      el.innerHTML = '🍽️';
+      var marker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
+      poiMarkers.push(marker);
+      el.addEventListener('click', function(e) {{
+        e.stopPropagation();
+        window.location.href = 'http://poi/selected?id=' + poiId;
+      }}, false);
+    }}
   }});
 }}
 
 function refreshMarkers(newPois) {{
   pois = newPois;
-  if (map && map.loaded()) addMarkers(newPois);
+  if (useLeaflet || (map && map.loaded())) addMarkers(newPois);
 }}
 
 function updateUserLocation(lng, lat) {{
   if (!map) return;
-  if (!userMarker) {{
-    var el = document.createElement('div');
-    el.id = 'user-marker';
-    userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
+  if (useLeaflet) {{
+    if (!userMarker) {{
+      var icon = L.divIcon({{ className: '', html: '<div id=\"user-marker\"></div>', iconSize: [20,20], iconAnchor: [10,10] }});
+      userMarker = L.marker([lat, lng], {{ icon: icon }}).addTo(map);
+    }} else {{
+      userMarker.setLatLng([lat, lng]);
+    }}
   }} else {{
-    userMarker.setLngLat([lng, lat]);
+    if (!userMarker) {{
+      var el = document.createElement('div');
+      el.id = 'user-marker';
+      userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
+    }} else {{
+      userMarker.setLngLat([lng, lat]);
+    }}
   }}
 }}
 
 function drawRoute(coords) {{
   if (!map) return;
-  
-  if (map.getSource('route')) {{
-    map.getSource('route').setData({{
-      'type': 'Feature',
-      'properties': {{}},
-      'geometry': {{
-        'type': 'LineString',
-        'coordinates': coords
-      }}
-    }});
+  if (useLeaflet) {{
+    // Leaflet: coords = [[lng,lat],...] → convert to [[lat,lng],...]
+    if (leafletRouteLayer) map.removeLayer(leafletRouteLayer);
+    var latlngs = coords.map(function(c) {{ return [c[1], c[0]]; }});
+    leafletRouteLayer = L.polyline(latlngs, {{ color: '#3B82F6', weight: 6, opacity: 0.8 }}).addTo(map);
+    map.fitBounds(leafletRouteLayer.getBounds(), {{ padding: [50,50] }});
   }} else {{
-    map.addSource('route', {{
-      'type': 'geojson',
-      'data': {{
-        'type': 'Feature',
-        'properties': {{}},
-        'geometry': {{
-          'type': 'LineString',
-          'coordinates': coords
-        }}
-      }}
-    }});
-    map.addLayer({{
-      'id': 'route',
-      'type': 'line',
-      'source': 'route',
-      'layout': {{
-        'line-join': 'round',
-        'line-cap': 'round'
-      }},
-      'paint': {{
-        'line-color': '#3B82F6',
-        'line-width': 6,
-        'line-opacity': 0.8
-      }}
-    }});
-  }}
-
-  if (coords.length > 0) {{
-    var bounds = coords.reduce(function(b, coord) {{
-      return b.extend(coord);
-    }}, new goongjs.LngLatBounds(coords[0], coords[0]));
-    map.fitBounds(bounds, {{ padding: 50 }});
+    if (map.getSource('route')) {{
+      map.getSource('route').setData({{
+        'type': 'Feature', 'properties': {{}},
+        'geometry': {{ 'type': 'LineString', 'coordinates': coords }}
+      }});
+    }} else {{
+      map.addSource('route', {{
+        'type': 'geojson',
+        'data': {{ 'type': 'Feature', 'properties': {{}},
+          'geometry': {{ 'type': 'LineString', 'coordinates': coords }} }}
+      }});
+      map.addLayer({{
+        'id': 'route', 'type': 'line', 'source': 'route',
+        'layout': {{ 'line-join': 'round', 'line-cap': 'round' }},
+        'paint': {{ 'line-color': '#3B82F6', 'line-width': 6, 'line-opacity': 0.8 }}
+      }});
+    }}
+    if (coords.length > 0) {{
+      var bounds = coords.reduce(function(b, coord) {{
+        return b.extend(coord);
+      }}, new goongjs.LngLatBounds(coords[0], coords[0]));
+      map.fitBounds(bounds, {{ padding: 50 }});
+    }}
   }}
 }}
 
@@ -1139,13 +1173,34 @@ function highlightPoi(poiId) {{
   }});
 }}
 
+// Wrapper flyTo tương thích Goong + Leaflet
+// C# gọi: map.flyTo({{center:[lng,lat], zoom:17}})
+// → Leaflet cần: map.setView([lat,lng], zoom)
+var _originalFlyTo = null;
+function patchLeafletFlyTo() {{
+  if (!useLeaflet || !map) return;
+  _originalFlyTo = map.flyTo;
+  map.flyTo = function(opts) {{
+    if (opts && opts.center) {{
+      // Goong format: center:[lng,lat] → Leaflet: [lat,lng]
+      var zoom = opts.zoom || map.getZoom();
+      map.setView([opts.center[1], opts.center[0]], zoom);
+    }} else {{
+      _originalFlyTo.apply(map, arguments);
+    }}
+  }};
+}}
+
 // Timeout 5s nếu CDN chưa load
 window.goongLoadTimeout = setTimeout(function() {{
-  if (!window.goongjs) onGoongLoadError();
+  if (!window.goongjs) {{
+    console.log('[Map] Goong CDN timeout — falling back to Leaflet');
+    initLeafletFallback();
+  }}
 }}, 5000);
 </script>
 
-<!-- Load Goong JS CDN - gọi onGoongLoaded/onGoongLoadError đã define ở trên -->
+<!-- Load Goong JS CDN -->
 <script
   src='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js'
   onload='onGoongLoaded()'

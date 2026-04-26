@@ -7,12 +7,19 @@
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.HomePage"
              x:DataType="views:HomePage"
-             BackgroundColor="#F5F7FA"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
         <converters:UrlToImageSourceConverter x:Key="UrlToImageConverter" />
     </ContentPage.Resources>
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F0F7F4" Offset="0.0"/>
+            <GradientStop Color="#F5F0EB" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
     
     <ScrollView>
         <VerticalStackLayout Spacing="0">
@@ -65,8 +72,18 @@
                 </Border>
             </Grid>
 
+            <!-- Decorative curve -->
+            <BoxView HeightRequest="18" Margin="0,-18,0,0">
+                <BoxView.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00C853" Offset="0.0"/>
+                        <GradientStop Color="Transparent" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </BoxView.Background>
+            </BoxView>
+
             <!-- Main Content -->
-            <VerticalStackLayout Padding="20,20,20,40" Spacing="24">
+            <VerticalStackLayout Padding="20,10,20,40" Spacing="24">
                 
                 <!-- Category Chips - horizontal scroll -->
                 <VerticalStackLayout Spacing="12">

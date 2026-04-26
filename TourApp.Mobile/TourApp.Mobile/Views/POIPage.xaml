@@ -6,16 +6,29 @@
              xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.POIPage"
-             BackgroundColor="#F5F7FA"
              Shell.NavBarIsVisible="False">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F0F7F4" Offset="0.0"/>
+            <GradientStop Color="#FFF8F0" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <ContentPage.Resources>
         <converters:UrlToImageSourceConverter x:Key="UrlToImageConverter" />
     </ContentPage.Resources>
     
     <Grid RowDefinitions="Auto,*">
-        <!-- Clean White Header -->
-        <VerticalStackLayout Grid.Row="0" BackgroundColor="White" Padding="20,48,20,18">
+        <!-- Header with subtle gradient -->
+        <VerticalStackLayout Grid.Row="0" Padding="20,48,20,18">
+            <VerticalStackLayout.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FFFFFF" Offset="0.0"/>
+                    <GradientStop Color="#F0F7F4" Offset="1.0"/>
+                </LinearGradientBrush>
+            </VerticalStackLayout.Background>
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
                 <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
                     <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 12">

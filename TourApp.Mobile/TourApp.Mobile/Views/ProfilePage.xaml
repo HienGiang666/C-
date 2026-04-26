@@ -4,13 +4,26 @@
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.ProfilePage"
-             BackgroundColor="#F5F7FA"
              Shell.NavBarIsVisible="False">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F3F0FF" Offset="0.0"/>
+            <GradientStop Color="#F5F0EB" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <ScrollView>
         <VerticalStackLayout Spacing="0">
-            <!-- Clean White Header with avatar -->
-            <VerticalStackLayout BackgroundColor="White" Padding="24,52,24,28">
+            <!-- Header with subtle gradient -->
+            <VerticalStackLayout Padding="24,52,24,28">
+                <VerticalStackLayout.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#FFFFFF" Offset="0.0"/>
+                        <GradientStop Color="#F8F5FF" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </VerticalStackLayout.Background>
                 <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
                     <Border WidthRequest="88" HeightRequest="88" Stroke="#00B14F" StrokeThickness="3" Padding="0" StrokeShape="RoundRectangle 44" HorizontalOptions="Center">
                         <Image Source="media__1775454538289.png" Aspect="AspectFill"/>

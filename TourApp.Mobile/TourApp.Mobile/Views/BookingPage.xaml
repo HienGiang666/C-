@@ -4,8 +4,15 @@
              xmlns:views="clr-namespace:TourApp.Mobile.Views"
              x:Class="TourApp.Mobile.Views.BookingPage"
              x:DataType="views:BookingPage"
-             Title="Đặt Tour"
-             BackgroundColor="#F5F7FA">
+             Title="Đặt Tour">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F0F7F4" Offset="0.0"/>
+            <GradientStop Color="#FFF8F0" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">

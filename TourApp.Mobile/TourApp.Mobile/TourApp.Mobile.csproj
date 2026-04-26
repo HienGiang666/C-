@@ -2,7 +2,6 @@
 
 	<PropertyGroup>
 		<DefaultItemExcludes>$(DefaultItemExcludes);TourApp.API\**;TourApp.CMS\**;TourApp.Mobile\**</DefaultItemExcludes>
-		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<NoWarn>CA1416;CS1591;CS0618;CS8602;CS8604;CS8625</NoWarn>
 		<TargetFrameworks>net9.0-android</TargetFrameworks>
@@ -38,12 +37,13 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(TargetFramework)' == 'net9.0-android'">
-		<!-- TẮT interpreter để startup nhanh hơn, bật lại khi cần Hot Reload -->
-		<AndroidUseInterpreter>false</AndroidUseInterpreter>
-		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
-		<!-- Bật AOT partially để startup nhanh -->
-		<RunAOTCompilation>true</RunAOTCompilation>
-		<AndroidEnableProfiledAot>true</AndroidEnableProfiledAot>
+		<!-- Debug: TẮT AOT để build nhanh (AOT compile 295 DLL x2 arch rất lâu) -->
+		<RunAOTCompilation>false</RunAOTCompilation>
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+		<!-- Bật Fast Deployment: push DLL thay vì đóng APK lại -->
+		<EmbedAssembliesIntoApk>false</EmbedAssembliesIntoApk>
+		<!-- Interpreter cho Hot Reload -->
+		<AndroidUseInterpreter>true</AndroidUseInterpreter>
 	</PropertyGroup>
 
 	<!-- RELEASE: Full AOT để startup nhanh nhất -->

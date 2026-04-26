@@ -2,8 +2,15 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TourApp.Mobile.Views.EditProfilePage"
-             Title="Chỉnh sửa hồ sơ"
-             BackgroundColor="#F5F7FA">
+             Title="Chỉnh sửa hồ sơ">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F3F0FF" Offset="0.0"/>
+            <GradientStop Color="#F5F0EB" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">

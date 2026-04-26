@@ -5,8 +5,15 @@
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.UserBookingsPage"
-             Title="{Binding [MyTours], Source={x:Static services:LocalizationResourceManager.Instance}}"
-             BackgroundColor="#F5F7FA">
+             Title="{Binding [MyTours], Source={x:Static services:LocalizationResourceManager.Instance}}">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F0F7F4" Offset="0.0"/>
+            <GradientStop Color="#FFF8F0" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <Grid RowDefinitions="*">
         <RefreshView x:Name="BookingsRefreshView" Grid.Row="0" Refreshing="OnRefreshing">
