@@ -88,14 +88,24 @@
                             <label asp-for="Address" class="form-label fw-medium">Địa chỉ <span class="text-danger">*</span></label>
                             <input asp-for="Address" class="form-control" required />
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Chọn vị trí trên bản đồ <span class="text-danger">*</span></label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="mapSearch" class="form-control" placeholder="Tìm địa điểm..." />
+                                <button type="button" class="btn btn-outline-primary" onclick="searchPlace()">Tìm</button>
+                            </div>
+                            <div id="goongMap" style="height:350px;border-radius:8px;border:1px solid #dee2e6;"></div>
+                            <small class="text-muted"><i class="fa-solid fa-hand-pointer me-1"></i>Click trên bản đồ để chọn vị trí</small>
+                        </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="Latitude" class="form-label fw-medium">Vĩ độ (Latitude) <span class="text-danger">*</span></label>
-                                <input asp-for="Latitude" class="form-control" type="number" step="any" min="0.000001" required />
+                                <input asp-for="Latitude" id="Latitude" class="form-control bg-light" type="number" step="any" required />
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Longitude" class="form-label fw-medium">Kinh độ (Longitude) <span class="text-danger">*</span></label>
-                                <input asp-for="Longitude" class="form-control" type="number" step="any" min="0.000001" required />
+                                <input asp-for="Longitude" id="Longitude" class="form-control bg-light" type="number" step="any" required />
                             </div>
                         </div>
                         <input type="hidden" asp-for="Radius" value="20" />
@@ -198,59 +208,153 @@
     </div>
 </div>
 
-<script>
-const poiDescription = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Description ?? ""));
-const poiName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name ?? ""));
-const langCodes = [@Html.Raw(string.Join(",", languages.Select(l => $"\"{l.Item1}\"")))];
-
-async function translateText(text, targetLang) {
-    try {
-        const url = `/api/Translate?text=${encodeURIComponent(text)}&target=${targetLang}&source=vi`;
-        const response = await fetch(url);
-        if (!response.ok) return text;
-        const data = await response.json();
-        if (data && data[0] && data[0].length > 0) {
-            return data[0].map(x => x[0]).join('');
-        }
-        return text;
-    } catch {
-        return text;
-    }
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.css" rel="stylesheet" />
 }
 
-async function autoTranslateAll() {
-    if (!poiDescription && !poiName) {
-        alert('Vui lòng nhập mô tả tiếng Việt trước khi dịch.');
-        return;
-    }
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.js"></script>
+    <script>
+        // ===== GOONG MAP PICKER =====
+        document.addEventListener('DOMContentLoaded', function () {
+            var mapEl = document.getElementById('goongMap');
+            if (!mapEl) return; // Admin view has no map
 
-    const statusDiv = document.getElementById('translationStatus');
-    const statusText = document.getElementById('translationStatusText');
-    statusDiv.classList.remove('d-none');
+            var GOONG_MAPTILE_KEY = '2Dnp8yaRq6ivkjX5c7D7RFcx5tDSi5g512jA5dG9';
+            var GOONG_REST_KEY = 'FEx6pcCh7bba5bfwJC4M7truNtLS7rEAwkZQZZ8g';
+            goongjs.accessToken = GOONG_MAPTILE_KEY;
 
-    for (let i = 0; i < langCodes.length; i++) {
-        const code = langCodes[i];
-        statusText.textContent = `Đang dịch ${code}... (${i + 1}/${langCodes.length})`;
+            var existingLat = parseFloat(document.getElementById('Latitude')?.value) || 10.762;
+            var existingLng = parseFloat(document.getElementById('Longitude')?.value) || 106.702;
 
-        try {
-            if (poiName) {
-                const nameBox = document.getElementById(`name-${code}`);
-                if (nameBox && !nameBox.value.trim()) {
-                    nameBox.value = await translateText(poiName, code);
+            var map = new goongjs.Map({
+                container: 'goongMap',
+                style: 'https://tiles.goong.io/assets/goong_map_web.json?api_key=' + GOONG_MAPTILE_KEY,
+                center: [existingLng, existingLat],
+                zoom: 15
+            });
+
+            var marker = null;
+
+            function setMarker(lat, lng, address) {
+                if (marker) marker.remove();
+                marker = new goongjs.Marker({ color: '#e74c3c' })
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+                document.getElementById('Latitude').value = lat.toFixed(6);
+                document.getElementById('Longitude').value = lng.toFixed(6);
+                if (address) {
+                    document.getElementById('Address').value = address;
                 }
             }
-            if (poiDescription) {
-                const descBox = document.getElementById(`desc-${code}`);
-                if (descBox && !descBox.value.trim()) {
-                    descBox.value = await translateText(poiDescription, code);
-                }
+
+            // Reverse geocode khi click bản đồ
+            function reverseGeocode(lat, lng) {
+                var url = 'https://rsapi.goong.io/Geocode?latlng=' + lat + ',' + lng + '&api_key=' + GOONG_REST_KEY;
+                fetch(url).then(r => r.json()).then(data => {
+                    if (data.results && data.results.length > 0) {
+                        document.getElementById('Address').value = data.results[0].formatted_address;
+                    }
+                }).catch(() => {});
             }
-        } catch (err) {
-            console.warn(`Dịch ${code} thất bại:`, err);
+
+            // Show existing marker if POI already has coordinates
+            if (existingLat > 0 && existingLng > 0) {
+                setMarker(existingLat, existingLng);
+            }
+
+            map.on('click', function (e) {
+                setMarker(e.lngLat.lat, e.lngLat.lng);
+                reverseGeocode(e.lngLat.lat, e.lngLat.lng);
+            });
+
+            // Tìm kiếm bằng Goong Place AutoComplete + Detail
+            window.searchPlace = function () {
+                var query = document.getElementById('mapSearch').value.trim();
+                if (!query) return;
+                var center = map.getCenter();
+                var url = 'https://rsapi.goong.io/Place/AutoComplete?api_key=' + GOONG_REST_KEY
+                    + '&input=' + encodeURIComponent(query)
+                    + '&location=' + center.lat + ',' + center.lng;
+                fetch(url).then(r => r.json()).then(data => {
+                    if (data.predictions && data.predictions.length > 0) {
+                        var placeId = data.predictions[0].place_id;
+                        var desc = data.predictions[0].description;
+                        var detailUrl = 'https://rsapi.goong.io/Place/Detail?api_key=' + GOONG_REST_KEY + '&place_id=' + placeId;
+                        fetch(detailUrl).then(r => r.json()).then(detail => {
+                            if (detail.result && detail.result.geometry) {
+                                var loc = detail.result.geometry.location;
+                                map.flyTo({ center: [loc.lng, loc.lat], zoom: 17 });
+                                setMarker(loc.lat, loc.lng, detail.result.formatted_address || desc);
+                            }
+                        });
+                    } else {
+                        alert('Không tìm thấy địa điểm. Thử nhập cụ thể hơn.');
+                    }
+                }).catch(() => alert('Lỗi tìm kiếm. Vui lòng thử lại.'));
+            };
+
+            document.getElementById('mapSearch').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); searchPlace(); }
+            });
+        });
+    </script>
+
+    <!-- Translation script -->
+    <script>
+        const poiDescription = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Description ?? ""));
+        const poiName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name ?? ""));
+        const langCodes = [@Html.Raw(string.Join(",", languages.Select(l => $"\"{l.Item1}\"")))];
+
+        async function translateText(text, targetLang) {
+            try {
+                const url = `/api/Translate?text=${encodeURIComponent(text)}&target=${targetLang}&source=vi`;
+                const response = await fetch(url);
+                if (!response.ok) return text;
+                const data = await response.json();
+                if (data && data[0] && data[0].length > 0) {
+                    return data[0].map(x => x[0]).join('');
+                }
+                return text;
+            } catch {
+                return text;
+            }
         }
-    }
 
-    statusText.textContent = '✅ Dịch xong! Kiểm tra và bấm "Lưu tất cả bản dịch" để lưu.';
-    setTimeout(() => statusDiv.classList.add('d-none'), 5000);
+        async function autoTranslateAll() {
+            if (!poiDescription && !poiName) {
+                alert('Vui lòng nhập mô tả tiếng Việt trước khi dịch.');
+                return;
+            }
+
+            const statusDiv = document.getElementById('translationStatus');
+            const statusText = document.getElementById('translationStatusText');
+            statusDiv.classList.remove('d-none');
+
+            for (let i = 0; i < langCodes.length; i++) {
+                const code = langCodes[i];
+                statusText.textContent = `Đang dịch ${code}... (${i + 1}/${langCodes.length})`;
+
+                try {
+                    if (poiName) {
+                        const nameBox = document.getElementById(`name-${code}`);
+                        if (nameBox && !nameBox.value.trim()) {
+                            nameBox.value = await translateText(poiName, code);
+                        }
+                    }
+                    if (poiDescription) {
+                        const descBox = document.getElementById(`desc-${code}`);
+                        if (descBox && !descBox.value.trim()) {
+                            descBox.value = await translateText(poiDescription, code);
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`Dịch ${code} thất bại:`, err);
+                }
+            }
+
+            statusText.textContent = '✅ Dịch xong! Kiểm tra và bấm "Lưu tất cả bản dịch" để lưu.';
+            setTimeout(() => statusDiv.classList.add('d-none'), 5000);
+        }
+    </script>
 }
-</script>

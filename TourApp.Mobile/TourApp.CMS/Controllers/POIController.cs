@@ -107,6 +107,16 @@ public class POIController : Controller
             return View(poi);
         }
 
+        // Check duplicate coordinates
+        var client = _clientFactory.CreateClient("TourApi");
+        var dupMsg = await CheckDuplicateCoordinatesAsync(client, poi.Latitude, poi.Longitude);
+        if (dupMsg != null)
+        {
+            TempData["error"] = dupMsg;
+            ViewData["Title"] = "Thêm địa điểm";
+            return View(poi);
+        }
+
         if (uploadImage != null)
             poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
 
@@ -114,7 +124,6 @@ public class POIController : Controller
         poi.Priority = 1;
         ApplyOwnershipForSave(poi, isNew: true);
 
-        var client = _clientFactory.CreateClient("TourApi");
         var response = await client.PostAsJsonAsync("api/POI", poi);
 
         if (response.IsSuccessStatusCode)
@@ -339,6 +348,26 @@ public class POIController : Controller
                     poi.ApprovalStatus = "Pending";
             }
         }
+    }
+
+    private async Task<string?> CheckDuplicateCoordinatesAsync(HttpClient client, double lat, double lng, int? excludePoiId = null)
+    {
+        try
+        {
+            var resp = await client.GetAsync("api/POI");
+            if (!resp.IsSuccessStatusCode) return null;
+            var allPois = await resp.Content.ReadFromJsonAsync<List<POI>>() ?? new List<POI>();
+            // ~10m tolerance ≈ 0.0001 degrees
+            const double tolerance = 0.0001;
+            var dup = allPois.FirstOrDefault(p =>
+                (excludePoiId == null || p.Id != excludePoiId) &&
+                Math.Abs(p.Latitude - lat) < tolerance &&
+                Math.Abs(p.Longitude - lng) < tolerance);
+            if (dup != null)
+                return $"Vị trí này đã tồn tại POI \"{dup.Name}\" ({dup.DisplayCode}). Vui lòng chọn vị trí khác trên bản đồ.";
+        }
+        catch { }
+        return null;
     }
 
     private static bool ValidatePoiRequired(POI poi, IFormFile? uploadImage, bool isCreate, out string error)
