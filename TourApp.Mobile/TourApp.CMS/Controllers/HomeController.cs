@@ -6,10 +6,12 @@ namespace TourApp.CMS.Controllers;
 public class HomeController : Controller
 {
     private readonly IHttpClientFactory _clientFactory;
+    private readonly IConfiguration _configuration;
 
-    public HomeController(IHttpClientFactory clientFactory)
+    public HomeController(IHttpClientFactory clientFactory, IConfiguration configuration)
     {
         _clientFactory = clientFactory;
+        _configuration = configuration;
     }
 
     public async Task<IActionResult> Index()
@@ -205,6 +207,7 @@ public class HomeController : Controller
         ViewBag.NarrationStats = narrationStats;
         ViewBag.UserLocationStats = userLocationStats;
         ViewBag.DurationStats = durationStats;
+        ViewBag.ApiBaseUrl = _configuration.GetSection("TourApi:BaseUrl").Value?.TrimEnd('/') ?? "https://localhost:7244";
 
         return View("Statistics");
     }

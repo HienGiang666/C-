@@ -4,9 +4,10 @@
              xmlns:views="clr-namespace:TourApp.Mobile.Views"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
              xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
+             xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.HomePage"
              x:DataType="views:HomePage"
-             BackgroundColor="#F5F6F8"
+             BackgroundColor="#F5F7FA"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -14,112 +15,159 @@
     </ContentPage.Resources>
     
     <ScrollView>
-        <Grid RowDefinitions="Auto,*">
+        <VerticalStackLayout Spacing="0">
 
-            <!-- Header Content (Gradient Orange) -->
-            <VerticalStackLayout Grid.Row="0">
-                <Grid>
-                    <!-- Simulated Gradient Background Area -->
-                    <BoxView Color="#FF3D00" HeightRequest="150" VerticalOptions="Start" />
-                    
-                    <VerticalStackLayout Padding="20,40,20,20">
-                        <!-- Top Bar -->
-                        <Grid ColumnDefinitions="Auto,*,Auto">
-                            <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
-                                <Label Text="🗺️" FontSize="24" />
-                                <Label x:Name="UserNameLabel" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
-                            
-                            <!-- QR Code Scanner button -->
-                            <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
-                                <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnQRScanClicked"/>
-                                </Border.GestureRecognizers>
-                            </Border>
-                        </Grid>
+            <!-- Green Gradient Header -->
+            <Grid Padding="20,48,20,22">
+                <Grid.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00B14F" Offset="0.0"/>
+                        <GradientStop Color="#00C853" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </Grid.Background>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                        <!-- Search Bar -->
-                        <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
-                            <Grid ColumnDefinitions="30,*">
-                                <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
-                                <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchPlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
-                            </Grid>
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnSearchBarTapped"/>
-                            </Border.GestureRecognizers>
+                <!-- Top Bar -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,18">
+                    <HorizontalStackLayout Grid.Column="0" Spacing="12" VerticalOptions="Center">
+                        <Border WidthRequest="44" HeightRequest="44" StrokeThickness="0" BackgroundColor="#FFFFFF30" StrokeShape="RoundRectangle 22">
+                            <Label Text="{x:Static helpers:IconFont.Account}" FontFamily="MaterialIcons" FontSize="22" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
-                    </VerticalStackLayout>
-                </Grid>
-            </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Xin chào," FontSize="12" TextColor="#FFFFFFBB"/>
+                            <Label x:Name="UserNameLabel" FontSize="17" FontAttributes="Bold" TextColor="White"/>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
 
-            <!-- Main Scrollable Area -->
-            <VerticalStackLayout Grid.Row="1" Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
+                    <Border Grid.Column="2" WidthRequest="44" HeightRequest="44" StrokeThickness="0" BackgroundColor="#FFFFFF30" StrokeShape="RoundRectangle 22">
+                        <Label Text="{x:Static helpers:IconFont.QrcodeScan}" FontFamily="MaterialIcons" FontSize="22" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </Grid>
+
+                <!-- Search Bar -->
+                <Border Grid.Row="1" Stroke="Transparent" StrokeThickness="0" BackgroundColor="White" Padding="14,0" HeightRequest="48" StrokeShape="RoundRectangle 24">
+                    <Border.Shadow>
+                        <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.08"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="30,*">
+                        <Label Grid.Column="0" Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center"/>
+                        <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchPlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                    </Grid>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSearchBarTapped"/>
+                    </Border.GestureRecognizers>
+                </Border>
+            </Grid>
+
+            <!-- Main Content -->
+            <VerticalStackLayout Padding="20,20,20,40" Spacing="24">
                 
-                <!-- Category Grid -->
-                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
-                    <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="#FFF0E5" Padding="5,15" StrokeShape="RoundRectangle 15">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnNuongTapped"/>
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
-                            <Label Text="🔥" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="{Binding [CategoryNuong], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="#FCE4E4" Padding="5,15" StrokeShape="RoundRectangle 15">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnLauTapped"/>
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
-                            <Label Text="🍲" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="{Binding [CategoryLau], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="2" StrokeThickness="0" BackgroundColor="#E6F0FF" Padding="5,15" StrokeShape="RoundRectangle 15">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnOcTapped"/>
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
-                            <Label Text="🐚" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="{Binding [CategoryOc], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="3" StrokeThickness="0" BackgroundColor="#E6FCEF" Padding="5,15" StrokeShape="RoundRectangle 15">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnAnVatTapped"/>
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
-                            <Label Text="🍢" FontSize="24" HorizontalOptions="Center"/>
-                            <Label Text="{Binding [CategoryAnVat], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#444"/>
-                        </VerticalStackLayout>
-                    </Border>
-                </Grid>
+                <!-- Category Chips - horizontal scroll -->
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Danh mục" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26"/>
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+                        <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="White" Padding="0,14" StrokeShape="RoundRectangle 14">
+                            <Border.Shadow>
+                                <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.06"/>
+                            </Border.Shadow>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnNuongTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                                <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" BackgroundColor="#FFF2E8" StrokeShape="RoundRectangle 12" HorizontalOptions="Center">
+                                    <Label Text="{x:Static helpers:IconFont.Fire}" FontFamily="MaterialIcons" FontSize="22" TextColor="#FF6B00" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="{Binding [CategoryNuong], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" FontAttributes="Bold" TextColor="#4A5568" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="White" Padding="0,14" StrokeShape="RoundRectangle 14">
+                            <Border.Shadow>
+                                <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.06"/>
+                            </Border.Shadow>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnLauTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                                <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" BackgroundColor="#FFE8E8" StrokeShape="RoundRectangle 12" HorizontalOptions="Center">
+                                    <Label Text="{x:Static helpers:IconFont.FoodForkDrink}" FontFamily="MaterialIcons" FontSize="22" TextColor="#FF3B30" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="{Binding [CategoryLau], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" FontAttributes="Bold" TextColor="#4A5568" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Grid.Column="2" StrokeThickness="0" BackgroundColor="White" Padding="0,14" StrokeShape="RoundRectangle 14">
+                            <Border.Shadow>
+                                <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.06"/>
+                            </Border.Shadow>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnOcTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                                <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" BackgroundColor="#E8F0FE" StrokeShape="RoundRectangle 12" HorizontalOptions="Center">
+                                    <Label Text="{x:Static helpers:IconFont.Food}" FontFamily="MaterialIcons" FontSize="22" TextColor="#007AFF" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="{Binding [CategoryOc], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" FontAttributes="Bold" TextColor="#4A5568" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Grid.Column="3" StrokeThickness="0" BackgroundColor="White" Padding="0,14" StrokeShape="RoundRectangle 14">
+                            <Border.Shadow>
+                                <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.06"/>
+                            </Border.Shadow>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAnVatTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                                <Border WidthRequest="42" HeightRequest="42" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 12" HorizontalOptions="Center">
+                                    <Label Text="{x:Static helpers:IconFont.StorefrontOutline}" FontFamily="MaterialIcons" FontSize="22" TextColor="#00B14F" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="{Binding [CategoryAnVat], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" FontAttributes="Bold" TextColor="#4A5568" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
 
-                <!-- Lộ Trình Gợi Ý -->
-                <VerticalStackLayout Spacing="15">
+                <!-- Suggested Tours -->
+                <VerticalStackLayout Spacing="14">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="{Binding [SuggestedTours], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
-                        <Label Grid.Column="1" Text="{Binding [SeeMore], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="{x:Static helpers:IconFont.Fire}" FontFamily="MaterialIcons" FontSize="20" TextColor="#FF6B00" VerticalOptions="Center"/>
+                            <Label Text="{Binding [SuggestedTours], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26"/>
+                        </HorizontalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding [SeeMore], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#00B14F" FontSize="13" FontAttributes="Bold" VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnXemThemTourTapped"/>
                             </Label.GestureRecognizers>
                         </Label>
                     </Grid>
 
-                    <CollectionView x:Name="TourCollectionView" HeightRequest="250" SelectionMode="Single" SelectionChanged="OnTourSelected">
-                        <!-- Mock setup for item layout -->
+                    <CollectionView x:Name="TourCollectionView" HeightRequest="260" SelectionMode="Single" SelectionChanged="OnTourSelected">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="views:MockItem">
-                                <Border StrokeThickness="0" Padding="0" Margin="0,0,0,15" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                <Border StrokeThickness="0" Padding="0" Margin="0,0,0,12" BackgroundColor="White" StrokeShape="RoundRectangle 16">
                                     <Border.Shadow>
-                                        <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                        <Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.08"/>
                                     </Border.Shadow>
-                                    <Grid RowDefinitions="120,Auto">
+                                    <Grid RowDefinitions="140,Auto">
+                                        <!-- Placeholder bg khi không có ảnh -->
+                                        <BoxView Grid.Row="0" Color="#E6F9EE"/>
                                         <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill"/>
-                                        <VerticalStackLayout Grid.Row="1" Padding="15">
-                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
-                                            <Label Text="{Binding Summary}" FontSize="12" TextColor="#888" Margin="0,5,0,0"/>
+                                        <!-- Gradient overlay bottom -->
+                                        <BoxView Grid.Row="0" VerticalOptions="End" HeightRequest="50">
+                                            <BoxView.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="Transparent" Offset="0.0"/>
+                                                    <GradientStop Color="#40000000" Offset="1.0"/>
+                                                </LinearGradientBrush>
+                                            </BoxView.Background>
+                                        </BoxView>
+                                        <VerticalStackLayout Grid.Row="1" Padding="16,12" Spacing="4">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="15" TextColor="#1A1D26"/>
+                                            <Label Text="{Binding Summary}" FontSize="13" TextColor="#00B14F" FontAttributes="Bold" LineBreakMode="TailTruncation" MaxLines="1"/>
                                         </VerticalStackLayout>
                                     </Grid>
                                 </Border>
@@ -128,29 +176,36 @@
                     </CollectionView>
                 </VerticalStackLayout>
 
-                <!-- Top Nổi Bật -->
-                <VerticalStackLayout Spacing="15">
+                <!-- Top Places -->
+                <VerticalStackLayout Spacing="14">
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="{Binding [TopPlaces], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="18" FontAttributes="Bold" TextColor="#16182B"/>
-                        <Label Grid.Column="1" Text="{Binding [SeeMore], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#FF5B00" FontSize="14" VerticalOptions="Center">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="{x:Static helpers:IconFont.Star}" FontFamily="MaterialIcons" FontSize="20" TextColor="#FFB800" VerticalOptions="Center"/>
+                            <Label Text="{Binding [TopPlaces], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26"/>
+                        </HorizontalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding [SeeMore], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#00B14F" FontSize="13" FontAttributes="Bold" VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnXemThemPoiTapped"/>
                             </Label.GestureRecognizers>
                         </Label>
                     </Grid>
 
-                    <CollectionView x:Name="PoiCollectionView" HeightRequest="200" ItemsLayout="HorizontalList" SelectionMode="Single" SelectionChanged="OnPoiSelected">
+                    <CollectionView x:Name="PoiCollectionView" HeightRequest="220" ItemsLayout="HorizontalList" SelectionMode="Single" SelectionChanged="OnPoiSelected">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="views:MockItem">
-                                <Border WidthRequest="200" StrokeThickness="0" Padding="0" Margin="0,0,15,5" BackgroundColor="White" StrokeShape="RoundRectangle 20">
+                                <Border WidthRequest="180" StrokeThickness="0" Padding="0" Margin="0,0,12,6" BackgroundColor="White" StrokeShape="RoundRectangle 16">
                                     <Border.Shadow>
-                                        <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                        <Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.08"/>
                                     </Border.Shadow>
-                                    <Grid RowDefinitions="120,Auto">
+                                    <Grid RowDefinitions="130,Auto">
+                                        <BoxView Grid.Row="0" Color="#FFF2E8"/>
                                         <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill"/>
-                                        <VerticalStackLayout Grid.Row="1" Padding="15">
-                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
-                                            <Label Text="{Binding Summary}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>
+                                        <!-- Rating badge -->
+                                        <Border Grid.Row="0" VerticalOptions="Start" HorizontalOptions="End" Margin="8" Padding="6,3" BackgroundColor="#FFFFFFDD" StrokeThickness="0" StrokeShape="RoundRectangle 8">
+                                            <Label Text="{Binding Summary}" FontSize="11" FontAttributes="Bold" TextColor="#FF6B00"/>
+                                        </Border>
+                                        <VerticalStackLayout Grid.Row="1" Padding="12,10" Spacing="2">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="13" TextColor="#1A1D26" LineBreakMode="TailTruncation" MaxLines="2"/>
                                         </VerticalStackLayout>
                                     </Grid>
                                 </Border>
@@ -160,6 +215,6 @@
                 </VerticalStackLayout>
 
             </VerticalStackLayout>
-        </Grid>
+        </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

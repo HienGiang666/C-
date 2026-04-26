@@ -91,12 +91,23 @@ public partial class TourPage : ContentPage
 
             if (_allTours?.Any() == true)
             {
+                var activeTours = _allTours.Where(t => t.IsActive).ToList();
+
+                // Pre-download ảnh
+                await ImageCacheService.PreloadAsync(activeTours.Select(t => t.ImageUrl));
+
+                foreach (var tour in activeTours)
+                {
+                    var localPath = await ImageCacheService.GetLocalPathAsync(tour.ImageUrl);
+                    if (localPath != null)
+                        tour.ImageUrl = localPath;
+                }
+
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     Tours.Clear();
-                    foreach (var tour in _allTours.Where(t => t.IsActive))
+                    foreach (var tour in activeTours)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[TourPage] Tour {tour.Id}: {tour.Name}, ImageUrl={tour.ImageUrl ?? "null"}");
                         Tours.Add(tour);
                     }
                 });

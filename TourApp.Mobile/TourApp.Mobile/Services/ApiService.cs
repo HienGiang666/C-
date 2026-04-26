@@ -6,13 +6,8 @@ namespace TourApp.Mobile.Services
 {
     public class ApiService
     {
-        // Ưu tiên các địa chỉ phổ biến để app mobile luôn tìm được API
-        // - Android emulator: 10.0.2.2
-        // - Máy local: localhost
-        // - Mạng LAN: IP Wi‑Fi hiện tại của máy dev
-        private const string DefaultLanUrl = "http://10.89.192.150:5254";
-        private const string AndroidEmulatorUrl = "http://10.0.2.2:5254";
-        private const string LocalhostUrl = "http://localhost:5254";
+        // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
+        private const string DefaultUrl = "https://hypocrite-ground-tackle.ngrok-free.dev";
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
@@ -24,7 +19,7 @@ namespace TourApp.Mobile.Services
 
         public static string BaseUrl
         {
-            get => Preferences.Default.Get("api_base_url", DefaultLanUrl);
+            get => Preferences.Default.Get("api_base_url", DefaultUrl);
             set
             {
                 var normalized = value.TrimEnd('/');
@@ -72,21 +67,20 @@ namespace TourApp.Mobile.Services
             // 1. Emulator ưu tiên hàng đầu
             if (DeviceInfo.Platform == DevicePlatform.Android && DeviceInfo.DeviceType == DeviceType.Virtual)
             {
-                ipsToTest.Add(AndroidEmulatorUrl);
+                ipsToTest.Add("http://10.0.2.2:5254");
                 ipsToTest.Add("http://10.0.2.2:7244");
-                ipsToTest.Add(LocalhostUrl);
             }
             else
             {
-                // Phone thật hoặc iOS simulator: ưu tiên URL đã lưu, localhost, rồi LAN IP
-                if (!string.IsNullOrWhiteSpace(BaseUrl))
+                // Phone thật: ưu tiên DefaultUrl và BaseUrl trước
+                ipsToTest.Add(DefaultUrl);
+                Debug.WriteLine($"[ApiService] Will try DefaultUrl: {DefaultUrl}");
+                
+                if (BaseUrl != DefaultUrl && !string.IsNullOrWhiteSpace(BaseUrl))
                 {
                     ipsToTest.Add(BaseUrl);
                     Debug.WriteLine($"[ApiService] Will try saved BaseUrl: {BaseUrl}");
                 }
-
-                ipsToTest.Add(LocalhostUrl);
-                ipsToTest.Add(DefaultLanUrl);
             }
 
             // 2. Quét subnet rộng hơn (1-50 trước, nếu không thấy thì quét tiếp)
@@ -94,12 +88,6 @@ namespace TourApp.Mobile.Services
             for (int i = 1; i <= 50; i++)
             {
                 ipsToTest.Add($"http://{subnet}.{i}:5254");
-            }
-
-            // 3. Nếu API chạy HTTPS ở máy dev thì thử thêm cổng 7244
-            for (int i = 1; i <= 50; i++)
-            {
-                ipsToTest.Add($"https://{subnet}.{i}:7244");
             }
 
             // Batch testing (hỗn hợp 5 url cùng lúc)
@@ -521,12 +509,14 @@ namespace TourApp.Mobile.Services
 #else
             var socketHandler = new SocketsHttpHandler
             {
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5), // Refresh connections every 5 minutes for DNS changes
                 MaxConnectionsPerServer = 10,
                 EnableMultipleHttp2Connections = true,
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             };
+#if WINDOWS
+            socketHandler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+#endif
             handler = socketHandler;
 #endif
             var client = new HttpClient(handler)

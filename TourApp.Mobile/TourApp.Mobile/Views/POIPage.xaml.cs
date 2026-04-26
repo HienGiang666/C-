@@ -87,10 +87,23 @@ public partial class POIPage : ContentPage
             
             if (_allPois?.Any() == true)
             {
+                var activePois = _allPois.Where(p => p.IsActive).ToList();
+
+                // Pre-download ảnh trước khi hiển thị
+                await ImageCacheService.PreloadAsync(activePois.Select(p => p.ImageUrl));
+
+                // Thay ImageUrl bằng local path
+                foreach (var poi in activePois)
+                {
+                    var localPath = await ImageCacheService.GetLocalPathAsync(poi.ImageUrl);
+                    if (localPath != null)
+                        poi.ImageUrl = localPath;
+                }
+
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     POIs.Clear();
-                    foreach (var poi in _allPois.Where(p => p.IsActive))
+                    foreach (var poi in activePois)
                     {
                         POIs.Add(poi);
                     }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 using TourApp.Mobile.Services;
@@ -9,6 +10,8 @@ namespace TourApp.Mobile
     {
         public static MauiApp CreateMauiApp()
         {
+            var startupTimer = Stopwatch.StartNew();
+            Debug.WriteLine("[Startup] CreateMauiApp started…");
             // Cấu hình WebView cho Android trước khi build
 #if ANDROID
             Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("GoongWebView", (handler, view) =>
@@ -73,6 +76,7 @@ namespace TourApp.Mobile
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                    fonts.AddFont("materialdesignicons-webfont.ttf", "MaterialIcons");
                 });
 
             builder.Services.AddSingleton<ApiService>();
@@ -89,13 +93,17 @@ namespace TourApp.Mobile
             builder.Services.AddTransient<Views.Auth.SignUpPage>();
             builder.Services.AddTransient<Views.QRScannerPage>();
 
-            // Initialize LanguageService for localization
-            LanguageService.Initialize();
+            // Initialize LanguageService for localization - LAZY (chỉ init cơ bản, load resources khi cần)
+            Debug.WriteLine($"[Startup] Initializing LanguageService... ({startupTimer.ElapsedMilliseconds}ms)");
+            LanguageService.InitializeLazy();
+            Debug.WriteLine($"[Startup] LanguageService initialized ({startupTimer.ElapsedMilliseconds}ms)");
 
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
-            return builder.Build();
+            var app = builder.Build();
+            Debug.WriteLine($"[Startup] MauiApp built successfully in {startupTimer.ElapsedMilliseconds}ms");
+            return app;
         }
 
 #if ANDROID

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using TourApp.Mobile.Services;
 
 namespace TourApp.Mobile
@@ -26,25 +27,17 @@ namespace TourApp.Mobile
 
             // ─────────────────────────────────────────────────────────────────
             InitializeComponent();
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await ApiService.AutoDiscoverApiAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[App] API auto-discovery failed: {ex.Message}");
-                }
-            });
         }
 
 
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
+            var timer = Stopwatch.StartNew();
+            Debug.WriteLine("[Startup] CreateWindow started...");
+
             AuthService.LoadSavedSession();
+            Debug.WriteLine($"[Startup] LoadSavedSession done ({timer.ElapsedMilliseconds}ms)");
 
             Page startPage;
             if (AuthService.IsLoggedIn && !string.IsNullOrEmpty(AuthService.CurrentUser?.Username))
@@ -66,20 +59,8 @@ namespace TourApp.Mobile
                 startPage = new NavigationPage(new Views.Auth.LoginPage());
             }
 
-            var window = new Window(startPage);
-            window.Destroying += async (_, __) =>
-            {
-                try
-                {
-                    await UserSessionService.StopSessionAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[App] Window.Destroying error: {ex.Message}");
-                }
-            };
-
-            return window;
+            Debug.WriteLine($"[Startup] CreateWindow completed in {timer.ElapsedMilliseconds}ms");
+            return new Window(startPage);
         }
 
 
