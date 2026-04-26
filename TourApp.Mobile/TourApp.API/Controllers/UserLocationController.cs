@@ -5,23 +5,7 @@ using TourApp.API.Models;
 using TourApp.API.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
-// API Routes and User Movement Analytics Controller
-// Uses existing UserLocationLogs and POIs tables - NO schema changes
-
 namespace TourApp.API.Controllers;
-
-public class UserSessionRequest
-{
-    public int? UserId { get; set; }
-    public string? GuestId { get; set; }
-    public bool IsOnline { get; set; }
-    public string? Name { get; set; }
-    public string? DeviceInfo { get; set; }
-    public string? Platform { get; set; }
-    public string? Version { get; set; }
-    public double? Latitude { get; set; }
-    public double? Longitude { get; set; }
-}
 
 [Route("api/[controller]")]
 [ApiController]
@@ -69,82 +53,166 @@ public class UserLocationController : ControllerBase
     }
 
     /// <summary>
-    /// Mobile app gọi khi mở app / heartbeat để giữ trạng thái online
+    /// Session endpoint: mobile app gọi khi user online/offline
     /// </summary>
     [HttpPost("session")]
-    public async Task<ActionResult<UserLocationLog>> UpdateSession([FromBody] UserSessionRequest request)
+    public async Task<IActionResult> SessionUpdate([FromBody] UserSessionRequest request)
     {
-        if (request == null)
+        var deviceId = request.GuestId ?? $"user_{request.UserId}" ?? "unknown";
+        
+        if (request.IsOnline)
         {
-            return BadRequest("Request body is required.");
+            // Lưu location log khi online (heartbeat)
+            if (request.Latitude != 0 || request.Longitude != 0)
+            {
+                _context.UserLocationLogs.Add(new UserLocationLog
+                {
+                    DeviceId = deviceId,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    Timestamp = DateTime.Now,
+                    SessionId = request.GuestId,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            await _hubContext.Clients.All.SendAsync("UserOnline", new
+            {
+                DeviceId = deviceId,
+                SessionId = request.GuestId,
+                Name = request.Name,
+                DeviceInfo = request.DeviceInfo,
+                Platform = request.Platform,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Timestamp = DateTime.Now
+            });
         }
-
-        var deviceId = !string.IsNullOrWhiteSpace(request.GuestId)
-            ? request.GuestId
-            : request.UserId?.ToString();
-
-        if (string.IsNullOrWhiteSpace(deviceId))
+        else
         {
-            return BadRequest("UserId or GuestId is required.");
+            await _hubContext.Clients.All.SendAsync("UserOffline", new
+            {
+                DeviceId = deviceId,
+                SessionId = request.GuestId,
+                Timestamp = DateTime.Now
+            });
         }
-
-        var log = new UserLocationLog
-        {
-            DeviceId = deviceId,
-            SessionId = request.GuestId ?? request.UserId?.ToString(),
-            Latitude = request.Latitude ?? 0,
-            Longitude = request.Longitude ?? 0,
-            Timestamp = DateTime.Now,
-            IsActive = request.IsOnline
-        };
-
-        _context.UserLocationLogs.Add(log);
-        await _context.SaveChangesAsync();
-
-        await _hubContext.Clients.All.SendAsync(request.IsOnline ? "UserOnline" : "UserOffline", new
-        {
-            log.DeviceId,
-            log.SessionId,
-            log.Timestamp,
-            log.IsActive,
-            request.Name,
-            request.DeviceInfo,
-            request.Platform,
-            request.Version
-        });
-
-        return Ok(log);
+        
+        return Ok(new { success = true });
     }
 
     /// <summary>
-    /// GET /api/userlocation/stats
-    /// Trả về thống kê người dùng đang online (theo Timestamp gần nhất trong 30 giây)
-    /// và tổng số device unique trong 24h qua
+    /// Management stats: dữ liệu chi tiết cho trang Quản lý người dùng
     /// </summary>
-    [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
+    [HttpGet("management-stats")]
+    public async Task<IActionResult> GetManagementStats()
     {
-        var thirtySecondsAgo = DateTime.Now.AddSeconds(-30); // 30 giây để có buffer cho network delay
         var since24h = DateTime.Now.AddHours(-24);
-        
-        // Tối ưu: Query online users trực tiếp - chỉ lấy log mới nhất trong 30 giây
-        var onlineLogs = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= thirtySecondsAgo && l.IsActive)
-            .GroupBy(l => l.DeviceId)
-            .Select(g => g.OrderByDescending(l => l.Timestamp).First())
-            .ToListAsync();
-        
-        // Query active24h - chỉ lấy count unique devices
-        var active24h = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= since24h)
+        var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+
+        // Tổng thiết bị đã vào app (all time)
+        var totalDevices = await _context.UserLocationLogs
             .Select(l => l.DeviceId)
             .Distinct()
             .CountAsync();
+
+        // Số lượt quét QR (trigger = "qr")
+        var qrScanCount = await _context.NarrationLogs
+            .Where(l => l.TriggerType == "qr")
+            .CountAsync();
+
+        // Logs 24h
+        var recentLogs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderByDescending(l => l.Timestamp)
+            .ToListAsync();
+
+        var byDevice = recentLogs.GroupBy(l => l.DeviceId).ToList();
+
+        // Chi tiết từng user
+        var users = byDevice.Select(g =>
+        {
+            var logs = g.OrderByDescending(l => l.Timestamp).ToList();
+            var firstLog = logs.Last();
+            var lastLog = logs.First();
+            var isOnline = lastLog.Timestamp >= oneMinuteAgo;
+
+            return new
+            {
+                deviceId = g.Key ?? "unknown",
+                isAnonymous = g.Key == null || !g.Key.StartsWith("user_"),
+                isOnline,
+                firstSeen = firstLog.Timestamp,
+                lastSeen = lastLog.Timestamp,
+                locationCount = logs.Count,
+                lastLocation = new { lat = lastLog.Latitude, lng = lastLog.Longitude }
+            };
+        }).OrderByDescending(u => u.isOnline).ThenByDescending(u => u.lastSeen).ToList();
+
+        // Lấy narration logs gần đây để biết ngôn ngữ dùng
+        var narrationLogs = await _context.NarrationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderByDescending(l => l.Timestamp)
+            .Take(200)
+            .ToListAsync();
+
+        // Lấy audio language info
+        var audioIds = narrationLogs.Where(n => n.AudioId.HasValue).Select(n => n.AudioId!.Value).Distinct().ToList();
+        var audioLanguages = await _context.Audios
+            .Where(a => audioIds.Contains(a.Id))
+            .Select(a => new { a.Id, a.Language })
+            .ToDictionaryAsync(a => a.Id, a => a.Language ?? "vi");
+
+        var narrationByDevice = narrationLogs.GroupBy(n => n.DeviceId).ToDictionary(
+            g => g.Key ?? "unknown",
+            g => new
+            {
+                playCount = g.Count(),
+                languages = g.Where(n => n.AudioId.HasValue && audioLanguages.ContainsKey(n.AudioId!.Value))
+                    .Select(n => audioLanguages[n.AudioId!.Value])
+                    .Distinct().ToList(),
+                qrCount = g.Count(n => n.TriggerType == "qr")
+            });
+
+        return Ok(new
+        {
+            totalDevices,
+            qrScanCount,
+            onlineNow = users.Count(u => u.isOnline),
+            active24h = users.Count,
+            users,
+            narrationByDevice
+        });
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats()
+    {
+        var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+        var since24h = DateTime.Now.AddHours(-24);
         
-        var onlineNow = onlineLogs.Count;
+        // Lấy tất cả logs trong 24h, group by DeviceId, lấy log mới nhất mỗi device
+        var recentLogs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderByDescending(l => l.Timestamp)
+            .ToListAsync();
         
-        // Vị trí online
-        var onlineLocations = onlineLogs.Select(l => new
+        var latestByDevice = recentLogs
+            .GroupBy(l => l.DeviceId)
+            .Select(g => g.First()) // Log mới nhất của mỗi device
+            .ToList();
+        
+        // Online = log mới nhất trong vòng 1 phút
+        var onlineDevices = latestByDevice
+            .Where(l => l.Timestamp >= oneMinuteAgo)
+            .ToList();
+        
+        var onlineNow = onlineDevices.Count;
+        var active24h = latestByDevice.Count;
+        
+        // Vị trí online (dùng log mới nhất trong 1 phút)
+        var onlineLocations = onlineDevices.Select(l => new
         {
             l.DeviceId,
             l.Latitude,
@@ -162,207 +230,89 @@ public class UserLocationController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/userlocation/heatmap
-    /// Trả về tất cả vị trí trong 24h qua để vẽ heatmap mật độ
+    /// Heatmap: trả về tất cả điểm location trong 24h cho Leaflet.heat
     /// </summary>
     [HttpGet("heatmap")]
-    public async Task<IActionResult> GetHeatmapData()
+    public async Task<IActionResult> GetHeatmap()
     {
         var since24h = DateTime.Now.AddHours(-24);
-        
-        // Lấy tất cả location logs trong 24h
-        var locations = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= since24h)
-            .Select(l => new
-            {
-                l.Latitude,
-                l.Longitude,
-                l.Timestamp,
-                l.DeviceId
-            })
-            .ToListAsync();
-        
-        // Format cho heatmap: [lat, lng, intensity]
-        var heatmapPoints = locations.Select(l => new[] { l.Latitude, l.Longitude, 0.8 });
-        
-        return Ok(new
-        {
-            totalPoints = locations.Count,
-            points = heatmapPoints
-        });
-    }
-
-    // CONST: Bán kính tìm POI gần nhất (meters)
-    private const double POI_RADIUS_METERS = 100;
-
-    /// <summary>
-    /// GET /api/userlocation/paths
-    /// Trả về TUYẾN DI CHUYỂN PHỔ BIẾN giữa các POI (popular routes)
-    /// Không đổi DB - dùng UserLocationLogs + POIs hiện có
-    /// </summary>
-    [HttpGet("paths")]
-    public async Task<IActionResult> GetMovementPaths()
-    {
-        var since24h = DateTime.Now.AddHours(-24);
-        
-        // 1. Lấy tất cả POIs (không đổi DB)
-        var pois = await _context.POIs
-            .Select(p => new { p.Id, p.Name, p.Latitude, p.Longitude })
-            .ToListAsync();
-        
-        // 2. Lấy location logs 24h qua, group by device
         var logs = await _context.UserLocationLogs
             .Where(l => l.Timestamp >= since24h)
-            .OrderBy(l => l.DeviceId)
-            .ThenBy(l => l.Timestamp)
-            .Select(l => new { l.DeviceId, l.Latitude, l.Longitude, l.Timestamp })
+            .Select(l => new[] { l.Latitude, l.Longitude, 0.5 })
             .ToListAsync();
+
+        return Ok(new { points = logs });
+    }
+
+    /// <summary>
+    /// Paths: trả về tuyến đường phổ biến (POI → POI) dựa trên dữ liệu location
+    /// </summary>
+    [HttpGet("paths")]
+    public async Task<IActionResult> GetPaths()
+    {
+        var since24h = DateTime.Now.AddHours(-24);
         
-        var devicePaths = logs
+        // Lấy logs theo device, sắp xếp theo thời gian
+        var logs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderBy(l => l.DeviceId).ThenBy(l => l.Timestamp)
+            .ToListAsync();
+
+        // Tạo tuyến đường từ mỗi device (nối điểm đầu → cuối)
+        var routes = logs
             .GroupBy(l => l.DeviceId)
-            .Where(g => g.Count() >= 2) // Chỉ device có >= 2 điểm
-            .ToList();
-        
-        // 3. Với mỗi device, map locations thành chuỗi POI
-        var allTransitions = new List<(int fromId, int toId)>();
-        
-        foreach (var deviceLog in devicePaths)
-        {
-            var poisVisited = new List<int>();
-            
-            foreach (var loc in deviceLog)
+            .Where(g => g.Count() >= 2)
+            .Select(g =>
             {
-                // Tìm POI gần nhất trong bán kính POI_RADIUS_METERS
-                var nearestPoi = pois
-                    .Select(p => new { p, dist = CalculateHaversineDistance(loc.Latitude, loc.Longitude, p.Latitude, p.Longitude) })
-                    .Where(x => x.dist <= POI_RADIUS_METERS)
-                    .OrderBy(x => x.dist)
-                    .FirstOrDefault();
-                
-                if (nearestPoi != null)
-                {
-                    poisVisited.Add(nearestPoi.p.Id);
-                }
-            }
-            
-            // Bỏ POI trùng liên tiếp
-            var uniquePois = new List<int>();
-            int? lastPoi = null;
-            foreach (var poiId in poisVisited)
-            {
-                if (poiId != lastPoi)
-                {
-                    uniquePois.Add(poiId);
-                    lastPoi = poiId;
-                }
-            }
-            
-            // Tạo các cặp chuyển tiếp A -> B
-            for (int i = 0; i < uniquePois.Count - 1; i++)
-            {
-                allTransitions.Add((uniquePois[i], uniquePois[i + 1]));
-            }
-        }
-        
-        // 4. Group các cặp để đếm số lần xuất hiện
-        var popularRoutes = allTransitions
-            .GroupBy(t => t)
-            .Select(g => new { FromId = g.Key.fromId, ToId = g.Key.toId, Count = g.Count() })
-            .Where(r => r.FromId != r.ToId && r.Count > 0) // Loại route A->A
-            .OrderByDescending(r => r.Count)
-            .Take(20) // Top 20 routes phổ biến
-            .ToList();
-        
-        // 5. Map sang response với POI names và coords
-        var routes = popularRoutes
-            .Select(r => {
-                var fromPoi = pois.First(p => p.Id == r.FromId);
-                var toPoi = pois.First(p => p.Id == r.ToId);
+                var pts = g.ToList();
                 return new
                 {
-                    fromPoiId = r.FromId,
-                    fromPoiName = fromPoi.Name,
-                    fromLat = fromPoi.Latitude,
-                    fromLng = fromPoi.Longitude,
-                    toPoiId = r.ToId,
-                    toPoiName = toPoi.Name,
-                    toLat = toPoi.Latitude,
-                    toLng = toPoi.Longitude,
-                    count = r.Count
+                    fromLat = pts.First().Latitude,
+                    fromLng = pts.First().Longitude,
+                    toLat = pts.Last().Latitude,
+                    toLng = pts.Last().Longitude,
+                    fromPoiName = pts.First().DeviceId ?? "Start",
+                    toPoiName = pts.Last().DeviceId ?? "End",
+                    count = pts.Count
                 };
             })
             .ToList();
-        
-        return Ok(new
-        {
-            totalRoutes = routes.Count,
-            poiRadiusMeters = POI_RADIUS_METERS,
-            routes
-        });
+
+        return Ok(new { routes });
     }
-    
-    /// <summary>
-    /// Tính khoảng cách Haversine giữa 2 điểm (meters)
-    /// </summary>
-    private double CalculateHaversineDistance(double lat1, double lng1, double lat2, double lng2)
-    {
-        const double R = 6371000; // Earth radius in meters
-        
-        var dLat = ToRadians(lat2 - lat1);
-        var dLng = ToRadians(lng2 - lng1);
-        
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
-        
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        
-        return R * c;
-    }
-    
-    private double ToRadians(double degrees) => degrees * Math.PI / 180;
 
     /// <summary>
-    /// GET /api/userlocation/history
-    /// Trả về lịch sử hoạt động của tất cả users (có tài khoản + ẩn danh)
+    /// History: lịch sử hoạt động 24h - danh sách user + thống kê
     /// </summary>
     [HttpGet("history")]
-    public async Task<IActionResult> GetUserHistory()
+    public async Task<IActionResult> GetHistory()
     {
         var since24h = DateTime.Now.AddHours(-24);
-        
-        // Lấy tất cả logs trong 24h, group by device, lấy thông tin mới nhất
         var logs = await _context.UserLocationLogs
             .Where(l => l.Timestamp >= since24h)
             .OrderByDescending(l => l.Timestamp)
             .ToListAsync();
+
+        var byDevice = logs.GroupBy(l => l.DeviceId).ToList();
         
-        var latestByDevice = logs
-            .GroupBy(l => l.DeviceId)
-            .Select(g => new
+        var users = byDevice.Select(g => new
+        {
+            deviceId = g.Key ?? "unknown",
+            isAnonymous = g.Key == null || !g.Key.StartsWith("user_"),
+            lastSeen = g.First().Timestamp,
+            locationCount = g.Count(),
+            lastLocation = new
             {
-                deviceId = g.Key,
-                sessionId = g.First().SessionId,
-                lastSeen = g.First().Timestamp,
-                firstSeen = g.Last().Timestamp,
-                locationCount = g.Count(),
-                lastLocation = new
-                {
-                    lat = g.First().Latitude,
-                    lng = g.First().Longitude
-                },
-                isAnonymous = string.IsNullOrEmpty(g.First().SessionId) || g.First().SessionId.StartsWith("anon_")
-            })
-            .OrderByDescending(u => u.lastSeen)
-            .Take(50)
-            .ToList();
-        
+                lat = g.First().Latitude,
+                lng = g.First().Longitude
+            }
+        }).ToList();
+
         return Ok(new
         {
-            totalUsers = latestByDevice.Count,
-            anonymousUsers = latestByDevice.Count(u => u.isAnonymous),
-            registeredUsers = latestByDevice.Count(u => !u.isAnonymous),
-            users = latestByDevice
+            totalUsers = byDevice.Count,
+            anonymousUsers = users.Count(u => u.isAnonymous),
+            users
         });
     }
 }

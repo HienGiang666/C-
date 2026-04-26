@@ -150,7 +150,11 @@ public partial class MapPage : ContentPage
             }, TaskContinuationOptions.OnlyOnFaulted);
 
             // Bắt đầu tracking GPS với background support
+#if ANDROID
             await _locationService.StartTrackingWithForegroundAsync();
+#else
+            await _locationService.StartTracking();
+#endif
 
             // Xử lý pending POI ID nếu có (khi navigate từ tab khác)
             if (_pendingPoiId.HasValue && _isJsMapReady && _pois != null)
@@ -232,7 +236,11 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         // Dừng GPS tracking (với foreground service trên Android)
+#if ANDROID
         _locationService.StopTrackingWithForeground();
+#else
+        _locationService.StopTracking();
+#endif
         // Dừng audio thuyết minh khi rời khỏi trang
         AudioPlayerService.Instance.Stop();
         // Dừng TTS (Text-to-Speech) nếu đang phát
@@ -471,9 +479,7 @@ public partial class MapPage : ContentPage
 
                 if (PoiImage != null)
                 {
-                    PoiImage.Source = !string.IsNullOrEmpty(poi.ImageUrl)
-                        ? ImageSource.FromUri(new Uri(poi.ImageUrl))
-                        : null;
+                    _ = LoadPoiImageAsync(poi.ImageUrl);
                 }
 
                 bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
@@ -546,18 +552,60 @@ public partial class MapPage : ContentPage
                 if (double.TryParse(query["lat"], System.Globalization.CultureInfo.InvariantCulture, out double lat) &&
                     double.TryParse(query["lng"], System.Globalization.CultureInfo.InvariantCulture, out double lng))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[MapPage] Set Mock GPS to {lat}, {lng}");
+                    System.Diagnostics.Debug.WriteLine($"[MockGPS] Moved to {lat}, {lng}");
                     _locationService.IsMocking = true;
                     _locationService.MockLocation = new Location(lat, lng);
-                    MainThread.BeginInvokeOnMainThread(async () => {
-                         await DisplayAlert("Mock GPS", $"Đã chốt vị trí U tại:\nLat: {lat}\nLng: {lng}", "OK");
+                    _lastLocation = new Location(lat, lng);
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        if (_isJsMapReady)
+                            MapWebView.Eval($"updateUserLocation({lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
                     });
+
+                    // Trigger geofence check ngay tại vị trí mới
+                    var mockLoc = new Location(lat, lng);
+                    _ = Task.Run(() => _geofenceService.CheckGeofences(mockLoc));
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MapWebView] Mock GPS Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[MockGPS] Error: {ex.Message}");
             }
+        }
+    }
+
+    private bool _isMockMode = false;
+    private void OnMockToggleClicked(object? sender, EventArgs e)
+    {
+        _isMockMode = !_isMockMode;
+
+        if (_isMockMode)
+        {
+            // Bật mock mode
+            MockToggleBtn.BackgroundColor = Color.FromArgb("#FF6B00");
+            MockToggleIcon.TextColor = Colors.White;
+            MockBanner.IsVisible = true;
+            
+            // Set mock location ngay (dùng vị trí hiện tại hoặc default Q4)
+            _locationService.IsMocking = true;
+            _locationService.MockLocation = _lastLocation ?? new Location(10.762, 106.702);
+            
+            if (_isJsMapReady)
+                MapWebView.Eval("setMockMode(true);");
+            System.Diagnostics.Debug.WriteLine("[MockGPS] Mock mode ON");
+        }
+        else
+        {
+            // Tắt mock mode, quay lại GPS thật
+            MockToggleBtn.BackgroundColor = Colors.White;
+            MockToggleIcon.TextColor = Color.FromArgb("#4A5568");
+            MockBanner.IsVisible = false;
+            _locationService.IsMocking = false;
+            _locationService.MockLocation = null;
+            if (_isJsMapReady)
+                MapWebView.Eval("setMockMode(false);");
+            System.Diagnostics.Debug.WriteLine("[MockGPS] Mock mode OFF — back to real GPS");
         }
     }
 
@@ -788,50 +836,6 @@ public partial class MapPage : ContentPage
         await DoSearch(SearchEntry.Text);
     }
 
-    // ⚙️ Nút đổi IP server (không cần rebuild app)
-    private async void OnSettingsClicked(object? sender, EventArgs e)
-    {
-        var current = ApiService.BaseUrl;
-        var result = await DisplayPromptAsync(
-            "⚙️ Cài đặt Server",
-            "Nhập địa chỉ API của máy tính\n(VD: http://192.168.1.7:5254)",
-            initialValue: current,
-            placeholder: "http://IP:PORT",
-            keyboard: Keyboard.Url);
-
-        if (string.IsNullOrWhiteSpace(result)) return;
-
-        result = result.TrimEnd('/');
-        if (!result.StartsWith("http"))
-        {
-            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("AddressRequired"), LanguageService.GetString("OK"));
-            return;
-        }
-
-        ApiService.UpdateBaseUrl(result);
-
-        // Test kết nối
-        var ok = await new ApiService().TestConnectionAsync();
-        if (ok)
-        {
-            // Reload POI với URL mới
-            _pois = null;
-            _isMapLoaded = false;
-            _pois = await new ApiService().GetAllPOIsAsync();
-            LoadMap();
-            _isMapLoaded = true;
-            await DisplayAlert($"✅ {LanguageService.GetString("ConnectedSuccess")}", 
-                LanguageService.GetString("ConnectedLocations", _pois?.Count ?? 0), 
-                LanguageService.GetString("OK"));
-        }
-        else
-        {
-            await DisplayAlert($"❌ {LanguageService.GetString("ConnectionFailed")}",
-                LanguageService.GetString("ConnectionCheck"),
-                LanguageService.GetString("OK"));
-        }
-    }
-
     private async Task DoSearch(string query)
     {
         if (string.IsNullOrWhiteSpace(query)) return;
@@ -969,6 +973,7 @@ public partial class MapPage : ContentPage
 <html>
 <head>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
+<link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
 <style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   body, html {{ width:100%; height:100%; overflow:hidden; background:#f0f2f5; }}
@@ -1044,6 +1049,12 @@ public partial class MapPage : ContentPage
      Nếu khai báo sau, hàm chưa tồn tại → ReferenceError → map trắng -->
 <script>
 var map, pois = {poisJson}, userMarker = null, poiMarkers = [];
+var mockModeEnabled = false;
+function setMockMode(enabled) {{
+  mockModeEnabled = enabled;
+  var el = document.getElementById('map');
+  if (el) el.style.cursor = enabled ? 'crosshair' : '';
+}}
 
 function onGoongLoadError() {{
   clearTimeout(window.goongLoadTimeout);
@@ -1057,10 +1068,12 @@ function onGoongLoaded() {{
     goongjs.accessToken = '{GoongMaptileKey}';
     map = new goongjs.Map({{
       container: 'map',
-      style: 'https://tiles.goong.io/assets/goong_map_web.json',
+      style: 'https://tiles.goong.io/assets/goong_map_web.json?api_key={GoongMaptileKey}',
       center: [106.7018, 10.7596],
-      zoom: 16
+      zoom: 16,
+      scrollZoom: true
     }});
+    map.addControl(new goongjs.NavigationControl(), 'bottom-right');
     map.on('load', function() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
@@ -1071,7 +1084,8 @@ function onGoongLoaded() {{
     map.on('error', function(e) {{
       document.getElementById('loading').classList.add('hide');
     }});
-    map.on('contextmenu', function(e) {{
+    map.on('click', function(e) {{
+      if (!mockModeEnabled) return;
       window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
     }});
   }} catch(e) {{
@@ -1215,8 +1229,31 @@ window.goongLoadTimeout = setTimeout(function() {{
   onload='onGoongLoaded()'
   onerror='onGoongLoadError()'>
 </script>
-<link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
 </body>
 </html>";
+    }
+
+    private async Task LoadPoiImageAsync(string? imageUrl)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                MainThread.BeginInvokeOnMainThread(() => PoiImage.Source = null);
+                return;
+            }
+
+            var localPath = await ImageCacheService.GetLocalPathAsync(imageUrl);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                PoiImage.Source = !string.IsNullOrEmpty(localPath) 
+                    ? ImageSource.FromFile(localPath) 
+                    : null;
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Image load error: {ex.Message}");
+        }
     }
 }
