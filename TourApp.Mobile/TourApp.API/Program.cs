@@ -30,6 +30,9 @@ builder.Services.AddControllers()
 // === SIGNALR - Real-time tracking ===
 builder.Services.AddSignalR();
 
+// Đăng ký IHttpContextAccessor (dùng trong Controllers)
+builder.Services.AddHttpContextAccessor();
+
 // Bật tính năng Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

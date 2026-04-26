@@ -63,6 +63,28 @@
             </Border.GestureRecognizers>
         </Border>
 
+        <!-- Zoom In button -->
+        <Border WidthRequest="42" HeightRequest="42" StrokeShape="RoundRectangle 8"
+                BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
+                VerticalOptions="End" Margin="0,0,15,190"
+                Shadow="{Shadow Brush=Black, Offset='0,2', Opacity=0.15, Radius=6}">
+            <Label Text="{x:Static helpers:IconFont.Plus}" FontFamily="MaterialIcons" FontSize="22" TextColor="#1A1D26" HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnZoomInClicked"/>
+            </Border.GestureRecognizers>
+        </Border>
+
+        <!-- Zoom Out button -->
+        <Border WidthRequest="42" HeightRequest="42" StrokeShape="RoundRectangle 8"
+                BackgroundColor="White" StrokeThickness="0" HorizontalOptions="End"
+                VerticalOptions="End" Margin="0,0,15,140"
+                Shadow="{Shadow Brush=Black, Offset='0,2', Opacity=0.15, Radius=6}">
+            <Label Text="{x:Static helpers:IconFont.Minus}" FontFamily="MaterialIcons" FontSize="22" TextColor="#1A1D26" HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnZoomOutClicked"/>
+            </Border.GestureRecognizers>
+        </Border>
+
         <!-- Mock mode banner -->
         <Border x:Name="MockBanner" IsVisible="False" BackgroundColor="#FF6B00" StrokeThickness="0" 
                 StrokeShape="RoundRectangle 12" Padding="12,6" HorizontalOptions="Center" 

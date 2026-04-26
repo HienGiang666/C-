@@ -95,16 +95,6 @@ public partial class MapPage : ContentPage
                 if (_isJsMapReady)
                     MapWebView.Eval($"highlightPoi({poiId});");
             };
-            _geofenceService.TtsLocaleNotFound += (_, lang) =>
-            {
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    await DisplayAlert("TTS", 
-                        $"Không tìm thấy giọng đọc cho ngôn ngữ '{lang}'. Vui lòng cài đặt Google Text-to-Speech và tải gói ngôn ngữ tiếng Việt.", 
-                        "OK");
-                });
-            };
-
 #if ANDROID
             // Enable foreground service for better background tracking on Android
             _locationService.SetUseForegroundService(true);
@@ -386,7 +376,6 @@ public partial class MapPage : ContentPage
         if (location == null) return;
         
         _lastLocation = location;
-        UserSessionService.UpdateLocation(location.Latitude, location.Longitude);
 
         bool shouldCheckGeofence = true;
         if (_lastCheckedLocation != null)
@@ -539,6 +528,7 @@ public partial class MapPage : ContentPage
         if (e.Url.StartsWith("http://map/setmock", StringComparison.OrdinalIgnoreCase))
         {
             e.Cancel = true;
+            if (!_locationService.IsMocking) return;
             try
             {
                 var uri = new Uri(e.Url);
@@ -547,10 +537,9 @@ public partial class MapPage : ContentPage
                     double.TryParse(query["lng"], System.Globalization.CultureInfo.InvariantCulture, out double lng))
                 {
                     System.Diagnostics.Debug.WriteLine($"[MapPage] Set Mock GPS to {lat}, {lng}");
-                    _locationService.IsMocking = true;
                     _locationService.MockLocation = new Location(lat, lng);
                     MainThread.BeginInvokeOnMainThread(async () => {
-                         await DisplayAlert("Mock GPS", $"Đã chốt vị trí U tại:\nLat: {lat}\nLng: {lng}", "OK");
+                         await DisplayAlert("Mock GPS", $"Lat: {lat:F6}\nLng: {lng:F6}", LanguageService.GetString("OK"));
                     });
                 }
             }
@@ -568,6 +557,32 @@ public partial class MapPage : ContentPage
         _ = _geofenceService.SpeakNarrationAsync(_currentPoi);
     }
 
+    private void OnMockToggleClicked(object? sender, EventArgs e)
+    {
+        _locationService.IsMocking = !_locationService.IsMocking;
+        MockBanner.IsVisible = _locationService.IsMocking;
+        MockToggleIcon.TextColor = _locationService.IsMocking ? Color.Parse("#FF6B00") : Color.Parse("#4A5568");
+        System.Diagnostics.Debug.WriteLine($"[MapPage] Mock mode: {_locationService.IsMocking}");
+
+        // Toggle JS click handler for mock location (mobile touch support)
+        if (_isJsMapReady)
+        {
+            MapWebView.Eval($"toggleMockClick({_locationService.IsMocking.ToString().ToLower()});");
+        }
+    }
+
+    private void OnZoomInClicked(object? sender, EventArgs e)
+    {
+        if (_isJsMapReady)
+            MapWebView.Eval("map.zoomIn();");
+    }
+
+    private void OnZoomOutClicked(object? sender, EventArgs e)
+    {
+        if (_isJsMapReady)
+            MapWebView.Eval("map.zoomOut();");
+    }
+
     private async void OnDirectionsClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
@@ -576,7 +591,7 @@ public partial class MapPage : ContentPage
         if (origin == null)
         {
             // Thử lấy vị trí hiện tại một lần nữa
-            await DisplayAlert("GPS", "Đang xác định vị trí của bạn...", "OK");
+            await DisplayAlert("GPS", LanguageService.GetString("Locating"), LanguageService.GetString("OK"));
             try
             {
                 var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
@@ -590,7 +605,7 @@ public partial class MapPage : ContentPage
             
             if (origin == null)
             {
-                await DisplayAlert("GPS", "Vui lòng bật GPS và đảm bảo đang ở ngoài trời hoặc khu vực có thu sóng GPS tốt.", "OK");
+                await DisplayAlert("GPS", LanguageService.GetString("GPSError"), LanguageService.GetString("OK"));
                 return;
             }
         }
@@ -617,7 +632,8 @@ public partial class MapPage : ContentPage
         coords.Add($"{destination.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{destination.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
 
         var pathStr = string.Join(";", coords);
-        var url = $"http://router.project-osrm.org/route/v1/driving/{pathStr}?overview=full&geometries=polyline";
+        var url = $"https://router.project-osrm.org/route/v1/driving/{pathStr}?overview=full&geometries=polyline";
+        System.Diagnostics.Debug.WriteLine($"[DrawRoute] OSRM URL: {url}");
 
         try
         {
@@ -641,7 +657,7 @@ public partial class MapPage : ContentPage
             else
             {
                 MainThread.BeginInvokeOnMainThread(async () => {
-                   await DisplayAlert("Lộ trình", "Không tìm thấy đường đi.", "OK");
+                   await DisplayAlert(LanguageService.GetString("Tours"), LanguageService.GetString("RouteNotFound"), LanguageService.GetString("OK"));
                 });
             }
         }
@@ -649,7 +665,7 @@ public partial class MapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"[DrawRoute] error: {ex}");
             MainThread.BeginInvokeOnMainThread(async () => {
-               await DisplayAlert("Lỗi", "Không thể gọi API chỉ đường, vui lòng kiểm tra mạng.", "OK");
+               await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("DirectionsAPIError"), LanguageService.GetString("OK"));
             });
         }
     }
@@ -1071,9 +1087,20 @@ function onGoongLoaded() {{
     map.on('error', function(e) {{
       document.getElementById('loading').classList.add('hide');
     }});
+    // Mock location: right-click on desktop, click on mobile touch
     map.on('contextmenu', function(e) {{
       window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
     }});
+    // Click handler for mobile (only active when mock mode enabled via toggleMockClick)
+    window._mockClickEnabled = false;
+    map.on('click', function(e) {{
+      if (window._mockClickEnabled) {{
+        window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
+      }}
+    }});
+    window.toggleMockClick = function(enabled) {{
+      window._mockClickEnabled = enabled;
+    }};
   }} catch(e) {{
     onGoongLoadError();
   }}
