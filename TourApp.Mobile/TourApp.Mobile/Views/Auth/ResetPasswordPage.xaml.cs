@@ -93,7 +93,7 @@ public partial class ResetPasswordPage : ContentPage
         {
             await DisplayAlert(
                 LanguageService.GetString("ServerError"), 
-                $"Lỗi kết nối: {ex.Message}", 
+                LanguageService.GetString("ConnectionErrorDetail", ex.Message), 
                 LanguageService.GetString("OK"));
         }
         finally

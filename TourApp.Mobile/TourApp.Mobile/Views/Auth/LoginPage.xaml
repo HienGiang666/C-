@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
              x:Class="TourApp.Mobile.Views.Auth.LoginPage"
              BackgroundColor="White"
              Shell.NavBarIsVisible="False">
@@ -16,24 +17,24 @@
                 </Border>
                 
                 <Label Text="TourApp" FontSize="28" FontAttributes="Bold" TextColor="#1A1D26" HorizontalOptions="Center" Margin="0,16,0,4"/>
-                <Label Text="Khám phá ẩm thực quanh bạn" FontSize="14" TextColor="#A0A8B8" HorizontalOptions="Center" Margin="0,0,0,36"/>
+                <Label Text="{Binding [AppSlogan], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="14" TextColor="#A0A8B8" HorizontalOptions="Center" Margin="0,0,0,36"/>
 
                 <!-- Form -->
                 <VerticalStackLayout Spacing="18">
                     <!-- Username -->
                     <VerticalStackLayout>
-                        <Label Text="Tài khoản" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                        <Label Text="{Binding [Username], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                         <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                            <Entry x:Name="UsernameEntry" Placeholder="Nhập tài khoản" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                            <Entry x:Name="UsernameEntry" Placeholder="{Binding [UsernamePlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
                         </Border>
                     </VerticalStackLayout>
 
                     <!-- Password -->
                     <VerticalStackLayout>
-                        <Label Text="Mật khẩu" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                        <Label Text="{Binding [Password], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                         <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
                             <Grid ColumnDefinitions="*,36">
-                                <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="Nhập mật khẩu" TextColor="#1A1D26" IsPassword="True" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                                <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="{Binding [PasswordPlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" IsPassword="True" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
                                 <Label x:Name="ShowPasswordLabel" Grid.Column="1" Text="{x:Static helpers:IconFont.EyeOff}" FontFamily="MaterialIcons" TextColor="#A0A8B8" VerticalOptions="Center" HorizontalOptions="Center" FontSize="20">
                                     <Label.GestureRecognizers>
                                         <TapGestureRecognizer Tapped="OnShowPasswordTapped"/>
@@ -46,16 +47,16 @@
                     <!-- Remember me -->
                     <HorizontalStackLayout Margin="0,-6,0,0" Spacing="8">
                         <CheckBox Color="#00B14F" Scale="0.8"/>
-                        <Label Text="Ghi nhớ đăng nhập" TextColor="#6B7588" VerticalOptions="Center" FontSize="13"/>
+                        <Label Text="{Binding [RememberLogin], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#6B7588" VerticalOptions="Center" FontSize="13"/>
                     </HorizontalStackLayout>
 
                     <!-- Login Button -->
-                    <Button x:Name="LoginButton" Text="ĐĂNG NHẬP" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="15" CornerRadius="12" HeightRequest="50" Margin="0,4,0,0" Clicked="OnLoginClicked"/>
+                    <Button x:Name="LoginButton" Text="{Binding [LoginButton], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="15" CornerRadius="12" HeightRequest="50" Margin="0,4,0,0" Clicked="OnLoginClicked"/>
 
                     <!-- Sign up -->
                     <HorizontalStackLayout HorizontalOptions="Center" Margin="0,4,0,0">
-                        <Label Text="Chưa có tài khoản? " TextColor="#6B7588" FontSize="13"/>
-                        <Label Text="Đăng ký ngay" TextColor="#00B14F" FontSize="13" FontAttributes="Bold">
+                        <Label Text="{Binding [NoAccount], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#6B7588" FontSize="13"/>
+                        <Label Text="{Binding [SignUpNow], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#00B14F" FontSize="13" FontAttributes="Bold">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnSignUpTapped"/>
                             </Label.GestureRecognizers>
@@ -67,7 +68,7 @@
 
         <!-- Guest login -->
         <VerticalStackLayout Grid.Row="1" Padding="28,0,28,36">
-            <Button x:Name="GuestLoginButton" Text="Tiếp tục với tư cách khách" BackgroundColor="Transparent" TextColor="#6B7588" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="48" BorderColor="#E4E7ED" BorderWidth="1" Clicked="OnGuestLoginClicked"/>
+            <Button x:Name="GuestLoginButton" Text="{Binding [ContinueAsGuest], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="Transparent" TextColor="#6B7588" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="48" BorderColor="#E4E7ED" BorderWidth="1" Clicked="OnGuestLoginClicked"/>
         </VerticalStackLayout>
     </Grid>
 </ContentPage>

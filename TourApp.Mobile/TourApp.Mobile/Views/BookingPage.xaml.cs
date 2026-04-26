@@ -103,7 +103,7 @@ public partial class BookingPage : ContentPage
         }
         else if (_currentTour != null)
         {
-            DisplayAlert("Thông báo", $"Tour này tối đa {_currentTour.MaxParticipants} người.", "OK");
+            DisplayAlert(LanguageService.GetString("Notice"), LanguageService.GetString("MaxParticipants", _currentTour.MaxParticipants), LanguageService.GetString("OK"));
         }
     }
 
@@ -128,10 +128,10 @@ public partial class BookingPage : ContentPage
             );
 
             var result = await DisplayAlert(
-                "Yêu cầu đăng nhập",
-                "Bạn cần đăng nhập để đặt tour. Đăng nhập ngay?",
-                "Đăng nhập",
-                "Hủy"
+                LanguageService.GetString("LoginRequired"),
+                LanguageService.GetString("LoginToBook"),
+                LanguageService.GetString("Login"),
+                LanguageService.GetString("Cancel")
             );
 
             if (result)
@@ -150,7 +150,7 @@ public partial class BookingPage : ContentPage
         if (_currentTour == null) return;
 
         ConfirmBookingButton.IsEnabled = false;
-        ConfirmBookingButton.Text = "Đang xử lý...";
+        ConfirmBookingButton.Text = LanguageService.GetString("Processing");
 
         var booking = new Booking
         {
@@ -170,14 +170,14 @@ public partial class BookingPage : ContentPage
         {
             // Xóa pending booking nếu có
             PendingBookingService.Clear();
-            await DisplayAlert("Thành công", "Cảm ơn bạn đã đặt tour. Vui lòng đợi quản trị viên xác nhận!", "OK");
+            await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("BookingSuccess"), LanguageService.GetString("OK"));
             await Shell.Current.Navigation.PopToRootAsync();
         }
         else
         {
-            await DisplayAlert("Lỗi", result.Message, "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), result.Message, LanguageService.GetString("OK"));
             ConfirmBookingButton.IsEnabled = true;
-            ConfirmBookingButton.Text = "Xác nhận Đặt Tour";
+            ConfirmBookingButton.Text = LanguageService.GetString("ConfirmBooking");
         }
     }
 }

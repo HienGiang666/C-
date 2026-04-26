@@ -27,7 +27,7 @@
                         <Shadow Brush="#000" Offset="0,2" Radius="10" Opacity="0.06"/>
                     </Border.Shadow>
                     <VerticalStackLayout Spacing="12">
-                        <Label x:Name="TourNameLabel" Text="Tên Tour" FontSize="22" FontAttributes="Bold" TextColor="#1A1D26"/>
+                        <Label x:Name="TourNameLabel" Text="{Binding [TourName], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="22" FontAttributes="Bold" TextColor="#1A1D26"/>
                         
                         <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
                             <HorizontalStackLayout Grid.Column="0" Spacing="6">
@@ -40,13 +40,13 @@
                                 <Border WidthRequest="28" HeightRequest="28" StrokeThickness="0" BackgroundColor="#FFF3E0" StrokeShape="RoundRectangle 8">
                                     <Label Text="{x:Static helpers:IconFont.ClockOutline}" FontFamily="MaterialIcons" FontSize="14" TextColor="#FF6B00" HorizontalOptions="Center" VerticalOptions="Center"/>
                                 </Border>
-                                <Label x:Name="DurationLabel" Text="1 ngày" FontSize="14" TextColor="#6B7588" VerticalOptions="Center"/>
+                                <Label x:Name="DurationLabel" Text="" FontSize="14" TextColor="#6B7588" VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                             <HorizontalStackLayout Grid.Column="2" Spacing="6">
                                 <Border WidthRequest="28" HeightRequest="28" StrokeThickness="0" BackgroundColor="#E8F0FE" StrokeShape="RoundRectangle 8">
                                     <Label Text="{x:Static helpers:IconFont.AccountGroup}" FontFamily="MaterialIcons" FontSize="14" TextColor="#007AFF" HorizontalOptions="Center" VerticalOptions="Center"/>
                                 </Border>
-                                <Label x:Name="ParticipantsLabel" Text="Tối đa 20" FontSize="14" TextColor="#6B7588" VerticalOptions="Center"/>
+                                <Label x:Name="ParticipantsLabel" Text="" FontSize="14" TextColor="#6B7588" VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                         </Grid>
                     </VerticalStackLayout>
@@ -55,7 +55,7 @@
                 <!-- Tour Description -->
                 <VerticalStackLayout Spacing="8" Padding="4,0">
                     <Label Text="{Binding [Introduction], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26" Margin="0,4,0,0"/>
-                    <Label x:Name="TourDescriptionLabel" Text="Mô tả của tour sẽ nằm ở đây..." FontSize="14" TextColor="#6B7588" LineBreakMode="WordWrap" LineHeight="1.5"/>
+                    <Label x:Name="TourDescriptionLabel" Text="" FontSize="14" TextColor="#6B7588" LineBreakMode="WordWrap" LineHeight="1.5"/>
                 </VerticalStackLayout>
 
                 <!-- Stops (POIs) -->
@@ -88,7 +88,7 @@
 
                 <!-- Action Buttons -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,4,0,24">
-                    <Button Grid.Column="0" Text="{Binding [ViewMap], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="Transparent" TextColor="#00B14F" BorderColor="#00B14F" BorderWidth="1.5" CornerRadius="12" HeightRequest="48" Clicked="OnViewMapClicked"/>
+                    <Button Grid.Column="0" Text="{Binding [ViewTour], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="Transparent" TextColor="#00B14F" BorderColor="#00B14F" BorderWidth="1.5" CornerRadius="12" HeightRequest="48" Clicked="OnViewMapClicked"/>
                     <Button Grid.Column="1" Text="{Binding [BookTour], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" CornerRadius="12" HeightRequest="48" Clicked="OnBookTourClicked"/>
                 </Grid>
             </VerticalStackLayout>

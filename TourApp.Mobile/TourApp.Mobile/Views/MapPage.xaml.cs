@@ -277,7 +277,7 @@ public partial class MapPage : ContentPage
                 {
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        DisplayAlert("Tour", $"Đang hiển thị lộ trình tour: {tour.Name}", "OK");
+                        DisplayAlert(LanguageService.GetString("Tours"), LanguageService.GetString("TourRouteDisplay", tour.Name), LanguageService.GetString("OK"));
                     });
                     
                     var tourPois = await _apiService.GetTourStopsAsync(tour.Id);
@@ -561,7 +561,7 @@ public partial class MapPage : ContentPage
         var origin = _locationService.MockLocation ?? _lastLocation;
         if (origin == null)
         {
-            await DisplayAlert("GPS", "Chưa xác định được vị trí của bạn.", "OK");
+            await DisplayAlert("GPS", LanguageService.GetString("GPSError"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -611,7 +611,7 @@ public partial class MapPage : ContentPage
             else
             {
                 MainThread.BeginInvokeOnMainThread(async () => {
-                   await DisplayAlert("Lộ trình", "Không tìm thấy đường đi.", "OK");
+                   await DisplayAlert(LanguageService.GetString("Tours"), LanguageService.GetString("RouteNotFound"), LanguageService.GetString("OK"));
                 });
             }
         }
@@ -619,7 +619,7 @@ public partial class MapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"[DrawRoute] error: {ex}");
             MainThread.BeginInvokeOnMainThread(async () => {
-               await DisplayAlert("Lỗi", "Không thể gọi API chỉ đường, vui lòng kiểm tra mạng.", "OK");
+               await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("DirectionsAPIError"), LanguageService.GetString("OK"));
             });
         }
     }
@@ -802,7 +802,7 @@ public partial class MapPage : ContentPage
                 MapWebView.Eval($"map.flyTo({{center: [{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
 
                 PoiNameLabel.Text = name ?? query;
-                PoiDescLabel.Text = "Kết quả từ Goong Maps";
+                PoiDescLabel.Text = LanguageService.GetString("SearchResultFromGoong");
                 PoiRatingLabel.Text = "⭐ --";
                 PoiDistanceLabel.Text = "";
                 PoiImage.Source = null;
@@ -1014,6 +1014,28 @@ function onGoongLoaded() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
       setTimeout(function() {{ window.location.href = 'http://map/ready'; }}, 0);
+      // Kiểm tra tiles có render không sau 3s (giả lập thường WebGL có nhưng tiles trắng)
+      setTimeout(function() {{
+        try {{
+          var canvas = document.querySelector('#map canvas');
+          if (canvas) {{
+            var ctx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (ctx) {{
+              var pixels = new Uint8Array(4);
+              ctx.readPixels(canvas.width/2, canvas.height/2, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, pixels);
+              // Nếu pixel trắng hoặc gần trắng → tiles không render
+              if (pixels[0] > 240 && pixels[1] > 240 && pixels[2] > 240) {{
+                console.log('[Map] Tiles blank after 3s — switching to Leaflet');
+                map.remove();
+                map = null; userMarker = null; poiMarkers = [];
+                document.getElementById('map').innerHTML = '';
+                initLeafletFallback();
+                return;
+              }}
+            }}
+          }}
+        }} catch(ex) {{ console.log('[Map] Tile check error:', ex); }}
+      }}, 3000);
     }});
     map.on('error', function(e) {{
       console.log('[Map] Goong error:', e);
@@ -1114,7 +1136,7 @@ function updateUserLocation(lng, lat) {{
   if (!map) return;
   if (useLeaflet) {{
     if (!userMarker) {{
-      var icon = L.divIcon({{ className: '', html: '<div id=\"user-marker\"></div>', iconSize: [20,20], iconAnchor: [10,10] }});
+      var icon = L.divIcon({{ className: '', html: '<div id=""user-marker""></div>', iconSize: [20,20], iconAnchor: [10,10] }});
       userMarker = L.marker([lat, lng], {{ icon: icon }}).addTo(map);
     }} else {{
       userMarker.setLatLng([lat, lng]);

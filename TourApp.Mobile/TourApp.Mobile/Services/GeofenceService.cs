@@ -122,8 +122,33 @@ namespace TourApp.Mobile.Services
         {
             System.Diagnostics.Debug.WriteLine($"[GeofenceService] Queueing {pois.Count} POI(s) for narration");
 
-            // Hiện mô tả POI đầu tiên (gần nhất) ngay lập tức
+            // Map poiId → POI để tra cứu nhanh
+            var poiMap = pois.ToDictionary(p => p.Id);
+            var currentPoiId = -1;
+
+            // GẮN LISTENER TRƯỚC khi enqueue — đảm bảo bắt được mọi ItemStarted event
+            void OnItemStarted(object? sender, AudioQueueItem startedItem)
+            {
+                // Khi audio item bắt đầu phát, cập nhật UI cho POI tương ứng
+                if (startedItem.PoiId > 0 
+                    && startedItem.PoiId != currentPoiId
+                    && poiMap.TryGetValue(startedItem.PoiId, out var poi))
+                {
+                    currentPoiId = startedItem.PoiId;
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    });
+                    System.Diagnostics.Debug.WriteLine($"[GeofenceService] Now playing POI: {poi.Name}");
+                }
+            }
+
+            AudioPlayerService.Instance.ItemStarted += OnItemStarted;
+
+            // Hiện mô tả POI đầu tiên (gần nhất) ngay lập tức để UI không trống
             var firstPoi = pois[0];
+            currentPoiId = firstPoi.Id;
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 PoiTriggered?.Invoke(this, firstPoi);
@@ -137,33 +162,18 @@ namespace TourApp.Mobile.Services
                 _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
             }
 
-            // Lắng nghe khi mỗi item phát xong → hiện mô tả POI kế tiếp
-            if (pois.Count > 1)
+            // Gỡ listener khi tất cả audio phát xong
+            void OnLastItemCompleted(object? sender, AudioQueueItem completedItem)
             {
-                var remainingPois = new Queue<POI>(pois.Skip(1));
-                
-                void OnItemCompleted(object? sender, AudioQueueItem completedItem)
+                // Kiểm tra nếu đây là item cuối cùng trong batch
+                if (completedItem.PoiId == pois[^1].Id)
                 {
-                    if (remainingPois.Count > 0)
-                    {
-                        var nextPoi = remainingPois.Dequeue();
-                        // Chỉ hiện nếu POI vừa phát xong khớp với POI trước đó trong queue
-                        MainThread.BeginInvokeOnMainThread(() =>
-                        {
-                            PoiTriggered?.Invoke(this, nextPoi);
-                            HighlightRequested?.Invoke(this, nextPoi.Id);
-                        });
-                        System.Diagnostics.Debug.WriteLine($"[GeofenceService] Next POI in queue: {nextPoi.Name}");
-                    }
-                    
-                    if (remainingPois.Count == 0)
-                    {
-                        AudioPlayerService.Instance.ItemCompleted -= OnItemCompleted;
-                    }
+                    AudioPlayerService.Instance.ItemStarted -= OnItemStarted;
+                    AudioPlayerService.Instance.ItemCompleted -= OnLastItemCompleted;
+                    System.Diagnostics.Debug.WriteLine("[GeofenceService] Narration queue finished, listeners removed");
                 }
-
-                AudioPlayerService.Instance.ItemCompleted += OnItemCompleted;
             }
+            AudioPlayerService.Instance.ItemCompleted += OnLastItemCompleted;
         }
 
         /// <summary>

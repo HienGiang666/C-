@@ -95,6 +95,8 @@ public partial class HomePage : ContentPage
         ToursTitle = LanguageService.GetString("Tours");
         ViewAllText = LanguageService.GetString("ViewAll");
         ScanQRText = LanguageService.GetString("ScanQR");
+        if (WelcomeLabel != null)
+            WelcomeLabel.Text = LanguageService.GetString("Welcome") + ",";
     }
     
     protected override void OnAppearing()

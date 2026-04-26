@@ -71,7 +71,7 @@ public partial class QRScannerPage : ContentPage
             else
             {
                 CameraContainer.IsVisible = false;
-                await DisplayAlert(LanguageService.GetString("Error"), "Cần quyền camera để quét QR", LanguageService.GetString("OK"));
+                await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("CameraPermissionRequired"), LanguageService.GetString("OK"));
             }
         }
 #else

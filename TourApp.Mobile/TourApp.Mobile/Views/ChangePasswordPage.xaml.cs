@@ -19,7 +19,7 @@ public partial class ChangePasswordPage : ContentPage
         var user = AuthService.CurrentUser;
         if (user == null)
         {
-            await DisplayAlert("Lỗi", "Không tìm thấy thông tin người dùng", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("UserNotFound"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -29,19 +29,19 @@ public partial class ChangePasswordPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(currentPassword))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập mật khẩu hiện tại", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("CurrentPasswordRequired"), LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
         {
-            await DisplayAlert("Lỗi", "Mật khẩu mới phải có ít nhất 6 ký tự", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordTooShort"), LanguageService.GetString("OK"));
             return;
         }
 
         if (newPassword != confirmPassword)
         {
-            await DisplayAlert("Lỗi", "Mật khẩu xác nhận không khớp", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PasswordMismatch"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -60,7 +60,7 @@ public partial class ChangePasswordPage : ContentPage
 
             if (!loginResponse.IsSuccessStatusCode)
             {
-                await DisplayAlert("Lỗi", "Mật khẩu hiện tại không đúng", "OK");
+                await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("CurrentPasswordWrong"), LanguageService.GetString("OK"));
                 return;
             }
 
@@ -84,19 +84,19 @@ public partial class ChangePasswordPage : ContentPage
 
             if (response.IsSuccessStatusCode)
             {
-                await DisplayAlert("Thành công", "Đổi mật khẩu thành công!", "OK");
+                await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("ChangePasswordSuccess"), LanguageService.GetString("OK"));
                 await Navigation.PopAsync();
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                await DisplayAlert("Lỗi", $"Đổi mật khẩu thất bại: {errorContent}", "OK");
+                await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("ChangePasswordFailed", errorContent), LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[ChangePasswordPage] Error: {ex.Message}");
-            await DisplayAlert("Lỗi", $"Lỗi kết nối: {ex.Message}", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("ConnectionErrorDetail", ex.Message), LanguageService.GetString("OK"));
         }
         finally
         {

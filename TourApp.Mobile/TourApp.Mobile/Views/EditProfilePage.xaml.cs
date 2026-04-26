@@ -38,7 +38,7 @@ public partial class EditProfilePage : ContentPage
         var user = AuthService.CurrentUser;
         if (user == null)
         {
-            await DisplayAlert("Lỗi", "Không tìm thấy thông tin người dùng", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("UserNotFound"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -49,7 +49,7 @@ public partial class EditProfilePage : ContentPage
 
         if (string.IsNullOrWhiteSpace(fullName))
         {
-            await DisplayAlert("Lỗi", "Vui lòng nhập họ và tên", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("FullNameRequired"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -97,19 +97,19 @@ public partial class EditProfilePage : ContentPage
                     Preferences.Default.Set("user_email", updatedUser.Email ?? "");
                 }
 
-                await DisplayAlert("Thành công", "Cập nhật thông tin thành công!", "OK");
+                await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("UpdateSuccess"), LanguageService.GetString("OK"));
                 await Navigation.PopAsync();
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                await DisplayAlert("Lỗi", $"Cập nhật thất bại: {errorContent}", "OK");
+                await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("UpdateFailed", errorContent), LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[EditProfilePage] Save error: {ex.Message}");
-            await DisplayAlert("Lỗi", $"Lỗi kết nối: {ex.Message}", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("ConnectionError", ex.Message), LanguageService.GetString("OK"));
         }
         finally
         {

@@ -58,7 +58,7 @@ public partial class ForgotPasswordPage : ContentPage
                 {
                     // If no demo code, we might need a different flow or just wait for email
                     // For now, let's assume we need a code to proceed
-                    await DisplayAlert(LanguageService.GetString("Error"), "No reset code received", LanguageService.GetString("OK"));
+                    await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("NoResetCode"), LanguageService.GetString("OK"));
                 }
             }
             else
@@ -73,7 +73,7 @@ public partial class ForgotPasswordPage : ContentPage
         {
             await DisplayAlert(
                 LanguageService.GetString("ServerError"), 
-                $"Lỗi kết nối: {ex.Message}", 
+                LanguageService.GetString("ConnectionErrorDetail", ex.Message), 
                 LanguageService.GetString("OK"));
         }
         finally

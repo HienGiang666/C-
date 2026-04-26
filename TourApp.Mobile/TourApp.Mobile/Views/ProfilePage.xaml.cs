@@ -60,7 +60,7 @@ public partial class ProfilePage : ContentPage
         {
             UserNameLabel.Text = AuthService.CurrentUser.DisplayName;
             UserEmailLabel.Text = isGuest 
-                ? "Đang dùng chế độ khách" 
+                ? LanguageService.GetString("GuestMode") 
                 : (AuthService.CurrentUser.Email ?? LanguageService.GetString("NoEmail"));
         }
         

@@ -174,7 +174,7 @@ public partial class TourPage : ContentPage
             }
             else
             {
-                await DisplayAlert("Kết quả", $"Không tìm thấy tour nào cho '{query}'", "OK");
+                await DisplayAlert(LanguageService.GetString("Tours"), LanguageService.GetString("NoToursFound", query), LanguageService.GetString("OK"));
             }
         }
     }

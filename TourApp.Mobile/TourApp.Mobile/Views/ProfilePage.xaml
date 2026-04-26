@@ -36,7 +36,7 @@
                 <Border x:Name="EditProfileButton" StrokeThickness="1" Stroke="#E4E7ED" BackgroundColor="#F8F9FC" Padding="18,10" HorizontalOptions="Center" Margin="0,14,0,0" StrokeShape="RoundRectangle 12">
                     <HorizontalStackLayout Spacing="8">
                         <Label Text="{x:Static helpers:IconFont.Pencil}" FontFamily="MaterialIcons" FontSize="16" TextColor="#00B14F" VerticalOptions="Center"/>
-                        <Label Text="Chỉnh sửa hồ sơ" FontSize="14" TextColor="#1A1D26" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Label Text="{Binding [EditProfile], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="14" TextColor="#1A1D26" FontAttributes="Bold" VerticalOptions="Center"/>
                     </HorizontalStackLayout>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnEditProfileTapped"/>
@@ -53,19 +53,19 @@
                     <Grid ColumnDefinitions="*,1,*,1,*">
                         <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
                             <Label Text="8" FontSize="22" FontAttributes="Bold" TextColor="#00B14F" HorizontalOptions="Center"/>
-                            <Label Text="Tour đã đi" FontSize="11" TextColor="#6B7588"/>
+                            <Label Text="{Binding [ToursVisited], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" TextColor="#6B7588"/>
                         </VerticalStackLayout>
                         <BoxView Grid.Column="1" Color="#E4E7ED" WidthRequest="1" VerticalOptions="Fill" Margin="0,4"/>
 
                         <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
                             <Label Text="24" FontSize="22" FontAttributes="Bold" TextColor="#00B14F" HorizontalOptions="Center"/>
-                            <Label Text="Quán đã thử" FontSize="11" TextColor="#6B7588"/>
+                            <Label Text="{Binding [PlacesTried], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" TextColor="#6B7588"/>
                         </VerticalStackLayout>
                         <BoxView Grid.Column="3" Color="#E4E7ED" WidthRequest="1" VerticalOptions="Fill" Margin="0,4"/>
 
                         <VerticalStackLayout Grid.Column="4" HorizontalOptions="Center" VerticalOptions="Center" Spacing="4">
                             <Label Text="12" FontSize="22" FontAttributes="Bold" TextColor="#00B14F" HorizontalOptions="Center"/>
-                            <Label Text="Yêu thích" FontSize="11" TextColor="#6B7588"/>
+                            <Label Text="{Binding [Favorites], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="11" TextColor="#6B7588"/>
                         </VerticalStackLayout>
                     </Grid>
                 </Border>
@@ -122,8 +122,8 @@
 
                 <!-- Login + Register Buttons (chỉ hiện khi là khách) -->
                 <VerticalStackLayout x:Name="GuestButtonsLayout" IsVisible="False" Spacing="10">
-                    <Button Text="Đăng nhập" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="48" Clicked="OnLoginClicked"/>
-                    <Button Text="Đăng ký" BackgroundColor="White" TextColor="#00B14F" BorderColor="#00B14F" BorderWidth="1.5" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="48" Clicked="OnRegisterClicked"/>
+                    <Button Text="{Binding [LoginButton], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="48" Clicked="OnLoginClicked"/>
+                    <Button Text="{Binding [RegisterButton], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="White" TextColor="#00B14F" BorderColor="#00B14F" BorderWidth="1.5" FontAttributes="Bold" FontSize="14" CornerRadius="12" HeightRequest="48" Clicked="OnRegisterClicked"/>
                 </VerticalStackLayout>
 
                 <Label Text="Version 1.0.0" FontSize="11" TextColor="#CDD2DB" HorizontalOptions="Center" Margin="0,4,0,0">

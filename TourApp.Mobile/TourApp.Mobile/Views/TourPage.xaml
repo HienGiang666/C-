@@ -18,6 +18,7 @@
 
     <ContentPage.Resources>
         <converters:UrlToImageSourceConverter x:Key="UrlToImageConverter" />
+        <converters:LocalizedFormatConverter x:Key="LocalizedFormat" />
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
@@ -70,7 +71,7 @@
                                                 <Border WidthRequest="26" HeightRequest="26" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 7">
                                                     <Label Text="{x:Static helpers:IconFont.MapMarker}" FontFamily="MaterialIcons" FontSize="14" TextColor="#00B14F" HorizontalOptions="Center" VerticalOptions="Center"/>
                                                 </Border>
-                                                <Label Text="{Binding PoiCount, StringFormat='{0} điểm'}" FontSize="12" TextColor="#6B7588" VerticalOptions="Center"/>
+                                                <Label Text="{Binding PoiCount, Converter={StaticResource LocalizedFormat}, ConverterParameter=PoiCount}" FontSize="12" TextColor="#6B7588" VerticalOptions="Center"/>
                                             </HorizontalStackLayout>
                                             <HorizontalStackLayout Grid.Column="1" Spacing="6">
                                                 <Border WidthRequest="26" HeightRequest="26" StrokeThickness="0" BackgroundColor="#E8F0FE" StrokeShape="RoundRectangle 7">

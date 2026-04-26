@@ -43,8 +43,8 @@ public partial class TourDetailPage : ContentPage
                 {
                     TourNameLabel.Text = _currentTour.Name;
                     PriceLabel.Text = $"{_currentTour.Price:N0} đ";
-                    DurationLabel.Text = $"{_currentTour.Duration} ngày";
-                    ParticipantsLabel.Text = $"Tối đa {_currentTour.MaxParticipants}";
+                    DurationLabel.Text = _currentTour.Duration.ToString();
+                    ParticipantsLabel.Text = LanguageService.GetString("MaxPeople", _currentTour.MaxParticipants);
                     TourDescriptionLabel.Text = _currentTour.Description;
                     
                     if (!string.IsNullOrEmpty(_currentTour.ImageUrl))
@@ -89,7 +89,7 @@ public partial class TourDetailPage : ContentPage
     {
         if (TourStops == null || !TourStops.Any())
         {
-            await DisplayAlert("Thông báo", "Tour hiện tại chưa có điểm đến nào.", "OK");
+            await DisplayAlert(LanguageService.GetString("Notice"), LanguageService.GetString("NoDestinations"), LanguageService.GetString("OK"));
             return;
         }
 
@@ -97,7 +97,7 @@ public partial class TourDetailPage : ContentPage
         if (btn != null)
         {
             btn.IsEnabled = false;
-            btn.Text = "⏳ Đang tải...";
+            btn.Text = $"⏳ {LanguageService.GetString("Loading")}";
         }
 
         try
@@ -120,11 +120,11 @@ public partial class TourDetailPage : ContentPage
                 }
             }
             
-            await DisplayAlert("Thành công", $"Đã tải {successCount}/{TourStops.Count} file audio ngoại tuyến.", "OK");
+            await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("DownloadAudioSuccess", successCount, TourStops.Count), LanguageService.GetString("OK"));
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Lỗi", "Tải audio thất bại.", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("DownloadAudioFailed"), LanguageService.GetString("OK"));
             System.Diagnostics.Debug.WriteLine($"[DownloadAudio] error: {ex.Message}");
         }
         finally
@@ -132,7 +132,7 @@ public partial class TourDetailPage : ContentPage
             if (btn != null)
             {
                 btn.IsEnabled = true;
-                btn.Text = "⬇️ Tải Audio Offline";
+                btn.Text = LanguageService.GetString("DownloadOfflineAudio");
             }
         }
     }

@@ -44,7 +44,7 @@
                             <Label Text="{x:Static helpers:IconFont.Account}" FontFamily="MaterialIcons" FontSize="22" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Spacing="1">
-                            <Label Text="Xin chào," FontSize="12" TextColor="#FFFFFFBB"/>
+                            <Label x:Name="WelcomeLabel" FontSize="12" TextColor="#FFFFFFBB"/>
                             <Label x:Name="UserNameLabel" FontSize="17" FontAttributes="Bold" TextColor="White"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
@@ -87,7 +87,7 @@
                 
                 <!-- Category Chips - horizontal scroll -->
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Danh mục" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26"/>
+                    <Label Text="{Binding [Categories], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26"/>
                     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
                         <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="White" Padding="0,14" StrokeShape="RoundRectangle 14">
                             <Border.Shadow>

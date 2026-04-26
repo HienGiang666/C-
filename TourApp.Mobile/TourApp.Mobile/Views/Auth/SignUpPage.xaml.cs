@@ -87,7 +87,7 @@ public partial class SignUpPage : ContentPage
 
             if (result.Success && result.User != null)
             {
-                await DisplayAlert("Thành công", "Đăng ký tài khoản thành công!", "OK");
+                await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("SignUpSuccess"), LanguageService.GetString("OK"));
                 // Navigate to main app
                 MainThread.BeginInvokeOnMainThread(() => {
                     AppNavigation.SetRootPage(new AppShell());
@@ -95,12 +95,12 @@ public partial class SignUpPage : ContentPage
             }
             else
             {
-                await DisplayAlert("Đăng ký thất bại", result.Message, "OK");
+                await DisplayAlert(LanguageService.GetString("SignUpFailed"), result.Message, LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
-            await DisplayAlert(LanguageService.GetString("Error"), $"{LanguageService.GetString("Error")}: {ex.Message}", LanguageService.GetString("OK"));
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("ConnectionErrorDetail", ex.Message), LanguageService.GetString("OK"));
         }
         finally
         {

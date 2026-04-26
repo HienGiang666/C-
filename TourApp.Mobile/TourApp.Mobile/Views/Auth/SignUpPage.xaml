@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
              x:Class="TourApp.Mobile.Views.Auth.SignUpPage"
              BackgroundColor="White"
              Shell.NavBarIsVisible="False">
@@ -14,35 +15,35 @@
                     <TapGestureRecognizer Tapped="OnBackTapped" />
                 </Border.GestureRecognizers>
             </Border>
-            <Label Text="Đăng ký" FontSize="24" FontAttributes="Bold" TextColor="#1A1D26" HorizontalOptions="Center" Margin="0,12,0,4"/>
-            <Label Text="Tạo tài khoản để bắt đầu khám phá" FontSize="13" TextColor="#A0A8B8" HorizontalOptions="Center"/>
+            <Label Text="{Binding [SignUpTitle], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="24" FontAttributes="Bold" TextColor="#1A1D26" HorizontalOptions="Center" Margin="0,12,0,4"/>
+            <Label Text="{Binding [SignUpSubtitle], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" TextColor="#A0A8B8" HorizontalOptions="Center"/>
         </VerticalStackLayout>
 
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="24,0,24,40" Spacing="16">
                 <VerticalStackLayout>
-                    <Label Text="Họ và tên" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                    <Label Text="{Binding [FullName], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                        <Entry x:Name="FullNameEntry" Placeholder="Nhập họ và tên" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                        <Entry x:Name="FullNameEntry" Placeholder="{Binding [EnterFullName], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>
-                    <Label Text="Tài khoản" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                    <Label Text="{Binding [Username], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                        <Entry x:Name="UsernameEntry" Placeholder="Nhập tài khoản" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                        <Entry x:Name="UsernameEntry" Placeholder="{Binding [UsernamePlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>
-                    <Label Text="Email" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                    <Label Text="{Binding [Email], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                        <Entry x:Name="EmailEntry" Placeholder="Nhập email" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" Keyboard="Email" VerticalOptions="Center"/>
+                        <Entry x:Name="EmailEntry" Placeholder="{Binding [EnterEmail], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" Keyboard="Email" VerticalOptions="Center"/>
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>
-                    <Label Text="Mật khẩu" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                    <Label Text="{Binding [Password], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
                         <Grid ColumnDefinitions="*,36">
-                            <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="Nhập mật khẩu" TextColor="#1A1D26" IsPassword="True" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                            <Entry x:Name="PasswordEntry" Grid.Column="0" Placeholder="{Binding [PasswordPlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" IsPassword="True" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
                             <Label x:Name="ShowPasswordLabel" Grid.Column="1" Text="{x:Static helpers:IconFont.EyeOff}" FontFamily="MaterialIcons" TextColor="#A0A8B8" VerticalOptions="Center" HorizontalOptions="Center" FontSize="20">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnShowPasswordTapped"/>
@@ -52,10 +53,10 @@
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>
-                    <Label Text="Nhập lại mật khẩu" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                    <Label Text="{Binding [ConfirmPassword], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
                         <Grid ColumnDefinitions="*,36">
-                            <Entry x:Name="ConfirmPasswordEntry" Grid.Column="0" Placeholder="Nhập lại mật khẩu" TextColor="#1A1D26" IsPassword="True" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                            <Entry x:Name="ConfirmPasswordEntry" Grid.Column="0" Placeholder="{Binding [ConfirmPassword], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" IsPassword="True" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
                             <Label x:Name="ShowConfirmPasswordLabel" Grid.Column="1" Text="{x:Static helpers:IconFont.EyeOff}" FontFamily="MaterialIcons" TextColor="#A0A8B8" VerticalOptions="Center" HorizontalOptions="Center" FontSize="20">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnShowConfirmPasswordTapped"/>
@@ -64,7 +65,7 @@
                         </Grid>
                     </Border>
                 </VerticalStackLayout>
-                <Button x:Name="SignUpButton" Text="ĐĂNG KÝ" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="15" CornerRadius="12" HeightRequest="50" Margin="0,8,0,0" Clicked="OnSignUpClicked"/>
+                <Button x:Name="SignUpButton" Text="{Binding [RegisterButton], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" FontAttributes="Bold" FontSize="15" CornerRadius="12" HeightRequest="50" Margin="0,8,0,0" Clicked="OnSignUpClicked"/>
             </VerticalStackLayout>
         </ScrollView>
     </Grid>
