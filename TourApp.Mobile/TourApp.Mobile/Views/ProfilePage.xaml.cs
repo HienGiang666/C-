@@ -53,12 +53,24 @@ public partial class ProfilePage : ContentPage
     {
         base.OnAppearing();
         
+        var isGuest = AuthService.IsGuestMode;
+        
         // Update user info
         if (AuthService.CurrentUser != null)
         {
             UserNameLabel.Text = AuthService.CurrentUser.DisplayName;
-            UserEmailLabel.Text = AuthService.CurrentUser.Email ?? LanguageService.GetString("NoEmail");
+            UserEmailLabel.Text = isGuest 
+                ? "Đang dùng chế độ khách" 
+                : (AuthService.CurrentUser.Email ?? LanguageService.GetString("NoEmail"));
         }
+        
+        // Ẩn/hiện các mục theo guest mode
+        EditProfileButton.IsVisible = !isGuest;
+        HistoryRow.IsVisible = !isGuest;
+        HistoryDivider.IsVisible = !isGuest;
+        ChangePasswordRow.IsVisible = !isGuest;
+        LogoutButton.IsVisible = !isGuest;
+        GuestButtonsLayout.IsVisible = isGuest;
         
         // Update language display theo ngôn ngữ hiện tại
         var currentLang = LanguageService.CurrentLanguage;
@@ -204,5 +216,17 @@ public partial class ProfilePage : ContentPage
             AuthService.Logout();
             AppNavigation.SetRootPage(new NavigationPage(new Views.Auth.LoginPage()));
         }
+    }
+
+    private void OnLoginClicked(object sender, EventArgs e)
+    {
+        AuthService.Logout();
+        AppNavigation.SetRootPage(new NavigationPage(new Views.Auth.LoginPage()));
+    }
+
+    private void OnRegisterClicked(object sender, EventArgs e)
+    {
+        AuthService.Logout();
+        AppNavigation.SetRootPage(new NavigationPage(new Views.Auth.SignUpPage()));
     }
 }

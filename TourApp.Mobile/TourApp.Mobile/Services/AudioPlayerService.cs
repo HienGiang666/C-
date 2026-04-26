@@ -37,6 +37,9 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
     private readonly IAudioManager _audioManager;
     private readonly HttpClient _httpClient;
     private readonly ConcurrentQueue<AudioQueueItem> _audioQueue = new();
+    private readonly HashSet<int> _enqueuedPoiIds = new();
+    private readonly object _enqueuedLock = new();
+    private int _currentlyPlayingPoiId = -1;
     private bool _isProcessingQueue = false;
     private readonly object _processingLock = new();
     private CancellationTokenSource? _playbackCts;
@@ -94,50 +97,62 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
 
     public async Task EnqueueAsync(AudioQueueItem item)
     {
-        _audioQueue.Enqueue(item);
-        UpdateQueueCount();
-        QueueChanged?.Invoke(this, EventArgs.Empty);
-        Debug.WriteLine($"[AudioPlayerService] Enqueued: {item.Title}, Queue count: {QueueCount}");
-
-        bool shouldStartProcessing = false;
-        lock (_processingLock)
+        // Chống trùng lặp: bỏ qua nếu POI đã có trong queue hoặc đang phát
+        if (item.PoiId > 0)
         {
-            if (!_isProcessingQueue && !IsPlaying)
+            lock (_enqueuedLock)
             {
-                _isProcessingQueue = true;
-                shouldStartProcessing = true;
-            }
-        }
-
-        if (shouldStartProcessing)
-        {
-            try
-            {
-                await ProcessQueueAsync();
-            }
-            finally
-            {
-                lock (_processingLock)
+                if (_currentlyPlayingPoiId == item.PoiId || !_enqueuedPoiIds.Add(item.PoiId))
                 {
-                    _isProcessingQueue = false;
+                    Debug.WriteLine($"[AudioQueue] SKIP duplicate POI {item.PoiId}: {item.Title}");
+                    return;
                 }
             }
         }
+
+        _audioQueue.Enqueue(item);
+        UpdateQueueCount();
+        QueueChanged?.Invoke(this, EventArgs.Empty);
+        Debug.WriteLine($"[AudioQueue] Enqueued: {item.Title} (POI {item.PoiId}), Queue: {QueueCount}");
+
+        await TryStartProcessingAsync();
     }
 
     public async Task EnqueueRangeAsync(IEnumerable<AudioQueueItem> items)
     {
+        int added = 0;
         foreach (var item in items)
         {
+            if (item.PoiId > 0)
+            {
+                lock (_enqueuedLock)
+                {
+                    if (_currentlyPlayingPoiId == item.PoiId || !_enqueuedPoiIds.Add(item.PoiId))
+                    {
+                        Debug.WriteLine($"[AudioQueue] SKIP duplicate POI {item.PoiId}: {item.Title}");
+                        continue;
+                    }
+                }
+            }
             _audioQueue.Enqueue(item);
+            added++;
         }
+
+        if (added == 0) return;
+
         UpdateQueueCount();
         QueueChanged?.Invoke(this, EventArgs.Empty);
+        Debug.WriteLine($"[AudioQueue] Enqueued {added} items, Queue: {QueueCount}");
 
+        await TryStartProcessingAsync();
+    }
+
+    private async Task TryStartProcessingAsync()
+    {
         bool shouldStartProcessing = false;
         lock (_processingLock)
         {
-            if (!_isProcessingQueue && !IsPlaying)
+            if (!_isProcessingQueue)
             {
                 _isProcessingQueue = true;
                 shouldStartProcessing = true;
@@ -146,48 +161,75 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
 
         if (shouldStartProcessing)
         {
-            try
-            {
-                await ProcessQueueAsync();
-            }
-            finally
-            {
-                lock (_processingLock)
-                {
-                    _isProcessingQueue = false;
-                }
-            }
+            await ProcessQueueAsync();
         }
     }
 
     private async Task ProcessQueueAsync()
     {
-        Debug.WriteLine($"[AudioPlayerService] Starting queue processing, items: {QueueCount}");
+        Debug.WriteLine($"[AudioQueue] Starting queue processing, items: {QueueCount}");
 
-        while (_audioQueue.TryDequeue(out var item))
+        try
         {
-            UpdateQueueCount();
-            QueueChanged?.Invoke(this, EventArgs.Empty);
+            while (true)
+            {
+                if (!_audioQueue.TryDequeue(out var item))
+                    break;
 
-            try
-            {
-                _playbackCts?.Cancel();
-                _playbackCts?.Dispose();
-                _playbackCts = new CancellationTokenSource();
-                
-                await PlayItemAsync(item, _playbackCts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.WriteLine("[AudioPlayerService] Playback cancelled");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[AudioPlayerService] Error playing item {item.Title}: {ex.Message}");
+                // Track currently playing, remove from enqueued set
+                lock (_enqueuedLock)
+                {
+                    _currentlyPlayingPoiId = item.PoiId;
+                    if (item.PoiId > 0)
+                        _enqueuedPoiIds.Remove(item.PoiId);
+                }
+
+                UpdateQueueCount();
+                QueueChanged?.Invoke(this, EventArgs.Empty);
+
+                try
+                {
+                    _playbackCts?.Cancel();
+                    _playbackCts?.Dispose();
+                    _playbackCts = new CancellationTokenSource();
+
+                    await PlayItemAsync(item, _playbackCts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    Debug.WriteLine("[AudioQueue] Playback cancelled");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[AudioQueue] Error playing {item.Title}: {ex.Message}");
+                }
+                finally
+                {
+                    lock (_enqueuedLock)
+                    {
+                        _currentlyPlayingPoiId = -1;
+                    }
+                }
             }
         }
-
-        Debug.WriteLine("[AudioPlayerService] Queue processing completed");
+        finally
+        {
+            lock (_processingLock)
+            {
+                // Re-check: nếu có item mới enqueue trong lúc kết thúc, tiếp tục xử lý
+                if (!_audioQueue.IsEmpty)
+                {
+                    Debug.WriteLine("[AudioQueue] New items found after loop, reprocessing...");
+                    _isProcessingQueue = true;
+                    _ = Task.Run(ProcessQueueAsync);
+                }
+                else
+                {
+                    _isProcessingQueue = false;
+                    Debug.WriteLine("[AudioQueue] Queue processing completed");
+                }
+            }
+        }
     }
 
     private async Task PlayItemAsync(AudioQueueItem item, CancellationToken cancellationToken = default)
@@ -272,9 +314,13 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
     public void ClearQueue()
     {
         while (_audioQueue.TryDequeue(out _)) { }
+        lock (_enqueuedLock)
+        {
+            _enqueuedPoiIds.Clear();
+        }
         UpdateQueueCount();
         QueueChanged?.Invoke(this, EventArgs.Empty);
-        Debug.WriteLine("[AudioPlayerService] Queue cleared");
+        Debug.WriteLine("[AudioQueue] Queue cleared");
     }
 
     public void StopAndClear()
@@ -292,6 +338,11 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
             Stop();
             _httpClient?.Dispose();
             while (_audioQueue.TryDequeue(out _)) { }
+            lock (_enqueuedLock)
+            {
+                _enqueuedPoiIds.Clear();
+                _currentlyPlayingPoiId = -1;
+            }
         }
         catch (Exception ex)
         {

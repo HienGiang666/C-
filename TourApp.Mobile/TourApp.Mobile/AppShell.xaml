@@ -4,33 +4,35 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:TourApp.Mobile.Views"
-    Title="Tour Quận 4">
+    Title="TourApp">
 
-    <!-- Shell hosts the authenticated app tabs only -->
+    <Shell.Resources>
+        <Style TargetType="TabBar" ApplyToDerivedTypes="True">
+            <Setter Property="Shell.TabBarBackgroundColor" Value="#FFFFFF" />
+            <Setter Property="Shell.TabBarTitleColor" Value="#00B14F" />
+            <Setter Property="Shell.TabBarUnselectedColor" Value="#A0A8B8" />
+            <Setter Property="Shell.TabBarForegroundColor" Value="#00B14F" />
+        </Style>
+    </Shell.Resources>
 
     <TabBar>
-        <!-- Home Tab -->
-        <Tab Title="Home" Icon="ic_home.png">
+        <Tab Title="Trang chủ" Icon="ic_home.png">
             <ShellContent ContentTemplate="{DataTemplate views:HomePage}" Route="HomePage" />
         </Tab>
         
-        <!-- Quán Ăn Tab -->
-        <Tab Title="Quán Ăn" Icon="ic_food.png">
+        <Tab Title="Quán ăn" Icon="ic_food.png">
             <ShellContent ContentTemplate="{DataTemplate views:POIPage}" Route="POIPage" />
         </Tab>
 
-        <!-- Map Tab -->
-        <Tab Title="Map" Icon="ic_map.png">
+        <Tab Title="Bản đồ" Icon="ic_map.png">
             <ShellContent ContentTemplate="{DataTemplate views:MapPage}" Route="MapPage" />
         </Tab>
 
-        <!-- Tour Tab -->
         <Tab Title="Tour" Icon="ic_tour.png">
             <ShellContent ContentTemplate="{DataTemplate views:TourPage}" Route="TourPage" />
         </Tab>
 
-        <!-- Profile Tab -->
-        <Tab Title="Tôi" Icon="ic_profile.png">
+        <Tab Title="Cá nhân" Icon="ic_profile.png">
             <ShellContent ContentTemplate="{DataTemplate views:ProfilePage}" Route="ProfilePage" />
         </Tab>
     </TabBar>

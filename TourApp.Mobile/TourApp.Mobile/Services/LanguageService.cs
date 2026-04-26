@@ -60,6 +60,27 @@ namespace TourApp.Mobile.Services
                 System.Diagnostics.Debug.WriteLine($"[LanguageService] Init error: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Lazy initialization - chỉ set culture, load resources khi cần
+        /// </summary>
+        public static void InitializeLazy()
+        {
+            if (_isInitialized) return;
+            
+            try
+            {
+                // Chỉ set culture, không load tất cả resources ngay
+                var savedLang = CurrentLanguage;
+                SetCulture(savedLang);
+                _isInitialized = true;
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Lazy initialized with language: {savedLang}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LanguageService] Lazy init error: {ex.Message}");
+            }
+        }
         
         /// <summary>
         /// Load tất cả RESX files từ embedded resources
@@ -361,12 +382,27 @@ namespace TourApp.Mobile.Services
         }
         
         /// <summary>
-        /// Lấy string đã localize theo key
+        /// Lấy string đã localize theo key - lazy load resources khi cần
         /// </summary>
         public static string GetString(string key)
         {
+            // Lazy init chỉ set culture
             if (!_isInitialized)
-                Initialize();
+                InitializeLazy();
+
+            // Lazy load resources nếu chưa load
+            if (_resources.Count == 0)
+            {
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine("[LanguageService] Lazy loading resources...");
+                    LoadAllResources();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[LanguageService] Failed to lazy load resources: {ex.Message}");
+                }
+            }
             
             try
             {

@@ -38,9 +38,20 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(TargetFramework)' == 'net9.0-android'">
-
-		<AndroidUseInterpreter>true</AndroidUseInterpreter>
+		<!-- TẮT interpreter để startup nhanh hơn, bật lại khi cần Hot Reload -->
+		<AndroidUseInterpreter>false</AndroidUseInterpreter>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+		<!-- Bật AOT partially để startup nhanh -->
+		<RunAOTCompilation>true</RunAOTCompilation>
+		<AndroidEnableProfiledAot>true</AndroidEnableProfiledAot>
+	</PropertyGroup>
+
+	<!-- RELEASE: Full AOT để startup nhanh nhất -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(TargetFramework)' == 'net9.0-android'">
+		<RunAOTCompilation>true</RunAOTCompilation>
+		<AndroidEnableProfiledAot>true</AndroidEnableProfiledAot>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
 
 

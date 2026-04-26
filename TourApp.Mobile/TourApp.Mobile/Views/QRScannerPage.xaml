@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
+             xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.QRScannerPage"
              BackgroundColor="Black"
              Shell.NavBarIsVisible="False">
@@ -11,7 +12,7 @@
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="20,40,20,20" BackgroundColor="#80000000">
             <Border Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeThickness="0"
                    BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
-                <Label Text="←" FontSize="20" TextColor="Black" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Text="{x:Static helpers:IconFont.ArrowLeft}" FontFamily="MaterialIcons" FontSize="20" TextColor="Black" HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnBackTapped"/>
                 </Border.GestureRecognizers>
@@ -23,7 +24,7 @@
             <!-- Flash toggle - hidden on Windows -->
             <Border x:Name="FlashButton" Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0"
                    BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
-                <Label Text="⚡" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Text="{x:Static helpers:IconFont.Flash}" FontFamily="MaterialIcons" FontSize="20" TextColor="Black" HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnFlashTapped"/>
                 </Border.GestureRecognizers>
@@ -39,35 +40,35 @@
             </Grid>
 
             <!-- Scanner overlay frame - InputTransparent so camera works underneath -->
-            <Border BackgroundColor="Transparent" Stroke="#FF3D00" StrokeThickness="3"
-                   StrokeShape="RoundRectangle 20" Padding="0"
-                   WidthRequest="250" HeightRequest="250"
+            <Border BackgroundColor="Transparent" Stroke="#00B14F" StrokeThickness="3"
+                   StrokeShape="RoundRectangle 24" Padding="0"
+                   WidthRequest="260" HeightRequest="260"
                    HorizontalOptions="Center" VerticalOptions="Center"
                    InputTransparent="True">
                 <Grid>
                     <!-- Corner markers -->
-                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                    <BoxView Color="#00B14F" WidthRequest="40" HeightRequest="4" 
                              HorizontalOptions="Start" VerticalOptions="Start" Margin="10"/>
-                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                    <BoxView Color="#00B14F" WidthRequest="4" HeightRequest="40" 
                              HorizontalOptions="Start" VerticalOptions="Start" Margin="10"/>
                     
-                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                    <BoxView Color="#00B14F" WidthRequest="40" HeightRequest="4" 
                              HorizontalOptions="End" VerticalOptions="Start" Margin="10"/>
-                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                    <BoxView Color="#00B14F" WidthRequest="4" HeightRequest="40" 
                              HorizontalOptions="End" VerticalOptions="Start" Margin="10"/>
                     
-                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                    <BoxView Color="#00B14F" WidthRequest="40" HeightRequest="4" 
                              HorizontalOptions="Start" VerticalOptions="End" Margin="10"/>
-                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                    <BoxView Color="#00B14F" WidthRequest="4" HeightRequest="40" 
                              HorizontalOptions="Start" VerticalOptions="End" Margin="10"/>
                     
-                    <BoxView Color="#FF3D00" WidthRequest="40" HeightRequest="4" 
+                    <BoxView Color="#00B14F" WidthRequest="40" HeightRequest="4" 
                              HorizontalOptions="End" VerticalOptions="End" Margin="10"/>
-                    <BoxView Color="#FF3D00" WidthRequest="4" HeightRequest="40" 
+                    <BoxView Color="#00B14F" WidthRequest="4" HeightRequest="40" 
                              HorizontalOptions="End" VerticalOptions="End" Margin="10"/>
                     
                     <!-- Scanning line animation -->
-                    <BoxView x:Name="ScanLine" Color="#FF3D00" HeightRequest="2" 
+                    <BoxView x:Name="ScanLine" Color="#00B14F" HeightRequest="2" 
                              HorizontalOptions="Fill" VerticalOptions="Start" Margin="20,0"/>
 
                 </Grid>

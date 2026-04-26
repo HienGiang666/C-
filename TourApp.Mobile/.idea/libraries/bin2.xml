@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="bin2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Debug/net9.0-android/android/bin/classes.zip!/" />
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Debug/net9.0-android/android/bin/mono.android.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

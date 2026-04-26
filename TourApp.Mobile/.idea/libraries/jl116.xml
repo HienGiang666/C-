@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="jl116">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Release/net9.0-android/lp/116/jl/res.zip!/" />
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Release/net9.0-android/lp/116/jl/annotations.zip!/" />
+      <root url="jar://$PROJECT_DIR$/TourApp.Mobile/obj/Release/net9.0-android/lp/116/jl/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
