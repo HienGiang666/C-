@@ -209,7 +209,7 @@ public class HomeController : Controller
         ViewBag.DurationStats = durationStats;
         ViewBag.ApiBaseUrl = _configuration.GetSection("TourApi:BaseUrl").Value?.TrimEnd('/') ?? "https://localhost:7244";
 
-        return View();
+        return View("Statistics");
     }
 
     public IActionResult Privacy()

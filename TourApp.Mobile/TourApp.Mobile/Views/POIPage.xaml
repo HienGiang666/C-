@@ -4,77 +4,75 @@
              xmlns:models="clr-namespace:TourApp.Mobile.Models"
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
              xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
-             xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
              x:Class="TourApp.Mobile.Views.POIPage"
+             BackgroundColor="#F5F6F8"
              Shell.NavBarIsVisible="False">
-
-    <ContentPage.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F0F7F4" Offset="0.0"/>
-            <GradientStop Color="#FFF8F0" Offset="0.5"/>
-            <GradientStop Color="#EEF2F7" Offset="1.0"/>
-        </LinearGradientBrush>
-    </ContentPage.Background>
 
     <ContentPage.Resources>
         <converters:UrlToImageSourceConverter x:Key="UrlToImageConverter" />
     </ContentPage.Resources>
     
     <Grid RowDefinitions="Auto,*">
-        <!-- Header with subtle gradient -->
-        <VerticalStackLayout Grid.Row="0" Padding="20,48,20,18">
-            <VerticalStackLayout.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FFFFFF" Offset="0.0"/>
-                    <GradientStop Color="#F0F7F4" Offset="1.0"/>
-                </LinearGradientBrush>
-            </VerticalStackLayout.Background>
-            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
-                <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
-                    <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 12">
-                        <Label Text="{x:Static helpers:IconFont.Food}" FontFamily="MaterialIcons" FontSize="20" TextColor="#00B14F" HorizontalOptions="Center" VerticalOptions="Center"/>
+        <!-- Header Content -->
+        <VerticalStackLayout Grid.Row="0">
+            <Grid>
+                <!-- Orange Header -->
+                <BoxView Color="#FF3D00" HeightRequest="150" VerticalOptions="Start" />
+                
+                <VerticalStackLayout Padding="20,40,20,20">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+                            <Label Text="🍲" FontSize="24" />
+                            <Label Text="{Binding [TabFood], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+
+                        <!-- QR Code Scanner button -->
+                        <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="White" Padding="0" StrokeShape="RoundRectangle 20">
+                            <Label Text="📷" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnQRScanClicked"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </Grid>
+
+                    <!-- Search Bar -->
+                    <Border StrokeThickness="0" BackgroundColor="White" Padding="15,0" Margin="0,20,0,0" HeightRequest="50" StrokeShape="RoundRectangle 25">
+                        <Grid ColumnDefinitions="30,*">
+                            <Label Grid.Column="0" Text="🔍" FontSize="18" TextColor="#888" VerticalOptions="Center"/>
+                            <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchFood], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
+                        </Grid>
                     </Border>
-                    <Label Text="{Binding [TabFood], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="20" FontAttributes="Bold" TextColor="#1A1D26" VerticalOptions="Center"/>
-                </HorizontalStackLayout>
-
-                <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="#F0F2F5" StrokeShape="RoundRectangle 12">
-                    <Label Text="{x:Static helpers:IconFont.QrcodeScan}" FontFamily="MaterialIcons" FontSize="20" TextColor="#4A5568" HorizontalOptions="Center" VerticalOptions="Center"/>
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnQRScanClicked"/>
-                    </Border.GestureRecognizers>
-                </Border>
+                </VerticalStackLayout>
             </Grid>
-
-            <!-- Search Bar -->
-            <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="48" StrokeShape="RoundRectangle 12">
-                <Grid ColumnDefinitions="30,*">
-                    <Label Grid.Column="0" Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center"/>
-                    <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchFood], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
-                </Grid>
-            </Border>
         </VerticalStackLayout>
 
         <!-- Main Content -->
         <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="16,16,16,40">
+            <VerticalStackLayout Padding="20,10,20,40" Spacing="25" BackgroundColor="#F5F6F8">
                 <CollectionView x:Name="PoiCollectionView" SelectionMode="Single" SelectionChanged="OnPoiSelected">
                     <CollectionView.ItemsLayout>
-                        <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
+                        <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="15" VerticalItemSpacing="15" />
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:POI">
-                            <Border StrokeThickness="0" Padding="0" BackgroundColor="White" StrokeShape="RoundRectangle 14">
+                            <Border StrokeThickness="0" Padding="0" BackgroundColor="White" StrokeShape="RoundRectangle 20">
                                 <Border.Shadow>
-                                    <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.06"/>
+                                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
                                 </Border.Shadow>
                                 <Grid RowDefinitions="120,Auto">
-                                    <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill"/>
-                                    <VerticalStackLayout Grid.Row="1" Padding="12,10" Spacing="4">
-                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="13" TextColor="#1A1D26" LineBreakMode="TailTruncation" MaxLines="1"/>
-                                        <HorizontalStackLayout Spacing="4">
-                                            <Label Text="{x:Static helpers:IconFont.Star}" FontFamily="MaterialIcons" FontSize="13" TextColor="#FFA000"/>
-                                            <Label Text="{Binding Rating, StringFormat='{0:F1}'}" FontSize="12" FontAttributes="Bold" TextColor="#FFA000"/>
-                                        </HorizontalStackLayout>
+                                    <Image Grid.Row="0" Source="{Binding ImageUrl, Converter={StaticResource UrlToImageConverter}}" Aspect="AspectFill">
+                                        <Image.Triggers>
+                                            <DataTrigger TargetType="Image" Binding="{Binding ImageUrl}" Value="">
+                                                <Setter Property="Source" Value="dotnet_bot.png" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Image" Binding="{Binding ImageUrl}" Value="{x:Null}">
+                                                <Setter Property="Source" Value="dotnet_bot.png" />
+                                            </DataTrigger>
+                                        </Image.Triggers>
+                                    </Image>
+                                    <VerticalStackLayout Grid.Row="1" Padding="15">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14" TextColor="Black"/>
+                                        <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="12" TextColor="#FF5B00" Margin="0,5,0,0"/>
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>

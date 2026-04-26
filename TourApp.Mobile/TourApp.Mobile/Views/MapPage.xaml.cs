@@ -2,6 +2,7 @@ using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
 using System.Text.Json;
 using Microsoft.Maui.Media;
+using Microsoft.Maui.Devices.Sensors;
 
 namespace TourApp.Mobile.Views;
 
@@ -94,11 +95,23 @@ public partial class MapPage : ContentPage
                 if (_isJsMapReady)
                     MapWebView.Eval($"highlightPoi({poiId});");
             };
+            _geofenceService.TtsLocaleNotFound += (_, lang) =>
+            {
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await DisplayAlert("TTS", 
+                        $"Không tìm thấy giọng đọc cho ngôn ngữ '{lang}'. Vui lòng cài đặt Google Text-to-Speech và tải gói ngôn ngữ tiếng Việt.", 
+                        "OK");
+                });
+            };
 
 #if ANDROID
             // Enable foreground service for better background tracking on Android
             _locationService.SetUseForegroundService(true);
 #endif
+
+            // Subscribe to language changes to refresh POI description
+            LanguageService.LanguageChanged += OnLanguageChanged;
         }
         catch (Exception ex)
         {
@@ -137,11 +150,7 @@ public partial class MapPage : ContentPage
             }, TaskContinuationOptions.OnlyOnFaulted);
 
             // Bắt đầu tracking GPS với background support
-#if ANDROID
             await _locationService.StartTrackingWithForegroundAsync();
-#else
-            await _locationService.StartTracking();
-#endif
 
             // Xử lý pending POI ID nếu có (khi navigate từ tab khác)
             if (_pendingPoiId.HasValue && _isJsMapReady && _pois != null)
@@ -180,6 +189,25 @@ public partial class MapPage : ContentPage
                 });
 
                 _pois = pois;
+                
+                // Debug: Log translation data
+                if (_pois?.Any() == true)
+                {
+                    var samplePoi = _pois.FirstOrDefault(p => p.Translations?.Any() == true);
+                    if (samplePoi != null)
+                    {
+                        var trans = samplePoi.Translations.Select(t => $"{t.Language}:{t.Description?[..Math.Min(20, t.Description?.Length ?? 0)]}");
+                        System.Diagnostics.Debug.WriteLine($"[MapPage] Loaded POI {samplePoi.Id} with translations: {string.Join(", ", trans)}");
+                    }
+                    else
+                    {
+                        var firstPoi = _pois.FirstOrDefault();
+                        if (firstPoi != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[MapPage] POI {firstPoi.Id} has {firstPoi.Translations?.Count ?? 0} translations");
+                        }
+                    }
+                }
 
                 // Cập nhật GeofenceService
                 _geofenceService.SetPois(_pois);
@@ -204,15 +232,39 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         // Dừng GPS tracking (với foreground service trên Android)
-#if ANDROID
         _locationService.StopTrackingWithForeground();
-#else
-        _locationService.StopTracking();
-#endif
         // Dừng audio thuyết minh khi rời khỏi trang
         AudioPlayerService.Instance.Stop();
         // Dừng TTS (Text-to-Speech) nếu đang phát
         _geofenceService.CancelTTS();
+        // Unsubscribe from language changes
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+    
+    /// <summary>
+    /// Xử lý khi ngôn ngữ thay đổi - refresh mô tả POI nếu bottom sheet đang mở
+    /// </summary>
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                // Update GeofenceService language
+                _geofenceService.CurrentLanguage = newLang;
+                
+                // Refresh POI description if bottom sheet is visible
+                if (_currentPoi != null && BottomSheetView?.IsVisible == true && PoiDescLabel != null)
+                {
+                    PoiDescLabel.Text = _currentPoi.GetLocalizedDescription(newLang);
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Refreshed POI description for language: {newLang}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] OnLanguageChanged error: {ex.Message}");
+            }
+        });
     }
     
     /// <summary>
@@ -277,7 +329,7 @@ public partial class MapPage : ContentPage
                 {
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        DisplayAlert(LanguageService.GetString("Tours"), LanguageService.GetString("TourRouteDisplay", tour.Name), LanguageService.GetString("OK"));
+                        DisplayAlert("Tour", $"Đang hiển thị lộ trình tour: {tour.Name}", "OK");
                     });
                     
                     var tourPois = await _apiService.GetTourStopsAsync(tour.Id);
@@ -334,6 +386,7 @@ public partial class MapPage : ContentPage
         if (location == null) return;
         
         _lastLocation = location;
+        UserSessionService.UpdateLocation(location.Latitude, location.Longitude);
 
         bool shouldCheckGeofence = true;
         if (_lastCheckedLocation != null)
@@ -381,6 +434,7 @@ public partial class MapPage : ContentPage
         });
     }
 
+
     private void OnPoiTriggered(object? sender, POI poi)
     {
         MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
@@ -417,7 +471,9 @@ public partial class MapPage : ContentPage
 
                 if (PoiImage != null)
                 {
-                    _ = LoadPoiImageAsync(poi.ImageUrl);
+                    PoiImage.Source = !string.IsNullOrEmpty(poi.ImageUrl)
+                        ? ImageSource.FromUri(new Uri(poi.ImageUrl))
+                        : null;
                 }
 
                 bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
@@ -490,60 +546,18 @@ public partial class MapPage : ContentPage
                 if (double.TryParse(query["lat"], System.Globalization.CultureInfo.InvariantCulture, out double lat) &&
                     double.TryParse(query["lng"], System.Globalization.CultureInfo.InvariantCulture, out double lng))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[MockGPS] Moved to {lat}, {lng}");
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Set Mock GPS to {lat}, {lng}");
                     _locationService.IsMocking = true;
                     _locationService.MockLocation = new Location(lat, lng);
-                    _lastLocation = new Location(lat, lng);
-
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        if (_isJsMapReady)
-                            MapWebView.Eval($"updateUserLocation({lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
+                    MainThread.BeginInvokeOnMainThread(async () => {
+                         await DisplayAlert("Mock GPS", $"Đã chốt vị trí U tại:\nLat: {lat}\nLng: {lng}", "OK");
                     });
-
-                    // Trigger geofence check ngay tại vị trí mới
-                    var mockLoc = new Location(lat, lng);
-                    _ = Task.Run(() => _geofenceService.CheckGeofences(mockLoc));
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MockGPS] Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[MapWebView] Mock GPS Error: {ex.Message}");
             }
-        }
-    }
-
-    private bool _isMockMode = false;
-    private void OnMockToggleClicked(object? sender, EventArgs e)
-    {
-        _isMockMode = !_isMockMode;
-
-        if (_isMockMode)
-        {
-            // Bật mock mode
-            MockToggleBtn.BackgroundColor = Color.FromArgb("#FF6B00");
-            MockToggleIcon.TextColor = Colors.White;
-            MockBanner.IsVisible = true;
-            
-            // Set mock location ngay (dùng vị trí hiện tại hoặc default Q4)
-            _locationService.IsMocking = true;
-            _locationService.MockLocation = _lastLocation ?? new Location(10.762, 106.702);
-            
-            if (_isJsMapReady)
-                MapWebView.Eval("setMockMode(true);");
-            System.Diagnostics.Debug.WriteLine("[MockGPS] Mock mode ON");
-        }
-        else
-        {
-            // Tắt mock mode, quay lại GPS thật
-            MockToggleBtn.BackgroundColor = Colors.White;
-            MockToggleIcon.TextColor = Color.FromArgb("#4A5568");
-            MockBanner.IsVisible = false;
-            _locationService.IsMocking = false;
-            _locationService.MockLocation = null;
-            if (_isJsMapReady)
-                MapWebView.Eval("setMockMode(false);");
-            System.Diagnostics.Debug.WriteLine("[MockGPS] Mock mode OFF — back to real GPS");
         }
     }
 
@@ -561,8 +575,24 @@ public partial class MapPage : ContentPage
         var origin = _locationService.MockLocation ?? _lastLocation;
         if (origin == null)
         {
-            await DisplayAlert("GPS", LanguageService.GetString("GPSError"), LanguageService.GetString("OK"));
-            return;
+            // Thử lấy vị trí hiện tại một lần nữa
+            await DisplayAlert("GPS", "Đang xác định vị trí của bạn...", "OK");
+            try
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                origin = await Geolocation.Default.GetLocationAsync(request);
+                if (origin != null)
+                {
+                    _lastLocation = origin;
+                }
+            }
+            catch { }
+            
+            if (origin == null)
+            {
+                await DisplayAlert("GPS", "Vui lòng bật GPS và đảm bảo đang ở ngoài trời hoặc khu vực có thu sóng GPS tốt.", "OK");
+                return;
+            }
         }
 
         BottomSheetView.IsVisible = false;
@@ -611,7 +641,7 @@ public partial class MapPage : ContentPage
             else
             {
                 MainThread.BeginInvokeOnMainThread(async () => {
-                   await DisplayAlert(LanguageService.GetString("Tours"), LanguageService.GetString("RouteNotFound"), LanguageService.GetString("OK"));
+                   await DisplayAlert("Lộ trình", "Không tìm thấy đường đi.", "OK");
                 });
             }
         }
@@ -619,7 +649,7 @@ public partial class MapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"[DrawRoute] error: {ex}");
             MainThread.BeginInvokeOnMainThread(async () => {
-               await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("DirectionsAPIError"), LanguageService.GetString("OK"));
+               await DisplayAlert("Lỗi", "Không thể gọi API chỉ đường, vui lòng kiểm tra mạng.", "OK");
             });
         }
     }
@@ -758,6 +788,50 @@ public partial class MapPage : ContentPage
         await DoSearch(SearchEntry.Text);
     }
 
+    // ⚙️ Nút đổi IP server (không cần rebuild app)
+    private async void OnSettingsClicked(object? sender, EventArgs e)
+    {
+        var current = ApiService.BaseUrl;
+        var result = await DisplayPromptAsync(
+            "⚙️ Cài đặt Server",
+            "Nhập địa chỉ API của máy tính\n(VD: http://192.168.1.7:5254)",
+            initialValue: current,
+            placeholder: "http://IP:PORT",
+            keyboard: Keyboard.Url);
+
+        if (string.IsNullOrWhiteSpace(result)) return;
+
+        result = result.TrimEnd('/');
+        if (!result.StartsWith("http"))
+        {
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("AddressRequired"), LanguageService.GetString("OK"));
+            return;
+        }
+
+        ApiService.UpdateBaseUrl(result);
+
+        // Test kết nối
+        var ok = await new ApiService().TestConnectionAsync();
+        if (ok)
+        {
+            // Reload POI với URL mới
+            _pois = null;
+            _isMapLoaded = false;
+            _pois = await new ApiService().GetAllPOIsAsync();
+            LoadMap();
+            _isMapLoaded = true;
+            await DisplayAlert($"✅ {LanguageService.GetString("ConnectedSuccess")}", 
+                LanguageService.GetString("ConnectedLocations", _pois?.Count ?? 0), 
+                LanguageService.GetString("OK"));
+        }
+        else
+        {
+            await DisplayAlert($"❌ {LanguageService.GetString("ConnectionFailed")}",
+                LanguageService.GetString("ConnectionCheck"),
+                LanguageService.GetString("OK"));
+        }
+    }
+
     private async Task DoSearch(string query)
     {
         if (string.IsNullOrWhiteSpace(query)) return;
@@ -802,7 +876,7 @@ public partial class MapPage : ContentPage
                 MapWebView.Eval($"map.flyTo({{center: [{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
 
                 PoiNameLabel.Text = name ?? query;
-                PoiDescLabel.Text = LanguageService.GetString("SearchResultFromGoong");
+                PoiDescLabel.Text = "Kết quả từ Goong Maps";
                 PoiRatingLabel.Text = "⭐ --";
                 PoiDistanceLabel.Text = "";
                 PoiImage.Source = null;
@@ -895,8 +969,6 @@ public partial class MapPage : ContentPage
 <html>
 <head>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
-<link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
-<link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
 <style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   body, html {{ width:100%; height:100%; overflow:hidden; background:#f0f2f5; }}
@@ -967,123 +1039,48 @@ public partial class MapPage : ContentPage
 
 <div id='map'></div>
 
-<!-- QUAN TRỌNG: Khai báo hàm TRƯỚC khi load CDN -->
+<!-- QUAN TRỌNG: Khai báo hàm TRƯỚC khi load CDN
+     Lý do: onerror/onload của script CDN gọi các hàm này ngay khi CDN load xong.
+     Nếu khai báo sau, hàm chưa tồn tại → ReferenceError → map trắng -->
 <script>
 var map, pois = {poisJson}, userMarker = null, poiMarkers = [];
-var mockModeEnabled = false;
-var useLeaflet = false; // true khi WebGL không khả dụng (giả lập)
-var leafletRouteLayer = null;
-
-function hasWebGL() {{
-  try {{
-    var c = document.createElement('canvas');
-    return !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
-  }} catch(e) {{ return false; }}
-}}
-
-function setMockMode(enabled) {{
-  mockModeEnabled = enabled;
-  var el = document.getElementById('map');
-  if (el) el.style.cursor = enabled ? 'crosshair' : '';
-}}
 
 function onGoongLoadError() {{
   clearTimeout(window.goongLoadTimeout);
-  console.log('[Map] Goong load error — falling back to Leaflet');
-  initLeafletFallback();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('errmsg').classList.add('show');
 }}
 
 function onGoongLoaded() {{
   clearTimeout(window.goongLoadTimeout);
-  if (!hasWebGL()) {{
-    console.log('[Map] WebGL not available — falling back to Leaflet');
-    initLeafletFallback();
-    return;
-  }}
   try {{
     goongjs.accessToken = '{GoongMaptileKey}';
     map = new goongjs.Map({{
       container: 'map',
-      style: 'https://tiles.goong.io/assets/goong_map_web.json?api_key={GoongMaptileKey}',
+      style: 'https://tiles.goong.io/assets/goong_map_web.json',
       center: [106.7018, 10.7596],
-      zoom: 16,
-      scrollZoom: true
+      zoom: 16
     }});
-    map.addControl(new goongjs.NavigationControl(), 'bottom-right');
     map.on('load', function() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
-      setTimeout(function() {{ window.location.href = 'http://map/ready'; }}, 0);
-      // Kiểm tra tiles có render không sau 3s (giả lập thường WebGL có nhưng tiles trắng)
       setTimeout(function() {{
-        try {{
-          var canvas = document.querySelector('#map canvas');
-          if (canvas) {{
-            var ctx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-            if (ctx) {{
-              var pixels = new Uint8Array(4);
-              ctx.readPixels(canvas.width/2, canvas.height/2, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, pixels);
-              // Nếu pixel trắng hoặc gần trắng → tiles không render
-              if (pixels[0] > 240 && pixels[1] > 240 && pixels[2] > 240) {{
-                console.log('[Map] Tiles blank after 3s — switching to Leaflet');
-                map.remove();
-                map = null; userMarker = null; poiMarkers = [];
-                document.getElementById('map').innerHTML = '';
-                initLeafletFallback();
-                return;
-              }}
-            }}
-          }}
-        }} catch(ex) {{ console.log('[Map] Tile check error:', ex); }}
-      }}, 3000);
+        window.location.href = 'http://map/ready';
+      }}, 0);
     }});
     map.on('error', function(e) {{
-      console.log('[Map] Goong error:', e);
       document.getElementById('loading').classList.add('hide');
     }});
-    map.on('click', function(e) {{
-      if (!mockModeEnabled) return;
+    map.on('contextmenu', function(e) {{
       window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
     }});
   }} catch(e) {{
-    console.log('[Map] Goong init error:', e);
-    initLeafletFallback();
+    onGoongLoadError();
   }}
-}}
-
-/* ===== LEAFLET FALLBACK (cho giả lập không có WebGL) ===== */
-function initLeafletFallback() {{
-  useLeaflet = true;
-  // Load Leaflet JS dynamically
-  var s = document.createElement('script');
-  s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-  s.onload = function() {{
-    document.getElementById('loading').classList.add('hide');
-    map = L.map('map').setView([10.7596, 106.7018], 16);
-    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
-    }}).addTo(map);
-    map.on('click', function(e) {{
-      if (!mockModeEnabled) return;
-      window.location.href = 'http://map/setmock?lat=' + e.latlng.lat + '&lng=' + e.latlng.lng;
-    }});
-    // Leaflet compat: add loaded() method + flyTo wrapper
-    map.loaded = function() {{ return true; }};
-    patchLeafletFlyTo();
-    addMarkers(pois);
-    setTimeout(function() {{ window.location.href = 'http://map/ready'; }}, 0);
-  }};
-  s.onerror = function() {{
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('errmsg').classList.add('show');
-  }};
-  document.head.appendChild(s);
 }}
 
 function addMarkers(poiList) {{
   if (!map) return;
-  // Remove existing markers
   poiMarkers.forEach(function(marker) {{ marker.remove(); }});
   poiMarkers = [];
 
@@ -1094,96 +1091,107 @@ function addMarkers(poiList) {{
     if (longitude === undefined || longitude === null) longitude = poi.longitude;
     var lat = Number(latitude);
     var lng = Number(longitude);
-    if (!isFinite(lat) || !isFinite(lng)) return;
 
+    if (!isFinite(lat) || !isFinite(lng)) {{
+      console.log('[Marker Skipped] Invalid coordinates');
+      return;
+    }}
+
+    // JSON from C# uses lowercase property names due to [JsonPropertyName(""id"")]
     var poiId = poi.id || poi.poiId || poi.PoiId || poi.Id || 0;
     var poiName = poi.name || poi.PoiName || poi.Name || 'Địa điểm';
 
-    if (useLeaflet) {{
-      // Leaflet marker
-      var icon = L.divIcon({{ className: 'poi-marker', html: '🍽️', iconSize: [40,40], iconAnchor: [20,20] }});
-      var marker = L.marker([lat, lng], {{ icon: icon }}).addTo(map);
-      marker.on('click', function() {{
-        window.location.href = 'http://poi/selected?id=' + poiId;
-      }});
-      marker.getElement().setAttribute('data-poi-id', poiId);
-      poiMarkers.push(marker);
-    }} else {{
-      // Goong marker
-      var el = document.createElement('div');
-      el.className = 'poi-marker';
-      el.setAttribute('data-poi-id', poiId);
-      el.style.cursor = 'pointer';
-      el.style.pointerEvents = 'auto';
-      el.style.zIndex = '1000';
-      el.innerHTML = '🍽️';
-      var marker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
-      poiMarkers.push(marker);
-      el.addEventListener('click', function(e) {{
-        e.stopPropagation();
-        window.location.href = 'http://poi/selected?id=' + poiId;
-      }}, false);
-    }}
+    // Create marker element
+    var el = document.createElement('div');
+    el.className = 'poi-marker';
+    el.setAttribute('data-poi-id', poiId);
+    el.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
+    el.innerHTML = '🍽️';
+
+    // Create marker with Goong
+    var marker = new goongjs.Marker(el)
+      .setLngLat([lng, lat])
+      .addTo(map);
+    poiMarkers.push(marker);
+
+    // Log for debugging
+    console.log('[Marker Created] POI ID: ' + poiId + ', Name: ' + poiName);
+
+    // Attach click handler to the DOM element - use capture phase
+    el.addEventListener('click', function(e) {{
+      console.log('[Marker Click Event Fired] POI ID: ' + poiId);
+      e.stopPropagation();
+      // Navigate using standard scheme to ensure WebView catches it
+      window.location.href = 'http://poi/selected?id=' + poiId;
+    }}, false);
+
+    // Make element explicitly clickable
+    el.style.pointerEvents = 'auto';
+    el.style.zIndex = '1000';
   }});
 }}
 
 function refreshMarkers(newPois) {{
   pois = newPois;
-  if (useLeaflet || (map && map.loaded())) addMarkers(newPois);
+  if (map && map.loaded()) addMarkers(newPois);
 }}
 
 function updateUserLocation(lng, lat) {{
   if (!map) return;
-  if (useLeaflet) {{
-    if (!userMarker) {{
-      var icon = L.divIcon({{ className: '', html: '<div id=""user-marker""></div>', iconSize: [20,20], iconAnchor: [10,10] }});
-      userMarker = L.marker([lat, lng], {{ icon: icon }}).addTo(map);
-    }} else {{
-      userMarker.setLatLng([lat, lng]);
-    }}
+  if (!userMarker) {{
+    var el = document.createElement('div');
+    el.id = 'user-marker';
+    userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
   }} else {{
-    if (!userMarker) {{
-      var el = document.createElement('div');
-      el.id = 'user-marker';
-      userMarker = new goongjs.Marker(el).setLngLat([lng, lat]).addTo(map);
-    }} else {{
-      userMarker.setLngLat([lng, lat]);
-    }}
+    userMarker.setLngLat([lng, lat]);
   }}
 }}
 
 function drawRoute(coords) {{
   if (!map) return;
-  if (useLeaflet) {{
-    // Leaflet: coords = [[lng,lat],...] → convert to [[lat,lng],...]
-    if (leafletRouteLayer) map.removeLayer(leafletRouteLayer);
-    var latlngs = coords.map(function(c) {{ return [c[1], c[0]]; }});
-    leafletRouteLayer = L.polyline(latlngs, {{ color: '#3B82F6', weight: 6, opacity: 0.8 }}).addTo(map);
-    map.fitBounds(leafletRouteLayer.getBounds(), {{ padding: [50,50] }});
+  
+  if (map.getSource('route')) {{
+    map.getSource('route').setData({{
+      'type': 'Feature',
+      'properties': {{}},
+      'geometry': {{
+        'type': 'LineString',
+        'coordinates': coords
+      }}
+    }});
   }} else {{
-    if (map.getSource('route')) {{
-      map.getSource('route').setData({{
-        'type': 'Feature', 'properties': {{}},
-        'geometry': {{ 'type': 'LineString', 'coordinates': coords }}
-      }});
-    }} else {{
-      map.addSource('route', {{
-        'type': 'geojson',
-        'data': {{ 'type': 'Feature', 'properties': {{}},
-          'geometry': {{ 'type': 'LineString', 'coordinates': coords }} }}
-      }});
-      map.addLayer({{
-        'id': 'route', 'type': 'line', 'source': 'route',
-        'layout': {{ 'line-join': 'round', 'line-cap': 'round' }},
-        'paint': {{ 'line-color': '#3B82F6', 'line-width': 6, 'line-opacity': 0.8 }}
-      }});
-    }}
-    if (coords.length > 0) {{
-      var bounds = coords.reduce(function(b, coord) {{
-        return b.extend(coord);
-      }}, new goongjs.LngLatBounds(coords[0], coords[0]));
-      map.fitBounds(bounds, {{ padding: 50 }});
-    }}
+    map.addSource('route', {{
+      'type': 'geojson',
+      'data': {{
+        'type': 'Feature',
+        'properties': {{}},
+        'geometry': {{
+          'type': 'LineString',
+          'coordinates': coords
+        }}
+      }}
+    }});
+    map.addLayer({{
+      'id': 'route',
+      'type': 'line',
+      'source': 'route',
+      'layout': {{
+        'line-join': 'round',
+        'line-cap': 'round'
+      }},
+      'paint': {{
+        'line-color': '#3B82F6',
+        'line-width': 6,
+        'line-opacity': 0.8
+      }}
+    }});
+  }}
+
+  if (coords.length > 0) {{
+    var bounds = coords.reduce(function(b, coord) {{
+      return b.extend(coord);
+    }}, new goongjs.LngLatBounds(coords[0], coords[0]));
+    map.fitBounds(bounds, {{ padding: 50 }});
   }}
 }}
 
@@ -1195,64 +1203,20 @@ function highlightPoi(poiId) {{
   }});
 }}
 
-// Wrapper flyTo tương thích Goong + Leaflet
-// C# gọi: map.flyTo({{center:[lng,lat], zoom:17}})
-// → Leaflet cần: map.setView([lat,lng], zoom)
-var _originalFlyTo = null;
-function patchLeafletFlyTo() {{
-  if (!useLeaflet || !map) return;
-  _originalFlyTo = map.flyTo;
-  map.flyTo = function(opts) {{
-    if (opts && opts.center) {{
-      // Goong format: center:[lng,lat] → Leaflet: [lat,lng]
-      var zoom = opts.zoom || map.getZoom();
-      map.setView([opts.center[1], opts.center[0]], zoom);
-    }} else {{
-      _originalFlyTo.apply(map, arguments);
-    }}
-  }};
-}}
-
 // Timeout 5s nếu CDN chưa load
 window.goongLoadTimeout = setTimeout(function() {{
-  if (!window.goongjs) {{
-    console.log('[Map] Goong CDN timeout — falling back to Leaflet');
-    initLeafletFallback();
-  }}
+  if (!window.goongjs) onGoongLoadError();
 }}, 5000);
 </script>
 
-<!-- Load Goong JS CDN -->
+<!-- Load Goong JS CDN - gọi onGoongLoaded/onGoongLoadError đã define ở trên -->
 <script
   src='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js'
   onload='onGoongLoaded()'
   onerror='onGoongLoadError()'>
 </script>
+<link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
 </body>
 </html>";
-    }
-
-    private async Task LoadPoiImageAsync(string? imageUrl)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(imageUrl))
-            {
-                MainThread.BeginInvokeOnMainThread(() => PoiImage.Source = null);
-                return;
-            }
-
-            var localPath = await ImageCacheService.GetLocalPathAsync(imageUrl);
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                PoiImage.Source = !string.IsNullOrEmpty(localPath) 
-                    ? ImageSource.FromFile(localPath) 
-                    : null;
-            });
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MapPage] Image load error: {ex.Message}");
-        }
     }
 }

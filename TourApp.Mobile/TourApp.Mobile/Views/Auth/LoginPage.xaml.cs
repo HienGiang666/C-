@@ -25,13 +25,13 @@ public partial class LoginPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("LoginRequiredUsername"), LanguageService.GetString("OK"));
+            await DisplayAlert(LanguageService.GetString("Error"), "Vui lòng nhập tên đăng nhập", LanguageService.GetString("OK"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("LoginRequiredPassword"), LanguageService.GetString("OK"));
+            await DisplayAlert(LanguageService.GetString("Error"), "Vui lòng nhập mật khẩu", LanguageService.GetString("OK"));
             return;
         }
 
@@ -68,18 +68,18 @@ public partial class LoginPage : ContentPage
                 // Phân biệt rõ lỗi mạng vs lỗi sai tài khoản
                 var title = result.IsNetworkError 
                     ? LanguageService.GetString("ServerError") 
-                    : LanguageService.GetString("LoginFailed");
+                    : "Đăng nhập thất bại";
                 await DisplayAlert(title, result.Message, LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
-            await DisplayAlert(LanguageService.GetString("ServerError"), LanguageService.GetString("ConnectionErrorDetail", ex.Message), LanguageService.GetString("OK"));
+            await DisplayAlert(LanguageService.GetString("ServerError"), $"Lỗi kết nối: {ex.Message}", LanguageService.GetString("OK"));
         }
         finally
         {
             LoginButton.IsEnabled = true;
-            LoginButton.Text = LanguageService.GetString("LoginButton");
+            LoginButton.Text = "LOG IN";
         }
     }
 
@@ -98,7 +98,8 @@ public partial class LoginPage : ContentPage
 
         // Khởi động session cho khách
         var guestId = $"guest_{Guid.NewGuid().ToString("N")[..8]}";
-        UserSessionService.StartSession(null, LanguageService.GetString("Guest"), guestId);
+        Preferences.Set("guest_id", guestId); // Lưu guestId để duy trì ID duy nhất
+        UserSessionService.StartSession(null, "Khách", guestId);
 
         // Chuyển đến app chính
         AppNavigation.SetRootPage(new AppShell());

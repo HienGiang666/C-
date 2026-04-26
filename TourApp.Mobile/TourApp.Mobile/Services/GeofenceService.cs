@@ -20,8 +20,8 @@ namespace TourApp.Mobile.Services
     {
         private readonly ApiService _apiService;
         private List<POI>? _pois;
-        private readonly Dictionary<int, DateTime> _poiCooldowns = new();
-        private const double CooldownMinutes = 2;
+        private int _lastSpokenPoiId = -1;
+        private DateTime _lastSpokenTime = DateTime.MinValue;
         private CancellationTokenSource? _ttsCts;
 
         /// <summary>
@@ -32,6 +32,11 @@ namespace TourApp.Mobile.Services
 
         public event EventHandler<POI>? PoiTriggered;
         public event EventHandler<int>? HighlightRequested;
+        /// <summary>
+        /// Fired when TTS locale is not found or may not work properly.
+        /// Parameter: requested language code (e.g., "vi")
+        /// </summary>
+        public event EventHandler<string>? TtsLocaleNotFound;
 
         // Map language code → TTS locale
         private static readonly Dictionary<string, string> LangToLocale = new()
@@ -74,10 +79,8 @@ namespace TourApp.Mobile.Services
         {
             if (_pois == null || !_pois.Any()) return;
 
-            var now = DateTime.Now;
-
-            // Tìm tất cả POI trong phạm vi, sắp xếp theo khoảng cách (gần nhất trước)
-            var poisInRange = _pois
+            // Ưu tiên POI gần nhất trước, sau đó tới priority để giảm CPU
+            var sortedPois = _pois
                 .Where(p => p.IsActive)
                 .Select(p => new
                 {
@@ -86,106 +89,83 @@ namespace TourApp.Mobile.Services
                         userLocation.Latitude, userLocation.Longitude,
                         p.Latitude, p.Longitude, DistanceUnits.Kilometers) * 1000
                 })
-                .Where(x => x.Distance <= x.Poi.Radius)
                 .OrderBy(x => x.Distance)
-                .ThenBy(x => x.Poi.Priority)
-                .ToList();
+                .ThenBy(x => x.Poi.Priority);
 
-            // Thu thập các POI cần trigger (chưa cooldown)
-            var poisToTrigger = new List<POI>();
-            foreach (var entry in poisInRange)
+            foreach (var poi in sortedPois)
             {
-                if (_poiCooldowns.TryGetValue(entry.Poi.Id, out var lastTime)
-                    && (now - lastTime).TotalMinutes < CooldownMinutes)
-                    continue;
-
-                _poiCooldowns[entry.Poi.Id] = DateTime.Now;
-                poisToTrigger.Add(entry.Poi);
-            }
-
-            // Xếp hàng tuần tự: gần nhất → xa nhất
-            if (poisToTrigger.Count > 0)
-            {
-                _ = TriggerNarrationQueueAsync(poisToTrigger);
-            }
-
-            // Dọn cooldown cũ (> 10 phút) để tránh memory leak
-            var expired = _poiCooldowns.Where(kv => (now - kv.Value).TotalMinutes > 10).Select(kv => kv.Key).ToList();
-            foreach (var id in expired) _poiCooldowns.Remove(id);
-        }
-
-        /// <summary>
-        /// Xếp hàng đợi: hiện mô tả + phát audio tuần tự từ POI gần nhất → xa nhất.
-        /// Mỗi POI đợi cái trước phát xong rồi mới hiện mô tả + phát tiếp.
-        /// </summary>
-        private async Task TriggerNarrationQueueAsync(List<POI> pois)
-        {
-            System.Diagnostics.Debug.WriteLine($"[GeofenceService] Queueing {pois.Count} POI(s) for narration");
-
-            // Map poiId → POI để tra cứu nhanh
-            var poiMap = pois.ToDictionary(p => p.Id);
-            var currentPoiId = -1;
-
-            // GẮN LISTENER TRƯỚC khi enqueue — đảm bảo bắt được mọi ItemStarted event
-            void OnItemStarted(object? sender, AudioQueueItem startedItem)
-            {
-                // Khi audio item bắt đầu phát, cập nhật UI cho POI tương ứng
-                if (startedItem.PoiId > 0 
-                    && startedItem.PoiId != currentPoiId
-                    && poiMap.TryGetValue(startedItem.PoiId, out var poi))
+                if (poi.Distance <= poi.Poi.Radius)
                 {
-                    currentPoiId = startedItem.PoiId;
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        PoiTriggered?.Invoke(this, poi);
-                        HighlightRequested?.Invoke(this, poi.Id);
-                    });
-                    System.Diagnostics.Debug.WriteLine($"[GeofenceService] Now playing POI: {poi.Name}");
+                    // Cooldown 2 phút/POI
+                    if (poi.Poi.Id == _lastSpokenPoiId && (DateTime.Now - _lastSpokenTime).TotalMinutes < 2)
+                        continue;
+
+                    TriggerNarration(poi.Poi);
+                    break; // Chỉ trigger 1 POI/cycle
                 }
             }
-
-            AudioPlayerService.Instance.ItemStarted += OnItemStarted;
-
-            // Hiện mô tả POI đầu tiên (gần nhất) ngay lập tức để UI không trống
-            var firstPoi = pois[0];
-            currentPoiId = firstPoi.Id;
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                PoiTriggered?.Invoke(this, firstPoi);
-                HighlightRequested?.Invoke(this, firstPoi.Id);
-            });
-
-            // Enqueue audio cho tất cả POI (AudioPlayerService sẽ phát tuần tự)
-            foreach (var poi in pois)
-            {
-                await EnqueueAudioForPoiAsync(poi);
-                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
-            }
-
-            // Gỡ listener khi tất cả audio phát xong
-            void OnLastItemCompleted(object? sender, AudioQueueItem completedItem)
-            {
-                // Kiểm tra nếu đây là item cuối cùng trong batch
-                if (completedItem.PoiId == pois[^1].Id)
-                {
-                    AudioPlayerService.Instance.ItemStarted -= OnItemStarted;
-                    AudioPlayerService.Instance.ItemCompleted -= OnLastItemCompleted;
-                    System.Diagnostics.Debug.WriteLine("[GeofenceService] Narration queue finished, listeners removed");
-                }
-            }
-            AudioPlayerService.Instance.ItemCompleted += OnLastItemCompleted;
         }
 
-        /// <summary>
-        /// Enqueue audio/TTS cho POI vào AudioPlayerService queue (không đè nhau)
-        /// </summary>
-        private async Task EnqueueAudioForPoiAsync(POI poi)
+        private void TriggerNarration(POI poi)
         {
             try
             {
-                var lang = CurrentLanguage;
+                _lastSpokenPoiId = poi.Id;
+                _lastSpokenTime = DateTime.Now;
 
-                // 1. Try MP3 audio từ API
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GeofenceService][TriggerNarration] UI error: {ex.Message}");
+                    }
+                });
+
+                _ = SpeakNarrationAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][TriggerNarration] Error: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Phát TTS dùng ScriptText từ DB (đúng ngôn ngữ hiện tại).
+        /// Thứ tự ưu tiên: ScriptText[CurrentLanguage] → ScriptText[vi] → Description fallback.
+        /// </summary>
+        public async Task SpeakNarrationAsync(POI poi, string? overrideLang = null)
+        {
+            if (poi == null) return;
+
+            try
+            {
+                await SpeakNarrationInternalAsync(poi, overrideLang);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][CRASH] SpeakNarrationAsync failed: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[GeofenceService][CRASH] Stack: {ex.StackTrace}");
+            }
+        }
+
+        private async Task SpeakNarrationInternalAsync(POI poi, string? overrideLang)
+        {
+            try
+            {
+                // Dừng TTS (Text-to-Speech) nếu đang phát
+                CancelTTS();
+                _ttsCts = new CancellationTokenSource();
+                var token = _ttsCts.Token;
+
+                var lang = overrideLang ?? CurrentLanguage;
+
+                // 1. Try to fetch MP3 Audio from API
                 Audio? audio = null;
                 try
                 {
@@ -202,102 +182,82 @@ namespace TourApp.Mobile.Services
                         ? audio.AudioPath
                         : ApiService.BaseUrl + audio.AudioPath;
 
-                    await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+                    try
                     {
-                        Url = audioUrl,
-                        Title = poi.Name ?? "Audio",
-                        PoiId = poi.Id
-                    });
-                    return;
+                        await AudioPlayerService.Instance.PlayFromUrlAsync(audioUrl, poi.Name ?? "Audio");
+                        // Log metrics
+                        _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "geofence");
+                        return; // Successfully played real audio
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[GeofenceService] Failed to play audio: {ex.Message}");
+                        // Continue to TTS fallback
+                    }
                 }
 
-                // 2. Fallback: TTS qua queue (chờ phát xong rồi tới cái kế)
-                var script = poi.GetScript(lang);
-                if (string.IsNullOrWhiteSpace(script))
-                    script = $"{poi.Name}. {poi.Description}";
-                if (string.IsNullOrWhiteSpace(script)) return;
+                // 2. Fallback to TTS if no MP3 found
+                var rawScript = poi.GetScript(lang);
+                if (string.IsNullOrWhiteSpace(rawScript)) return;
 
-                await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+                // Strip HTML tags and normalize whitespace
+                var script = System.Text.RegularExpressions.Regex.Replace(rawScript, "<[^>]+>", "")
+                    .Replace("&nbsp;", " ")
+                    .Replace("&amp;", "&")
+                    .Replace("&lt;", "<")
+                    .Replace("&gt;", ">")
+                    .Trim();
+                script = System.Text.RegularExpressions.Regex.Replace(script, "\\s+", " ");
+
+                var localeName = LangToLocale.TryGetValue(lang, out var loc) ? loc : "vi-VN";
+                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script='{script[..Math.Min(50, script.Length)]}...'");
+
+                try
                 {
-                    Title = poi.Name ?? "TTS",
-                    PoiId = poi.Id,
-                    TtsText = script,
-                    TtsLocale = lang
-                });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[GeofenceService] EnqueueAudio error: {ex.Message}");
-            }
-        }
+                    var locales = await TextToSpeech.Default.GetLocalesAsync();
+                    var localeList = locales?.ToList() ?? new();
 
-        /// <summary>
-        /// Phát narration cho POI (gọi từ QR hoặc manual).
-        /// Sử dụng queue nếu có MP3, fallback TTS nếu không.
-        /// </summary>
-        public async Task SpeakNarrationAsync(POI poi, string? overrideLang = null)
-        {
-            if (poi == null) return;
+                    // Try multiple matching strategies
+                    var matchedLocale = localeList.FirstOrDefault(l =>
+                        l.Language.Equals(lang, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Name.Equals(localeName, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase))
+                        ?? localeList.FirstOrDefault(l =>
+                        l.Name.StartsWith(localeName, StringComparison.OrdinalIgnoreCase));
 
-            var lang = overrideLang ?? CurrentLanguage;
+                    // Log available locales and notify UI if locale not found
+                    if (matchedLocale == null)
+                    {
+                        var availableLangs = string.Join(", ", localeList.Select(l => $"{l.Language}({l.Name})").Take(10));
+                        System.Diagnostics.Debug.WriteLine($"[TTS] WARNING: No locale matched for '{lang}'/'{localeName}'");
+                        System.Diagnostics.Debug.WriteLine($"[TTS] Available: {availableLangs}... (total: {localeList.Count})");
+                        MainThread.BeginInvokeOnMainThread(() => TtsLocaleNotFound?.Invoke(this, lang));
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TTS] Matched locale: {matchedLocale.Name} ({matchedLocale.Language})");
+                    }
 
-            // 1. Try MP3 audio
-            Audio? audio = null;
-            try
-            {
-                audio = await _apiService.GetAudioByPoiAsync(poi.Id, lang);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[GeofenceService] Failed to get audio: {ex.Message}");
-            }
+                    var options = new SpeechOptions
+                    {
+                        Pitch = 1.0f,
+                        Volume = 1.0f,
+                        Locale = matchedLocale // null is OK - will use device default
+                    };
 
-            if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
-            {
-                var audioUrl = audio.AudioPath.StartsWith("http")
-                    ? audio.AudioPath
-                    : ApiService.BaseUrl + audio.AudioPath;
-
-                await AudioPlayerService.Instance.PlayFromUrlAsync(audioUrl, poi.Name ?? "Audio", poi.Id);
-                _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "narration");
-                return;
-            }
-
-            // 2. Fallback TTS
-            await SpeakTTSAsync(poi, lang);
-        }
-
-        /// <summary>
-        /// Fallback: phát TTS khi không có file MP3
-        /// </summary>
-        private async Task SpeakTTSAsync(POI poi, string lang)
-        {
-            try
-            {
-                CancelTTS();
-                _ttsCts = new CancellationTokenSource();
-                var token = _ttsCts.Token;
-
-                var script = poi.GetScript(lang);
-                if (string.IsNullOrWhiteSpace(script))
-                    script = $"{poi.Name}. {poi.Description}";
-                if (string.IsNullOrWhiteSpace(script)) return;
-
-                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script[..Math.Min(50, script.Length)]}...");
-
-                var locales = await TextToSpeech.Default.GetLocalesAsync();
-                var matchedLocale = locales?.FirstOrDefault(l =>
-                    l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
-
-                var options = new SpeechOptions
+                    await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
+                    _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence_tts");
+                }
+                catch (FeatureNotSupportedException)
                 {
-                    Pitch = 1.0f,
-                    Volume = 1.0f,
-                    Locale = matchedLocale
-                };
-
-                await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
-                _ = _apiService.LogNarrationAsync(poi.Id, null, "tts");
+                    System.Diagnostics.Debug.WriteLine("[TTS] Not supported on this device");
+                }
+                catch (PermissionException)
+                {
+                    System.Diagnostics.Debug.WriteLine("[TTS] Permission denied");
+                }
             }
             catch (OperationCanceledException)
             {
@@ -305,7 +265,8 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TTS] Stack: {ex.StackTrace}");
             }
         }
 
@@ -329,19 +290,33 @@ namespace TourApp.Mobile.Services
         /// </summary>
         public async Task TriggerFromQRAsync(POI poi)
         {
-            System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
-
-            // Reset cooldown để QR luôn phát được
-            _poiCooldowns.Remove(poi.Id);
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            try
             {
-                PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.Id);
-            });
+                System.Diagnostics.Debug.WriteLine($"[QR] Force trigger POI={poi.Name}");
 
-            await SpeakNarrationAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
+                // Reset cooldown để QR luôn phát được
+                _lastSpokenPoiId = -1;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        PoiTriggered?.Invoke(this, poi);
+                        HighlightRequested?.Invoke(this, poi.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QR][TriggerFromQRAsync] UI error: {ex.Message}");
+                    }
+                });
+
+                await SpeakNarrationAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "qr");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[QR][TriggerFromQRAsync] Error: {ex.GetType().Name}: {ex.Message}");
+            }
         }
     }
 }

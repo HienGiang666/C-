@@ -31,25 +31,18 @@ public class LocationForegroundService : Service
     {
         System.Diagnostics.Debug.WriteLine("[LocationForegroundService] OnStartCommand");
 
-        try
+        var notification = CreateNotification(_statusText);
+        
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
         {
-            var notification = CreateNotification(_statusText);
+            StartForeground(NOTIFICATION_ID, notification, global::Android.Content.PM.ForegroundService.TypeLocation);
+        }
+        else
+        {
             StartForeground(NOTIFICATION_ID, notification);
-            StartLocationTracking();
         }
-        catch (Java.Lang.SecurityException ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] SecurityException: {ex.Message}");
-            // Permission not granted, stop service
-            StopSelf();
-            return StartCommandResult.NotSticky;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] Error: {ex.Message}");
-            StopSelf();
-            return StartCommandResult.NotSticky;
-        }
+
+        StartLocationTracking();
 
         return StartCommandResult.Sticky;
     }
@@ -112,11 +105,50 @@ public class LocationForegroundService : Service
         }
     }
 
-    private void StartLocationTracking()
+    private async void StartLocationTracking()
     {
-        // Foreground service chỉ giữ app alive khi minimize.
-        // GPS polling + gửi API được xử lý bởi LocationService.RunGpsLoopSafe()
-        System.Diagnostics.Debug.WriteLine("[LocationForegroundService] Foreground service started (keeps app alive). GPS loop handled by LocationService.");
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    var request = new GeolocationRequest(
+                        GeolocationAccuracy.Best,
+                        TimeSpan.FromSeconds(10)
+                    );
+
+                    var location = await Geolocation.Default.GetLocationAsync(request, token);
+
+                    if (location != null)
+                    {
+                        var msg = $"Vị trí: {location.Latitude:F4}, {location.Longitude:F4}";
+                        UpdateNotification(msg);
+
+                        // Broadcast location to the app
+                        var intent = new Intent("LOCATION_UPDATE");
+                        intent.PutExtra("latitude", location.Latitude);
+                        intent.PutExtra("longitude", location.Longitude);
+                        SendBroadcast(intent);
+
+                        System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] {msg}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] GPS error: {ex.Message}");
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(5), token);
+            }
+        }
+        catch (System.OperationCanceledException)
+        {
+            System.Diagnostics.Debug.WriteLine("[LocationForegroundService] Tracking cancelled");
+        }
     }
 
     private void StopLocationTracking()
@@ -131,21 +163,6 @@ public class LocationForegroundService : Service
     /// </summary>
     public static void Start(Context context)
     {
-        // Check location permission before starting (Android 14+ requirement)
-        if ((int)Build.VERSION.SdkInt >= 34) // Android 14+
-        {
-            var hasLocation = AndroidX.Core.Content.ContextCompat.CheckSelfPermission(
-                context, global::Android.Manifest.Permission.AccessFineLocation) == global::Android.Content.PM.Permission.Granted
-                || AndroidX.Core.Content.ContextCompat.CheckSelfPermission(
-                context, global::Android.Manifest.Permission.AccessCoarseLocation) == global::Android.Content.PM.Permission.Granted;
-
-            if (!hasLocation)
-            {
-                System.Diagnostics.Debug.WriteLine("[LocationForegroundService] Cannot start: Location permission not granted");
-                return;
-            }
-        }
-
         var intent = new Intent(context, typeof(LocationForegroundService));
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.O)

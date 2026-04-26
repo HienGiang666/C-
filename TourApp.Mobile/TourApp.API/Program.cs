@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using TourApp.API.Data;
 using TourApp.API.Services;
 using TourApp.API.Hubs;
@@ -23,6 +22,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 
+// Đăng ký HttpContextAccessor để lấy request info
+builder.Services.AddHttpContextAccessor();
+
 // === SIGNALR - Real-time tracking ===
 builder.Services.AddSignalR();
 
@@ -33,25 +35,11 @@ builder.Services.AddSwaggerGen();
 // Đăng ký BusinessKeyService (Scoped để dùng DbContext)
 builder.Services.AddScoped<BusinessKeyService>();
 
-// Cấu hình Database — hỗ trợ cả SQL Server và PostgreSQL
-// Tự động chọn provider dựa vào connection string
+// Cấu hình Database — bỏ qua PendingModelChangesWarning khi model đã có cột (ApplySchemaPatches)
+// nhưng chưa có file migration tương ứng, tránh crash tại Migrate().
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    
-    // Kiểm tra nếu connection string là PostgreSQL (chứa các từ khóa PostgreSQL)
-    if (connectionString != null && 
-        (connectionString.Contains("Host=") || connectionString.Contains("Server=postgres") || 
-         connectionString.Contains("Database=postgres") || connectionString.Contains("postgresql://")))
-    {
-        options.UseNpgsql(connectionString);
-    }
-    else
-    {
-        // Mặc định SQL Server cho local development
-        options.UseSqlServer(connectionString);
-    }
-    
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     options.ConfigureWarnings(w =>
         w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
@@ -81,7 +69,7 @@ try
 
     DbSeeder.ApplySchemaPatches(context);
     DbSeeder.EnsureBusinessKeyCodes(context);
-    DbSeeder.EnsureBusinessKeyCodes(context); // tour/booking seed có Code 02= null → gán TR-/BK-
+    DbSeeder.EnsureBusinessKeyCodes(context); // tour/booking seed có Code = null → gán TR-/BK-
     DbSeeder.AssignPoiOwnersCuongHien(context);
 }
 catch (Exception ex)
@@ -104,20 +92,30 @@ app.UseCors("AllowAll");
 // [DISABLED] Phone kết nối qua HTTP → nếu redirect sang HTTPS sẽ fail
 // app.UseHttpsRedirection();
 
-// Serve ảnh từ CMS wwwroot/uploads (cho mobile app tải ảnh qua API URL)
-var cmsUploadsPath = Path.Combine(app.Environment.ContentRootPath, "..", "TourApp.CMS", "wwwroot", "uploads");
-if (Directory.Exists(cmsUploadsPath))
+// Serve ảnh từ thư mục uploads của CMS project (nếu tồn tại)
+var cmsProjectPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "TourApp.CMS"));
+if (Directory.Exists(cmsProjectPath))
 {
+    var cmsUploadsPath = Path.Combine(cmsProjectPath, "wwwroot", "uploads");
+    Directory.CreateDirectory(cmsUploadsPath);
     app.UseStaticFiles(new StaticFileOptions
     {
-        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Path.GetFullPath(cmsUploadsPath)),
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(cmsUploadsPath),
         RequestPath = "/uploads"
     });
-    Console.WriteLine($"[Static Files] Serving uploads from: {Path.GetFullPath(cmsUploadsPath)}");
+    Console.WriteLine($"[StaticFiles] Serving uploads from: {cmsUploadsPath}");
 }
 else
 {
-    Console.WriteLine($"[Static Files] WARNING: CMS uploads not found at {cmsUploadsPath}");
+    // Fallback: tạo thư mục uploads trong API project nếu CMS chưa có
+    var apiUploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+    Directory.CreateDirectory(apiUploadsPath);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(apiUploadsPath),
+        RequestPath = "/uploads"
+    });
+    Console.WriteLine($"[StaticFiles] Created and serving uploads from: {apiUploadsPath}");
 }
 
 app.UseAuthorization();

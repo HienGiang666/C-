@@ -91,7 +91,7 @@ public class POIController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(POI poi, IFormFile? uploadImage)
+    public async Task<IActionResult> Create(POI poi, IFormFile? uploadImage, string? imageUrl)
     {
         var role = HttpContext.Session.GetString("Role") ?? "";
         if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
@@ -100,7 +100,8 @@ public class POIController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (!ValidatePoiRequired(poi, uploadImage, isCreate: true, out var err))
+        imageUrl = NormalizeImageUrl(imageUrl);
+        if (!ValidatePoiRequired(poi, uploadImage, imageUrl, isCreate: true, out var err))
         {
             TempData["error"] = err;
             ViewData["Title"] = "Thêm địa điểm";
@@ -109,6 +110,8 @@ public class POIController : Controller
 
         if (uploadImage != null)
             poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
+        else if (!string.IsNullOrWhiteSpace(imageUrl))
+            poi.ImageUrl = imageUrl;
 
         poi.Radius = 20;
         poi.Priority = 1;
@@ -234,7 +237,7 @@ public class POIController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, POI poi, IFormFile? uploadImage)
+    public async Task<IActionResult> Edit(int id, POI poi, IFormFile? uploadImage, string? imageUrl)
     {
         var client = _clientFactory.CreateClient("TourApi");
         var existingResponse = await client.GetAsync($"api/POI/{id}");
@@ -274,7 +277,8 @@ public class POIController : Controller
         }
         else
         {
-            if (!ValidatePoiRequired(poi, uploadImage, isCreate: false, out var err))
+            imageUrl = NormalizeImageUrl(imageUrl);
+            if (!ValidatePoiRequired(poi, uploadImage, imageUrl, isCreate: false, out var err))
             {
                 TempData["error"] = err;
                 ViewBag.IsAdminPoiEdit = false;
@@ -282,6 +286,8 @@ public class POIController : Controller
             }
             if (uploadImage != null)
                 poi.ImageUrl = await _fileUploadService.UploadImageAsync(uploadImage, "images");
+            else if (!string.IsNullOrWhiteSpace(imageUrl))
+                poi.ImageUrl = imageUrl;
             else if (existing != null)
                 poi.ImageUrl = existing.ImageUrl;
 
@@ -341,17 +347,27 @@ public class POIController : Controller
         }
     }
 
-    private static bool ValidatePoiRequired(POI poi, IFormFile? uploadImage, bool isCreate, out string error)
+    private static bool ValidatePoiRequired(POI poi, IFormFile? uploadImage, string? imageUrl, bool isCreate, out string error)
     {
         error = "";
         if (string.IsNullOrWhiteSpace(poi.Name)) { error = "Tên địa điểm không được để trống."; return false; }
         if (string.IsNullOrWhiteSpace(poi.Address)) { error = "Địa chỉ không được để trống."; return false; }
         if (string.IsNullOrWhiteSpace(poi.OpenTime)) { error = "Giờ mở cửa không được để trống."; return false; }
         if (string.IsNullOrWhiteSpace(poi.Description)) { error = "Mô tả không được để trống."; return false; }
-        if (isCreate && (uploadImage == null || uploadImage.Length == 0)) { error = "Vui lòng chọn ảnh đại diện."; return false; }
+        var hasImage = uploadImage != null && uploadImage.Length > 0 || !string.IsNullOrWhiteSpace(imageUrl);
+        if (isCreate && !hasImage) { error = "Vui lòng chọn ảnh đại diện hoặc nhập URL ảnh."; return false; }
         if (poi.Latitude == 0 || poi.Longitude == 0) { error = "Vĩ độ và kinh độ phải khác 0."; return false; }
         if (poi.Rating <= 0) { error = "Đánh giá phải lớn hơn 0."; return false; }
         return true;
+    }
+
+    private static string? NormalizeImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return null;
+
+        imageUrl = imageUrl.Trim();
+        return Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) ? uri.ToString() : imageUrl;
     }
 
     /// <summary>
