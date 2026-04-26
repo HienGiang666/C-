@@ -287,13 +287,16 @@ namespace TourApp.Mobile.Services
                     }
                 }
 
-                // Start foreground service
+                // Start foreground service (giữ app alive khi minimize)
                 var context = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
                 if (context != null)
                 {
                     TourApp.Mobile.Platforms.Android.Services.LocationForegroundService.Start(context);
-                    return;
                 }
+                
+                // VẪN PHẢI gọi StartTracking để chạy GPS loop + gửi location lên API
+                await StartTracking();
+                return;
             }
 
             // Fall back to standard tracking

@@ -76,7 +76,7 @@ namespace TourApp.Mobile.Services
 
             var now = DateTime.Now;
 
-            // Tìm tất cả POI trong phạm vi, sắp xếp theo khoảng cách + priority
+            // Tìm tất cả POI trong phạm vi, sắp xếp theo khoảng cách (gần nhất trước)
             var poisInRange = _pois
                 .Where(p => p.IsActive)
                 .Select(p => new
@@ -91,14 +91,22 @@ namespace TourApp.Mobile.Services
                 .ThenBy(x => x.Poi.Priority)
                 .ToList();
 
+            // Thu thập các POI cần trigger (chưa cooldown)
+            var poisToTrigger = new List<POI>();
             foreach (var entry in poisInRange)
             {
-                // Per-POI cooldown
                 if (_poiCooldowns.TryGetValue(entry.Poi.Id, out var lastTime)
                     && (now - lastTime).TotalMinutes < CooldownMinutes)
                     continue;
 
-                TriggerNarration(entry.Poi);
+                _poiCooldowns[entry.Poi.Id] = DateTime.Now;
+                poisToTrigger.Add(entry.Poi);
+            }
+
+            // Xếp hàng tuần tự: gần nhất → xa nhất
+            if (poisToTrigger.Count > 0)
+            {
+                _ = TriggerNarrationQueueAsync(poisToTrigger);
             }
 
             // Dọn cooldown cũ (> 10 phút) để tránh memory leak
@@ -106,18 +114,56 @@ namespace TourApp.Mobile.Services
             foreach (var id in expired) _poiCooldowns.Remove(id);
         }
 
-        private void TriggerNarration(POI poi)
+        /// <summary>
+        /// Xếp hàng đợi: hiện mô tả + phát audio tuần tự từ POI gần nhất → xa nhất.
+        /// Mỗi POI đợi cái trước phát xong rồi mới hiện mô tả + phát tiếp.
+        /// </summary>
+        private async Task TriggerNarrationQueueAsync(List<POI> pois)
         {
-            _poiCooldowns[poi.Id] = DateTime.Now;
+            System.Diagnostics.Debug.WriteLine($"[GeofenceService] Queueing {pois.Count} POI(s) for narration");
 
+            // Hiện mô tả POI đầu tiên (gần nhất) ngay lập tức
+            var firstPoi = pois[0];
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                PoiTriggered?.Invoke(this, poi);
-                HighlightRequested?.Invoke(this, poi.Id);
+                PoiTriggered?.Invoke(this, firstPoi);
+                HighlightRequested?.Invoke(this, firstPoi.Id);
             });
 
-            _ = EnqueueAudioForPoiAsync(poi);
-            _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+            // Enqueue audio cho tất cả POI (AudioPlayerService sẽ phát tuần tự)
+            foreach (var poi in pois)
+            {
+                await EnqueueAudioForPoiAsync(poi);
+                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+            }
+
+            // Lắng nghe khi mỗi item phát xong → hiện mô tả POI kế tiếp
+            if (pois.Count > 1)
+            {
+                var remainingPois = new Queue<POI>(pois.Skip(1));
+                
+                void OnItemCompleted(object? sender, AudioQueueItem completedItem)
+                {
+                    if (remainingPois.Count > 0)
+                    {
+                        var nextPoi = remainingPois.Dequeue();
+                        // Chỉ hiện nếu POI vừa phát xong khớp với POI trước đó trong queue
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            PoiTriggered?.Invoke(this, nextPoi);
+                            HighlightRequested?.Invoke(this, nextPoi.Id);
+                        });
+                        System.Diagnostics.Debug.WriteLine($"[GeofenceService] Next POI in queue: {nextPoi.Name}");
+                    }
+                    
+                    if (remainingPois.Count == 0)
+                    {
+                        AudioPlayerService.Instance.ItemCompleted -= OnItemCompleted;
+                    }
+                }
+
+                AudioPlayerService.Instance.ItemCompleted += OnItemCompleted;
+            }
         }
 
         /// <summary>
@@ -155,8 +201,19 @@ namespace TourApp.Mobile.Services
                     return;
                 }
 
-                // 2. Fallback: TTS (phát trực tiếp, không qua queue)
-                await SpeakTTSAsync(poi, lang);
+                // 2. Fallback: TTS qua queue (chờ phát xong rồi tới cái kế)
+                var script = poi.GetScript(lang);
+                if (string.IsNullOrWhiteSpace(script))
+                    script = $"{poi.Name}. {poi.Description}";
+                if (string.IsNullOrWhiteSpace(script)) return;
+
+                await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+                {
+                    Title = poi.Name ?? "TTS",
+                    PoiId = poi.Id,
+                    TtsText = script,
+                    TtsLocale = lang
+                });
             }
             catch (Exception ex)
             {

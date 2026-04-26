@@ -112,50 +112,11 @@ public class LocationForegroundService : Service
         }
     }
 
-    private async void StartLocationTracking()
+    private void StartLocationTracking()
     {
-        _cts = new CancellationTokenSource();
-        var token = _cts.Token;
-
-        try
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-                    var request = new GeolocationRequest(
-                        GeolocationAccuracy.Best,
-                        TimeSpan.FromSeconds(10)
-                    );
-
-                    var location = await Geolocation.Default.GetLocationAsync(request, token);
-
-                    if (location != null)
-                    {
-                        var msg = $"Vị trí: {location.Latitude:F4}, {location.Longitude:F4}";
-                        UpdateNotification(msg);
-
-                        // Broadcast location to the app
-                        var intent = new Intent("LOCATION_UPDATE");
-                        intent.PutExtra("latitude", location.Latitude);
-                        intent.PutExtra("longitude", location.Longitude);
-                        SendBroadcast(intent);
-
-                        System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] {msg}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LocationForegroundService] GPS error: {ex.Message}");
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(5), token);
-            }
-        }
-        catch (System.OperationCanceledException)
-        {
-            System.Diagnostics.Debug.WriteLine("[LocationForegroundService] Tracking cancelled");
-        }
+        // Foreground service chỉ giữ app alive khi minimize.
+        // GPS polling + gửi API được xử lý bởi LocationService.RunGpsLoopSafe()
+        System.Diagnostics.Debug.WriteLine("[LocationForegroundService] Foreground service started (keeps app alive). GPS loop handled by LocationService.");
     }
 
     private void StopLocationTracking()

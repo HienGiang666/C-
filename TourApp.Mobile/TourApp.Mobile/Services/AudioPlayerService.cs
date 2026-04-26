@@ -12,6 +12,11 @@ public class AudioQueueItem
     public string Title { get; set; } = string.Empty;
     public int PoiId { get; set; }
     public DateTime EnqueuedAt { get; set; } = DateTime.Now;
+    
+    // TTS fallback: khi không có MP3, dùng text + locale để phát TTS trong queue
+    public string? TtsText { get; set; }
+    public string? TtsLocale { get; set; }
+    public bool IsTts => string.IsNullOrEmpty(Url) && !string.IsNullOrEmpty(TtsText);
 }
 
 public class AudioPlayerService : INotifyPropertyChanged, IDisposable
@@ -234,10 +239,17 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
 
     private async Task PlayItemAsync(AudioQueueItem item, CancellationToken cancellationToken = default)
     {
-        Debug.WriteLine($"[AudioPlayerService] Playing: {item.Title}");
+        Debug.WriteLine($"[AudioPlayerService] Playing: {item.Title} (TTS={item.IsTts})");
         
         CurrentAudioTitle = item.Title;
         ItemStarted?.Invoke(this, item);
+
+        // TTS fallback: phát bằng TextToSpeech thay vì MP3
+        if (item.IsTts)
+        {
+            await PlayTtsItemAsync(item, cancellationToken);
+            return;
+        }
 
         var cacheFileName = $"audio_{Math.Abs(item.Url.GetHashCode())}.mp3";
         var localFile = Path.Combine(FileSystem.CacheDirectory, cacheFileName);
@@ -406,6 +418,40 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
             {
                 _isProcessingQueue = false;
             }
+        }
+    }
+
+    private async Task PlayTtsItemAsync(AudioQueueItem item, CancellationToken cancellationToken)
+    {
+        try
+        {
+            IsPlaying = true;
+
+            var locales = await TextToSpeech.Default.GetLocalesAsync();
+            var matchedLocale = locales?.FirstOrDefault(l =>
+                !string.IsNullOrEmpty(item.TtsLocale) && 
+                l.Language.StartsWith(item.TtsLocale, StringComparison.OrdinalIgnoreCase));
+
+            var options = new SpeechOptions
+            {
+                Pitch = 1.0f,
+                Volume = 1.0f,
+                Locale = matchedLocale
+            };
+
+            await TextToSpeech.Default.SpeakAsync(item.TtsText!, options, cancellationToken);
+            
+            ItemCompleted?.Invoke(this, item);
+            PlaybackEnded?.Invoke(this, EventArgs.Empty);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AudioPlayerService] TTS error: {ex.Message}");
+        }
+        finally
+        {
+            IsPlaying = false;
         }
     }
 
