@@ -1,4 +1,5 @@
 using Microsoft.Maui.Devices.Sensors;
+using System.Net.Http.Json;
 
 namespace TourApp.Mobile.Services
 {
@@ -14,6 +15,7 @@ namespace TourApp.Mobile.Services
         private bool _isTracking = false;
         private readonly object _trackingLock = new();
         private CancellationTokenSource? _trackingCts;
+        private DateTime _lastApiLogTime = DateTime.MinValue;
 
         public bool IsMocking { get; set; } = false;
         public Location? MockLocation { get; set; }
@@ -173,6 +175,13 @@ namespace TourApp.Mobile.Services
                                     System.Diagnostics.Debug.WriteLine($"[LocationService] UI callback error: {uiEx.Message}");
                                 }
                             });
+
+                            // Auto-send location to API for CMS tracking (throttle 5s)
+                            if ((DateTime.Now - _lastApiLogTime).TotalSeconds >= 5)
+                            {
+                                _lastApiLogTime = DateTime.Now;
+                                _ = Task.Run(async () => await SendLocationToApiAsync(location));
+                            }
                         }
                     }
                     catch (OperationCanceledException)
@@ -307,5 +316,48 @@ namespace TourApp.Mobile.Services
             StopTracking();
         }
 #endif
+
+        private async Task SendLocationToApiAsync(Location location)
+        {
+            try
+            {
+                var baseUrl = ApiService.BaseUrl;
+                if (string.IsNullOrEmpty(baseUrl)) return;
+
+                HttpMessageHandler handler;
+#if ANDROID
+                var androidHandler = new Xamarin.Android.Net.AndroidMessageHandler();
+                androidHandler.ServerCertificateCustomValidationCallback =
+                    (_, cert, _, errors) =>
+                        cert?.Issuer == "CN=localhost" ||
+                        errors == System.Net.Security.SslPolicyErrors.None;
+                handler = androidHandler;
+#else
+                handler = new HttpClientHandler();
+#endif
+                using var client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
+                client.Timeout = TimeSpan.FromSeconds(5);
+
+                var deviceId = string.IsNullOrEmpty(DeviceInfo.Name) ? $"emu_{DateTime.Now.Ticks}" : DeviceInfo.Name;
+                var request = new
+                {
+                    DeviceId = deviceId,
+                    Latitude = location.Latitude,
+                    Longitude = location.Longitude,
+                    Timestamp = DateTime.Now,
+                    IsActive = true
+                };
+
+                var response = await client.PostAsJsonAsync("/api/userlocation", request);
+                if (response.IsSuccessStatusCode)
+                    System.Diagnostics.Debug.WriteLine($"[LocationService] Location sent to API: {location.Latitude}, {location.Longitude}");
+                else
+                    System.Diagnostics.Debug.WriteLine($"[LocationService] API FAILED: {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LocationService] SendLocationToApiAsync error: {ex.Message}");
+            }
+        }
     }
 }

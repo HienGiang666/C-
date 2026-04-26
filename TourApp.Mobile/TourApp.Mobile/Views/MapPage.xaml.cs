@@ -1,7 +1,6 @@
 using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
 using System.Text.Json;
-using System.Net.Http.Json;
 using Microsoft.Maui.Media;
 
 namespace TourApp.Mobile.Views;
@@ -355,14 +354,6 @@ public partial class MapPage : ContentPage
             }
         }
 
-        // Log location lên API cho CMS tracking (throttle 3s)
-        if ((DateTime.Now - _lastApiLogTime).TotalSeconds >= 3)
-        {
-            _lastApiLogTime = DateTime.Now;
-            _ = Task.Run(async () => await LogLocationToApiAsync(location));
-            System.Diagnostics.Debug.WriteLine($"[MapPage] Triggered API log for {location.Latitude},{location.Longitude}");
-        }
-
         MainThread.BeginInvokeOnMainThread(() =>
         {
             try
@@ -523,8 +514,6 @@ public partial class MapPage : ContentPage
     }
 
     private bool _isMockMode = false;
-    private DateTime _lastApiLogTime = DateTime.MinValue;
-
     private void OnMockToggleClicked(object? sender, EventArgs e)
     {
         _isMockMode = !_isMockMode;
@@ -535,6 +524,11 @@ public partial class MapPage : ContentPage
             MockToggleBtn.BackgroundColor = Color.FromArgb("#FF6B00");
             MockToggleIcon.TextColor = Colors.White;
             MockBanner.IsVisible = true;
+            
+            // Set mock location ngay (dùng vị trí hiện tại hoặc default Q4)
+            _locationService.IsMocking = true;
+            _locationService.MockLocation = _lastLocation ?? new Location(10.762, 106.702);
+            
             if (_isJsMapReady)
                 MapWebView.Eval("setMockMode(true);");
             System.Diagnostics.Debug.WriteLine("[MockGPS] Mock mode ON");
@@ -762,42 +756,6 @@ public partial class MapPage : ContentPage
     private async void OnSearchCompleted(object? sender, EventArgs e)
     {
         await DoSearch(SearchEntry.Text);
-    }
-
-    private async Task LogLocationToApiAsync(Location location)
-    {
-        try
-        {
-            var baseUrl = ApiService.BaseUrl;
-            using var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
-            client.Timeout = TimeSpan.FromSeconds(5);
-
-            var deviceId = string.IsNullOrEmpty(DeviceInfo.Name) ? $"emu_{DateTime.Now.Ticks}" : DeviceInfo.Name;
-            var request = new
-            {
-                DeviceId = deviceId,
-                Latitude = location.Latitude,
-                Longitude = location.Longitude,
-                Timestamp = DateTime.Now,
-                IsActive = true
-            };
-
-            System.Diagnostics.Debug.WriteLine($"[MapPage] Sending location to API: {baseUrl}/api/userlocation, device={deviceId}");
-            var response = await client.PostAsJsonAsync("/api/userlocation", request);
-            if (response.IsSuccessStatusCode)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] Location logged to API: {location.Latitude}, {location.Longitude}");
-            }
-            else
-            {
-                var body = await response.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"[MapPage] API log FAILED: {response.StatusCode} - {body}");
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MapPage] LogLocationToApiAsync error: {ex.Message}");
-        }
     }
 
     private async Task DoSearch(string query)

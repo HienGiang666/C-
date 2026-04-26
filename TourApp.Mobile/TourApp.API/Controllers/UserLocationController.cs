@@ -126,4 +126,91 @@ public class UserLocationController : ControllerBase
             onlineLocations
         });
     }
+
+    /// <summary>
+    /// Heatmap: trả về tất cả điểm location trong 24h cho Leaflet.heat
+    /// </summary>
+    [HttpGet("heatmap")]
+    public async Task<IActionResult> GetHeatmap()
+    {
+        var since24h = DateTime.Now.AddHours(-24);
+        var logs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .Select(l => new[] { l.Latitude, l.Longitude, 0.5 })
+            .ToListAsync();
+
+        return Ok(new { points = logs });
+    }
+
+    /// <summary>
+    /// Paths: trả về tuyến đường phổ biến (POI → POI) dựa trên dữ liệu location
+    /// </summary>
+    [HttpGet("paths")]
+    public async Task<IActionResult> GetPaths()
+    {
+        var since24h = DateTime.Now.AddHours(-24);
+        
+        // Lấy logs theo device, sắp xếp theo thời gian
+        var logs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderBy(l => l.DeviceId).ThenBy(l => l.Timestamp)
+            .ToListAsync();
+
+        // Tạo tuyến đường từ mỗi device (nối điểm đầu → cuối)
+        var routes = logs
+            .GroupBy(l => l.DeviceId)
+            .Where(g => g.Count() >= 2)
+            .Select(g =>
+            {
+                var pts = g.ToList();
+                return new
+                {
+                    fromLat = pts.First().Latitude,
+                    fromLng = pts.First().Longitude,
+                    toLat = pts.Last().Latitude,
+                    toLng = pts.Last().Longitude,
+                    fromPoiName = pts.First().DeviceId ?? "Start",
+                    toPoiName = pts.Last().DeviceId ?? "End",
+                    count = pts.Count
+                };
+            })
+            .ToList();
+
+        return Ok(new { routes });
+    }
+
+    /// <summary>
+    /// History: lịch sử hoạt động 24h - danh sách user + thống kê
+    /// </summary>
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory()
+    {
+        var since24h = DateTime.Now.AddHours(-24);
+        var logs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderByDescending(l => l.Timestamp)
+            .ToListAsync();
+
+        var byDevice = logs.GroupBy(l => l.DeviceId).ToList();
+        
+        var users = byDevice.Select(g => new
+        {
+            deviceId = g.Key ?? "unknown",
+            isAnonymous = g.Key == null || !g.Key.StartsWith("user_"),
+            lastSeen = g.First().Timestamp,
+            locationCount = g.Count(),
+            lastLocation = new
+            {
+                lat = g.First().Latitude,
+                lng = g.First().Longitude
+            }
+        }).ToList();
+
+        return Ok(new
+        {
+            totalUsers = byDevice.Count,
+            anonymousUsers = users.Count(u => u.isAnonymous),
+            users
+        });
+    }
 }
