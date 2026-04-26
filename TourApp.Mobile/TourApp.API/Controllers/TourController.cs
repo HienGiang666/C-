@@ -32,15 +32,31 @@ public class TourController : ControllerBase
 
     /// <summary>Danh sách điểm ghé theo thứ tự (OrderIndex) — dùng cho mobile/CMS.</summary>
     [HttpGet("{id}/stops")]
-    public async Task<ActionResult<IEnumerable<TourPOI>>> GetTourStops(int id)
+    public async Task<IActionResult> GetTourStops(int id)
     {
         if (!await _context.Tours.AnyAsync(t => t.Id == id))
             return NotFound();
-        return await _context.TourPOIs
+        var stops = await _context.TourPOIs
             .Include(x => x.POI)
             .Where(x => x.TourId == id)
             .OrderBy(x => x.OrderIndex)
+            .Select(x => new
+            {
+                id = x.Id,
+                tourId = x.TourId,
+                poiId = x.POIId,
+                orderIndex = x.OrderIndex,
+                poi = x.POI == null ? null : new
+                {
+                    id = x.POI.Id,
+                    name = x.POI.Name,
+                    latitude = x.POI.Latitude,
+                    longitude = x.POI.Longitude,
+                    imageUrl = x.POI.ImageUrl
+                }
+            })
             .ToListAsync();
+        return Ok(stops);
     }
 
     /// <summary>Thay toàn bộ điểm dừng của tour theo thứ tự mảng POI Id.</summary>
