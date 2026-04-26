@@ -21,7 +21,11 @@ builder.Services.AddCors(options =>
 });
 // -----------------------------------------------------------
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        opts.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
 // === SIGNALR - Real-time tracking ===
 builder.Services.AddSignalR();
