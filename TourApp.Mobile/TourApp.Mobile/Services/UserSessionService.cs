@@ -32,7 +32,7 @@ namespace TourApp.Mobile.Services
                 // Gọi API báo online ngay lập tức (fire and forget)
                 _ = Task.Run(async () => await SendSessionAsync(true, name));
 
-                // Bắt đầu heartbeat mỗi 30 giây
+                // Bắt đầu heartbeat mỗi 5 giây (real-time cho CMS)
                 _ = Task.Run(async () => await RunHeartbeatAsync(name, _heartbeatCts.Token));
 
                 Debug.WriteLine($"[UserSessionService] Session started - UserId: {userId}, GuestId: {guestId}, Name: {name}");
@@ -66,7 +66,7 @@ namespace TourApp.Mobile.Services
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(30), ct);
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                     if (!ct.IsCancellationRequested)
                         await SendSessionAsync(true, name);
                 }
@@ -88,6 +88,19 @@ namespace TourApp.Mobile.Services
                 await ApiService.AutoDiscoverApiAsync();
                 var baseUrl = ApiService.BaseUrl;
 
+                // Lấy GPS hiện tại để gửi kèm heartbeat
+                double lat = 0, lng = 0;
+                try
+                {
+                    var location = await Geolocation.GetLastKnownLocationAsync();
+                    if (location != null)
+                    {
+                        lat = location.Latitude;
+                        lng = location.Longitude;
+                    }
+                }
+                catch { }
+
                 using var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
                 client.Timeout = TimeSpan.FromSeconds(5);
 
@@ -100,6 +113,8 @@ namespace TourApp.Mobile.Services
                     DeviceInfo = DeviceInfo.Name,
                     Platform = DeviceInfo.Platform.ToString(),
                     Version = DeviceInfo.Version.ToString(),
+                    Latitude = lat,
+                    Longitude = lng,
                     Timestamp = DateTime.UtcNow
                 };
 

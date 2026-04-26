@@ -62,10 +62,28 @@ public class UserLocationController : ControllerBase
         
         if (request.IsOnline)
         {
+            // Lưu location log khi online (heartbeat)
+            if (request.Latitude != 0 || request.Longitude != 0)
+            {
+                _context.UserLocationLogs.Add(new UserLocationLog
+                {
+                    DeviceId = deviceId,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    Timestamp = DateTime.Now,
+                    SessionId = request.GuestId,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+            }
+
             await _hubContext.Clients.All.SendAsync("UserOnline", new
             {
                 DeviceId = deviceId,
                 SessionId = request.GuestId,
+                Name = request.Name,
+                DeviceInfo = request.DeviceInfo,
+                Platform = request.Platform,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude,
                 Timestamp = DateTime.Now
@@ -82,6 +100,90 @@ public class UserLocationController : ControllerBase
         }
         
         return Ok(new { success = true });
+    }
+
+    /// <summary>
+    /// Management stats: dữ liệu chi tiết cho trang Quản lý người dùng
+    /// </summary>
+    [HttpGet("management-stats")]
+    public async Task<IActionResult> GetManagementStats()
+    {
+        var since24h = DateTime.Now.AddHours(-24);
+        var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+
+        // Tổng thiết bị đã vào app (all time)
+        var totalDevices = await _context.UserLocationLogs
+            .Select(l => l.DeviceId)
+            .Distinct()
+            .CountAsync();
+
+        // Số lượt quét QR (trigger = "qr")
+        var qrScanCount = await _context.NarrationLogs
+            .Where(l => l.TriggerType == "qr")
+            .CountAsync();
+
+        // Logs 24h
+        var recentLogs = await _context.UserLocationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderByDescending(l => l.Timestamp)
+            .ToListAsync();
+
+        var byDevice = recentLogs.GroupBy(l => l.DeviceId).ToList();
+
+        // Chi tiết từng user
+        var users = byDevice.Select(g =>
+        {
+            var logs = g.OrderByDescending(l => l.Timestamp).ToList();
+            var firstLog = logs.Last();
+            var lastLog = logs.First();
+            var isOnline = lastLog.Timestamp >= oneMinuteAgo;
+
+            return new
+            {
+                deviceId = g.Key ?? "unknown",
+                isAnonymous = g.Key == null || !g.Key.StartsWith("user_"),
+                isOnline,
+                firstSeen = firstLog.Timestamp,
+                lastSeen = lastLog.Timestamp,
+                locationCount = logs.Count,
+                lastLocation = new { lat = lastLog.Latitude, lng = lastLog.Longitude }
+            };
+        }).OrderByDescending(u => u.isOnline).ThenByDescending(u => u.lastSeen).ToList();
+
+        // Lấy narration logs gần đây để biết ngôn ngữ dùng
+        var narrationLogs = await _context.NarrationLogs
+            .Where(l => l.Timestamp >= since24h)
+            .OrderByDescending(l => l.Timestamp)
+            .Take(200)
+            .ToListAsync();
+
+        // Lấy audio language info
+        var audioIds = narrationLogs.Where(n => n.AudioId.HasValue).Select(n => n.AudioId!.Value).Distinct().ToList();
+        var audioLanguages = await _context.Audios
+            .Where(a => audioIds.Contains(a.Id))
+            .Select(a => new { a.Id, a.Language })
+            .ToDictionaryAsync(a => a.Id, a => a.Language ?? "vi");
+
+        var narrationByDevice = narrationLogs.GroupBy(n => n.DeviceId).ToDictionary(
+            g => g.Key ?? "unknown",
+            g => new
+            {
+                playCount = g.Count(),
+                languages = g.Where(n => n.AudioId.HasValue && audioLanguages.ContainsKey(n.AudioId!.Value))
+                    .Select(n => audioLanguages[n.AudioId!.Value])
+                    .Distinct().ToList(),
+                qrCount = g.Count(n => n.TriggerType == "qr")
+            });
+
+        return Ok(new
+        {
+            totalDevices,
+            qrScanCount,
+            onlineNow = users.Count(u => u.isOnline),
+            active24h = users.Count,
+            users,
+            narrationByDevice
+        });
     }
 
     [HttpGet("stats")]

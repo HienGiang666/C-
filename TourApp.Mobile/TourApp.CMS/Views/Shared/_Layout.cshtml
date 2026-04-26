@@ -34,7 +34,7 @@
                 </a>
                 @if (isAdmin)
                 {
-                <a asp-controller="Home" asp-action="ThongKe" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
+                <a asp-controller="Home" asp-action="Statistics" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
                     <i class="fa-solid fa-chart-line me-3 fs-5 width-20"></i> Thống kê
                 </a>
                 }
@@ -57,6 +57,9 @@
                 </a>
                 <a asp-controller="Approval" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
                     <i class="fa-solid fa-clipboard-check me-3 fs-5 width-20"></i> Phê duyệt
+                </a>
+                <a asp-controller="ActivityManagement" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
+                    <i class="fa-solid fa-user-gear me-3 fs-5 width-20"></i> Quản lý hoạt động
                 </a>
                 }
                 <a asp-controller="Activity" asp-action="Index" class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 rounded mb-1 btn-sidebar">
