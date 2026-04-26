@@ -11,8 +11,6 @@ namespace TourApp.Mobile.Services
         private static CancellationTokenSource? _heartbeatCts;
         private static int? _currentUserId;
         private static string? _currentGuestId;
-        private static double? _currentLatitude;
-        private static double? _currentLongitude;
 
         /// <summary>
         /// Bắt đầu session tracking cho user đăng nhập hoặc khách
@@ -20,14 +18,12 @@ namespace TourApp.Mobile.Services
         /// <param name="userId">ID user (null nếu là khách)</param>
         /// <param name="name">Tên hiển thị</param>
         /// <param name="guestId">ID khách (nếu là khách)</param>
-        public static void StartSession(int? userId, string name, string? guestId = null, double? latitude = null, double? longitude = null)
+        public static void StartSession(int? userId, string name, string? guestId = null)
         {
             try
             {
                 _currentUserId = userId;
                 _currentGuestId = guestId;
-                _currentLatitude = latitude;
-                _currentLongitude = longitude;
 
                 // Dừng heartbeat cũ nếu có
                 _heartbeatCts?.Cancel();
@@ -36,7 +32,7 @@ namespace TourApp.Mobile.Services
                 // Gọi API báo online ngay lập tức (fire and forget)
                 _ = Task.Run(async () => await SendSessionAsync(true, name));
 
-                // Bắt đầu heartbeat mỗi 5 giây để cập nhật online nhanh hơn
+                // Bắt đầu heartbeat mỗi 5 giây (real-time cho CMS)
                 _ = Task.Run(async () => await RunHeartbeatAsync(name, _heartbeatCts.Token));
 
                 Debug.WriteLine($"[UserSessionService] Session started - UserId: {userId}, GuestId: {guestId}, Name: {name}");
@@ -64,9 +60,6 @@ namespace TourApp.Mobile.Services
             }
         }
 
-        /// <summary>
-        /// Cập nhật vị trí hiện tại mà không khởi động lại session/heartbeat
-        /// </summary>
         private static async Task RunHeartbeatAsync(string name, CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
@@ -88,18 +81,25 @@ namespace TourApp.Mobile.Services
             }
         }
 
-        public static void UpdateLocation(double latitude, double longitude)
-        {
-            _currentLatitude = latitude;
-            _currentLongitude = longitude;
-        }
-
         private static async Task SendSessionAsync(bool isOnline, string? name)
         {
             try
             {
                 await ApiService.AutoDiscoverApiAsync();
                 var baseUrl = ApiService.BaseUrl;
+
+                // Lấy GPS hiện tại để gửi kèm heartbeat
+                double lat = 0, lng = 0;
+                try
+                {
+                    var location = await Geolocation.GetLastKnownLocationAsync();
+                    if (location != null)
+                    {
+                        lat = location.Latitude;
+                        lng = location.Longitude;
+                    }
+                }
+                catch { }
 
                 using var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
                 client.Timeout = TimeSpan.FromSeconds(5);
@@ -113,8 +113,8 @@ namespace TourApp.Mobile.Services
                     DeviceInfo = DeviceInfo.Name,
                     Platform = DeviceInfo.Platform.ToString(),
                     Version = DeviceInfo.Version.ToString(),
-                    Latitude = _currentLatitude,
-                    Longitude = _currentLongitude,
+                    Latitude = lat,
+                    Longitude = lng,
                     Timestamp = DateTime.UtcNow
                 };
 

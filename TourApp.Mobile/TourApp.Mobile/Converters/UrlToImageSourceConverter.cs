@@ -3,59 +3,27 @@ using System.Diagnostics;
 
 namespace TourApp.Mobile.Converters
 {
+    /// <summary>
+    /// Converter đơn giản: nhận local file path (đã download bởi ImageCacheService),
+    /// trả về ImageSource.FromFile. Nếu là URL chưa cache → trả null.
+    /// </summary>
     public class UrlToImageSourceConverter : IValueConverter
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is string url && !string.IsNullOrWhiteSpace(url))
+            if (value is not string path || string.IsNullOrWhiteSpace(path))
+                return null;
+
+            // Nếu là local file path (đã cache)
+            if (File.Exists(path))
             {
-                try
-                {
-                    // Trim whitespace
-                    url = url.Trim();
-                    
-                    // Nếu là absolute URL (http:// hoặc https://), dùng trực tiếp
-                    if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
-                        url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Debug.WriteLine($"[ImageConverter] Loading absolute URL: {url}");
-                        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluteUri))
-                        {
-                            return ImageSource.FromUri(absoluteUri);
-                        }
-                    }
-                    // Nếu là relative URL bắt đầu bằng /, nối với BaseUrl
-                    else if (url.StartsWith("/"))
-                    {
-                        var baseUrl = Services.ApiService.BaseUrl;
-                        var fullUrl = baseUrl.TrimEnd('/') + url;
-                        Debug.WriteLine($"[ImageConverter] Loading relative URL: {fullUrl}");
-                        if (Uri.TryCreate(fullUrl, UriKind.Absolute, out var fullUri))
-                        {
-                            return ImageSource.FromUri(fullUri);
-                        }
-                    }
-                    // URL không có scheme, thêm http://
-                    else
-                    {
-                        var fullUrl = $"http://{url}";
-                        Debug.WriteLine($"[ImageConverter] Adding scheme to URL: {fullUrl}");
-                        if (Uri.TryCreate(fullUrl, UriKind.Absolute, out var schemeUri))
-                        {
-                            return ImageSource.FromUri(schemeUri);
-                        }
-                    }
-                    
-                    Debug.WriteLine($"[ImageConverter] Failed to parse URL: {url}");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[ImageConverter] Error loading '{url}': {ex.Message}");
-                }
+                Debug.WriteLine($"[ImageConverter] FromFile: {path}");
+                return ImageSource.FromFile(path);
             }
-            
-            Debug.WriteLine($"[ImageConverter] Empty or invalid URL '{value}', using placeholder");
-            return ImageSource.FromFile("dotnet_bot.png");
+
+            // Nếu vẫn là URL (chưa được pre-download), log warning
+            Debug.WriteLine($"[ImageConverter] Not cached yet: {path}");
+            return null;
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

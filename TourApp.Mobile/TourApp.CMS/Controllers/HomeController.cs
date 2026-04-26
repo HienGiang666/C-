@@ -133,7 +133,7 @@ public class HomeController : Controller
         return View();
     }
 
-    public async Task<IActionResult> ThongKe()
+    public async Task<IActionResult> Statistics()
     {
         ViewData["Title"] = "Thống kê";
 

@@ -10,123 +10,160 @@
     var isAdminPoi = cmsRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }
 
-<div class="card border-0 mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Danh sách Địa điểm</h5>
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot me-2 text-primary"></i> Danh sách Địa điểm</h5>
+    <div class="d-flex gap-2">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-secondary active" id="btnCardView" onclick="toggleView('card')"><i class="fa-solid fa-grip"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTableView" onclick="toggleView('table')"><i class="fa-solid fa-table-list"></i></button>
+        </div>
         @if (!isAdminPoi)
         {
-            <a asp-action="Create" class="btn btn-primary d-flex align-items-center">
-                <i class="fa-solid fa-plus me-2"></i> Thêm mới
-            </a>
+            <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i> Thêm mới</a>
         }
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width:48px" class="text-center text-muted">#</th>
-                        <th>ID</th>
-                        <th>Ảnh</th>
-                        <th>Tên địa điểm</th>
-                        <th>Chủ sở hữu</th>
-                        <th>Mô tả</th>
-                        <th>Tọa độ</th>
-                        <th>Trạng thái</th>
-                        <th class="text-end">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        @foreach (var item in Model)
-                        {
-                            stt++;
-                            <tr>
-                                <td class="text-center text-muted align-middle">
-                                    <small>@stt</small>
-                                </td>
-                                <td><span class="badge bg-secondary">@item.DisplayCode</span></td>
-                                <td>
-                                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/50" : item.ImageUrl)"
-                                         class="img-thumbnail rounded" style="width: 50px; height: 50px; object-fit: cover;" />
-                                </td>
-                                <td class="fw-bold text-primary">@item.Name</td>
-                                <td>
-                                    @if (item.OwnerUserId.HasValue && ownerNames.TryGetValue(item.OwnerUserId.Value, out var oname))
-                                    {
-                                        <span class="fw-medium">@oname</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
-                                    }
-                                </td>
-                                <td class="text-truncate" style="max-width: 200px;" title="@item.Description">
-                                    <small>@item.Description</small>
-                                </td>
-                                <td>
-                                    <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-danger"></i> @item.Latitude</small></div>
-                                    <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-primary"></i> @item.Longitude</small></div>
-                                </td>
-                                <td>
-                                    @if (item.IsActive)
-                                    {
-                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">hoạt động</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">đã khóa</span>
-                                    }
-                                    @if (item.ApprovalStatus == "Pending")
-                                    {
-                                        <span class="badge bg-warning text-dark ms-1">Chờ duyệt</span>
-                                    }
-                                    else if (item.ApprovalStatus == "Rejected")
-                                    {
-                                        <span class="badge bg-danger ms-1">Từ chối</span>
-                                    }
-                                </td>
-                                <td class="text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="showQRCode(@item.Id, '@item.Name.Replace("'", "\\'")')" title="Tạo QR Code">
-                                        <i class="fa-solid fa-qrcode"></i> QR
-                                    </button>
-                                    <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1" title="Quản lý Audio">
-                                        <i class="fa-solid fa-headphones"></i> Audios
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa địa điểm này?');">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">
-                                <i class="fa-solid fa-box-open fs-2 mb-2"></i><br />
-                                Không có dữ liệu
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @if (totalPages > 1)
+</div>
+
+<!-- Card Grid View (giống mobile) -->
+<div id="cardView">
+    @if (Model != null && Model.Any())
     {
-        <div class="card-footer bg-white d-flex justify-content-center flex-wrap gap-1">
-            @for (var p = 1; p <= totalPages; p++)
+        <div class="row g-3">
+            @foreach (var item in Model)
             {
-                <a class="btn btn-sm @(p == currentPage ? "btn-primary" : "btn-outline-secondary")" asp-action="Index" asp-route-page="@p">@p</a>
+                stt++;
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;overflow:hidden;">
+                        <div style="position:relative;">
+                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/300x180?text=No+Image" : item.ImageUrl)"
+                                 class="card-img-top" style="height:140px;object-fit:cover;" />
+                            <span class="badge bg-dark bg-opacity-75 text-white position-absolute" style="top:8px;left:8px;font-size:0.7rem;">@item.DisplayCode</span>
+                            @if (!item.IsActive)
+                            {
+                                <span class="badge bg-secondary position-absolute" style="top:8px;right:8px;">Khóa</span>
+                            }
+                            else if (item.ApprovalStatus == "Pending")
+                            {
+                                <span class="badge bg-warning text-dark position-absolute" style="top:8px;right:8px;">Chờ duyệt</span>
+                            }
+                            else if (item.ApprovalStatus == "Rejected")
+                            {
+                                <span class="badge bg-danger position-absolute" style="top:8px;right:8px;">Từ chối</span>
+                            }
+                        </div>
+                        <div class="card-body p-2 pb-1">
+                            <h6 class="fw-bold mb-1 text-truncate" style="font-size:0.85rem;" title="@item.Name">@item.Name</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fa-solid fa-star text-warning me-1" style="font-size:0.75rem;"></i>
+                                <span class="fw-bold" style="font-size:0.8rem;color:#FFA000;">@item.Rating.ToString("F1")</span>
+                                <span class="text-muted ms-2" style="font-size:0.7rem;">@item.Address</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top-0 p-2 pt-0 d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-outline-success btn-sm flex-fill" style="font-size:0.7rem;" onclick="showQRCode(@item.Id, '@item.Name.Replace("'", "\\'")'))"><i class="fa-solid fa-qrcode"></i></button>
+                            <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-outline-info btn-sm flex-fill" style="font-size:0.7rem;"><i class="fa-solid fa-headphones"></i></a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm flex-fill" style="font-size:0.7rem;"><i class="fa-solid fa-pen"></i></a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm flex-fill" style="font-size:0.7rem;" onclick="return confirm('Xóa địa điểm này?');"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                    </div>
+                </div>
             }
         </div>
     }
+    else
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-box-open fs-1 mb-2"></i>
+            <p>Không có dữ liệu</p>
+        </div>
+    }
 </div>
+
+<!-- Table View (giữ nguyên) -->
+<div id="tableView" class="d-none">
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:48px" class="text-center text-muted">#</th>
+                            <th>ID</th>
+                            <th>Ảnh</th>
+                            <th>Tên địa điểm</th>
+                            <th>Chủ sở hữu</th>
+                            <th>Mô tả</th>
+                            <th>Tọa độ</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            int stt2 = (currentPage - 1) * 10;
+                            @foreach (var item in Model)
+                            {
+                                stt2++;
+                                <tr>
+                                    <td class="text-center text-muted align-middle"><small>@stt2</small></td>
+                                    <td><span class="badge bg-secondary">@item.DisplayCode</span></td>
+                                    <td>
+                                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/50" : item.ImageUrl)"
+                                             class="img-thumbnail rounded" style="width:50px;height:50px;object-fit:cover;" />
+                                    </td>
+                                    <td class="fw-bold text-primary">@item.Name</td>
+                                    <td>
+                                        @if (item.OwnerUserId.HasValue && ownerNames.TryGetValue(item.OwnerUserId.Value, out var oname))
+                                        { <span class="fw-medium">@oname</span> }
+                                        else
+                                        { <span class="text-muted">—</span> }
+                                    </td>
+                                    <td class="text-truncate" style="max-width:200px;" title="@item.Description"><small>@item.Description</small></td>
+                                    <td>
+                                        <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-danger"></i> @item.Latitude</small></div>
+                                        <div class="mb-1"><small class="text-muted"><i class="fa-solid fa-location-crosshairs me-1 text-primary"></i> @item.Longitude</small></div>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        { <span class="badge bg-success bg-opacity-10 text-success border border-success">hoạt động</span> }
+                                        else
+                                        { <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">đã khóa</span> }
+                                        @if (item.ApprovalStatus == "Pending")
+                                        { <span class="badge bg-warning text-dark ms-1">Chờ duyệt</span> }
+                                        else if (item.ApprovalStatus == "Rejected")
+                                        { <span class="badge bg-danger ms-1">Từ chối</span> }
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="showQRCode(@item.Id, '@item.Name.Replace("'", "\\'")')"><i class="fa-solid fa-qrcode"></i> QR</button>
+                                        <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-sm btn-outline-info me-1"><i class="fa-solid fa-headphones"></i> Audios</a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i></a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa địa điểm này?');"><i class="fa-solid fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="9" class="text-center py-4 text-muted"><i class="fa-solid fa-box-open fs-2 mb-2"></i><br />Không có dữ liệu</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (totalPages > 1)
+{
+    <div class="d-flex justify-content-center flex-wrap gap-1 mt-3">
+        @for (var p = 1; p <= totalPages; p++)
+        {
+            <a class="btn btn-sm @(p == currentPage ? "btn-primary" : "btn-outline-secondary")" asp-action="Index" asp-route-page="@p">@p</a>
+        }
+    </div>
+}
 
 <!-- QR Code Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
@@ -206,6 +243,24 @@
         link.href = currentQrData;
         link.download = `POI-${currentPoiName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
         link.click();
+    }
+
+    function toggleView(mode) {
+        var cardView = document.getElementById('cardView');
+        var tableView = document.getElementById('tableView');
+        var btnCard = document.getElementById('btnCardView');
+        var btnTable = document.getElementById('btnTableView');
+        if (mode === 'table') {
+            cardView.classList.add('d-none');
+            tableView.classList.remove('d-none');
+            btnCard.classList.remove('active');
+            btnTable.classList.add('active');
+        } else {
+            cardView.classList.remove('d-none');
+            tableView.classList.add('d-none');
+            btnCard.classList.add('active');
+            btnTable.classList.remove('active');
+        }
     }
 </script>
 }

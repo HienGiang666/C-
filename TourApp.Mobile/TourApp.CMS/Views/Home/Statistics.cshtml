@@ -6,111 +6,82 @@
 
 @if (isAdmin)
 {
-<!-- Row 1: Stats Cards -->
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="d-flex align-items-center p-3 rounded bg-success bg-opacity-10 h-100">
-            <i class="fa-solid fa-mobile-screen-button text-success fs-3 me-3"></i>
-            <div>
-                <div class="text-muted small">Đang online</div>
-                <div class="fw-bold fs-4" id="onlineCount">@(ViewBag.UserLocationStats?.OnlineNow ?? 0)</div>
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                    <i class="fa-solid fa-signal text-success fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Đang online</div>
+                    <div class="fw-bold fs-4" id="onlineCount">0</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="d-flex align-items-center p-3 rounded bg-info bg-opacity-10 h-100">
-            <i class="fa-solid fa-clock-rotate-left text-info fs-3 me-3"></i>
-            <div>
-                <div class="text-muted small">Hoạt động 24h qua</div>
-                <div class="fw-bold fs-4" id="active24hCount">@(ViewBag.UserLocationStats?.Active24h ?? 0)</div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                    <i class="fa-solid fa-clock-rotate-left text-info fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Hoạt động 24h</div>
+                    <div class="fw-bold fs-4" id="active24hCount">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                    <i class="fa-solid fa-map-pin text-primary fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Điểm vị trí (24h)</div>
+                    <div class="fw-bold fs-4" id="locationPoints">0</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Row 2: Map (2/3) + User History (1/3) -->
-<div class="row g-4">
-    <!-- Map Section - 8 columns (2/3) -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot text-primary me-2"></i> Bản đồ người dùng</h5>
-                <button id="refreshMap" class="btn btn-sm btn-outline-secondary">
-                    <i class="fa-solid fa-rotate"></i>
+<!-- Map Full Width -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Bản đồ người dùng</h5>
+        <div class="d-flex align-items-center gap-2">
+            <small id="connectionStatus" class="text-muted"><i class="fa-solid fa-plug me-1"></i>Đang kết nối...</small>
+            <button id="refreshMap" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+    </div>
+    <div class="card-body p-0 position-relative">
+        <div id="goongMap" style="height: 550px;"></div>
+
+        <!-- Layer Toggles -->
+        <div class="position-absolute" style="top: 10px; right: 10px; z-index: 10;">
+            <div class="d-flex flex-column gap-2 p-2 rounded-3" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <small class="text-muted text-center fw-semibold">Hiển thị</small>
+                <button class="btn btn-success btn-sm active" id="btnLive" onclick="toggleLayer('live')">
+                    <i class="fa-solid fa-circle-check me-1"></i>Live
                 </button>
-            </div>
-            <div class="card-body p-0 position-relative">
-                <!-- Map Container -->
-                <div id="userLocationMap" style="height: 500px; border-radius: 0 0 8px 8px;"></div>
-                
-                <!-- Layer Toggles - Floating on top-right of map -->
-                <div class="position-absolute" style="top: 10px; right: 10px; z-index: 1000;">
-                    <div class="d-flex flex-column gap-2 p-2 rounded-3" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                        <small class="text-muted text-center fw-semibold">Hiển thị</small>
-                        <!-- Live Toggle -->
-                        <input type="checkbox" class="btn-check" id="toggleLive" checked>
-                        <label class="btn btn-success btn-sm d-flex align-items-center justify-content-start gap-2" for="toggleLive" style="min-width: 130px; border: none;">
-                            <i class="fa-regular fa-circle-check" id="iconLive"></i>Live
-                        </label>
-                        
-                        <!-- Heatmap Toggle -->
-                        <input type="checkbox" class="btn-check" id="toggleHeatmap" checked>
-                        <label class="btn btn-danger btn-sm d-flex align-items-center justify-content-start gap-2" for="toggleHeatmap" style="min-width: 130px; border: none;">
-                            <i class="fa-regular fa-circle-check" id="iconHeatmap"></i>Heatmap
-                        </label>
-                        
-                        <!-- Paths Toggle -->
-                        <input type="checkbox" class="btn-check" id="togglePaths" checked>
-                        <label class="btn btn-primary btn-sm d-flex align-items-center justify-content-start gap-2" for="togglePaths" style="min-width: 130px; border: none;">
-                            <i class="fa-regular fa-circle-check" id="iconPaths"></i>Tuyến đường
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Legend -->
-                <div class="p-2 bg-light border-top">
-                    <div class="d-flex flex-wrap gap-3 justify-content-center small">
-                        <span><i class="fa-solid fa-circle text-success me-1"></i> Đang online</span>
-                        <span><i class="fa-solid fa-fire text-danger me-1"></i> Heatmap (mật độ)</span>
-                        <span><i class="fa-solid fa-route text-primary me-1"></i> Tuyến đường</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer bg-white text-center">
-                <small id="connectionStatus" class="text-muted"><i class="fa-solid fa-plug me-1"></i>Đang kết nối real-time...</small>
+                <button class="btn btn-danger btn-sm active" id="btnHeatmap" onclick="toggleLayer('heatmap')">
+                    <i class="fa-solid fa-circle-check me-1"></i>Heatmap
+                </button>
+                <button class="btn btn-primary btn-sm active" id="btnPaths" onclick="toggleLayer('paths')">
+                    <i class="fa-solid fa-circle-check me-1"></i>Tuyến đường
+                </button>
             </div>
         </div>
     </div>
-    
-    <!-- User History Section - 4 columns (1/3) -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white">
-                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i> Lịch sử hoạt động (24h)</h5>
-            </div>
-            <div class="card-body p-0">
-                <!-- Stats Summary -->
-                <div class="p-3 border-bottom bg-light">
-                    <div class="row g-2 text-center">
-                        <div class="col-6">
-                            <div class="small text-muted">Tổng người dùng</div>
-                            <div class="fw-bold fs-5" id="totalUsers">-</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="small text-muted">Khách ẩn danh</div>
-                            <div class="fw-bold fs-5" id="anonymousUsers">-</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- User List -->
-                <div id="userHistoryList" style="height: 420px; overflow-y: auto;">
-                    <div class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-spinner fa-spin fs-3 mb-2"></i>
-                        <p class="mb-0">Đang tải dữ liệu...</p>
-                    </div>
-                </div>
-            </div>
+    <div class="card-footer bg-white">
+        <div class="d-flex flex-wrap gap-3 justify-content-center small">
+            <span><i class="fa-solid fa-circle text-success me-1"></i>Đang online</span>
+            <span><i class="fa-solid fa-fire text-danger me-1"></i>Heatmap (mật độ)</span>
+            <span><i class="fa-solid fa-route text-primary me-1"></i>Tuyến đường phổ biến</span>
         </div>
     </div>
 </div>
@@ -123,452 +94,259 @@ else
 }
 
 @section Styles {
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <style>
-        .user-history-item {
-            transition: background-color 0.2s;
-        }
-        .user-history-item:hover {
-            background-color: #f8f9fa;
-        }
-        .user-anonymous {
-            border-left: 3px solid #6c757d;
-        }
-        .user-registered {
-            border-left: 3px solid #28a745;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.css" rel="stylesheet" />
 }
 
 @section Scripts {
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Leaflet.Heat Plugin -->
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.min.js"></script>
-    <!-- SignalR Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    
+
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // ===== CONFIG =====
-            var apiBaseUrl = 'https://localhost:7244';
-            var map, markers = {}, heatmapLayer, pathLayers = [];
-            var onlineCount = 0;
-            var pollingInterval = null;
-            
-            // Layer states - independent toggles
-            var layerStates = { live: true, heatmap: true, paths: true };
-            
-            // Icons
-            var onlineIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: "<div style='background-color:#28a745;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);'></div>",
-                iconSize: [16, 16], iconAnchor: [8, 8]
-            });
-            
-            // ===== LEAFLET MAP SETUP =====
-            map = L.map('userLocationMap').setView([10.762, 106.702], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
-            
-            // ===== SIGNALR SETUP =====
-            var connection = new signalR.HubConnectionBuilder()
-                .withUrl(apiBaseUrl + '/hubs/userlocation')
-                .withAutomaticReconnect()
-                .build();
-            
-            function updateConnectionStatus(status, color) {
-                var statusEl = document.getElementById('connectionStatus');
-                if (statusEl) {
-                    statusEl.innerHTML = '<span class="' + color + '"><i class="fa-solid fa-circle me-1" style="font-size:8px"></i>' + status + '</span>';
-                }
-            }
-            
-            // ===== LAYER MANAGEMENT - BUG FIX: Separate clear functions =====
-            
-            // Chỉ remove markers khỏi map, KHÔNG xóa object markers
-            function clearLiveFromMapOnly() {
-                Object.values(markers).forEach(m => {
-                    if (map.hasLayer(m)) map.removeLayer(m);
-                });
-            }
-            
-            // Xóa heatmap layer
-            function clearHeatmapLayer() {
-                if (heatmapLayer) {
-                    map.removeLayer(heatmapLayer);
-                    heatmapLayer = null;
-                }
-            }
-            
-            // Xóa tất cả path layers (polyline + markers)
-            function clearPathLayers() {
-                pathLayers.forEach(l => map.removeLayer(l));
-                pathLayers = [];
-            }
-            
-            // Hiện lại markers đã có trong object markers
-            function showLiveMarkers() {
-                Object.values(markers).forEach(m => {
-                    if (!map.hasLayer(m)) m.addTo(map);
-                });
-            }
-            
-            function loadHeatmap() {
-                fetch(apiBaseUrl + '/api/userlocation/heatmap')
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.points && data.points.length > 0) {
-                            heatmapLayer = L.heatLayer(data.points, {
-                                radius: 25, blur: 15, maxZoom: 17,
-                                gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1: 'red' }
-                            }).addTo(map);
-                        }
-                    })
-                    .catch(err => console.error('[Heatmap] Error:', err));
-            }
-            
-            // BUG FIX: Tất cả path layers (polyline + markers) đều phải lưu vào pathLayers
-            function loadPaths() {
-                fetch(apiBaseUrl + '/api/userlocation/paths')
-                    .then(r => r.json())
-                    .then(data => {
-                        clearPathLayers(); // Clear cũ trước khi vẽ mới
-                        
-                        if (data.routes && data.routes.length > 0) {
-                            data.routes.forEach(route => {
-                                // Polyline nối từ POI đầu đến POI cuối
-                                var polyline = L.polyline(
-                                    [[route.fromLat, route.fromLng], [route.toLat, route.toLng]],
-                                    { color: '#0d6efd', weight: 3 + Math.min(route.count, 5), opacity: 0.7, dashArray: '5, 10' }
-                                ).addTo(map);
-                                pathLayers.push(polyline);
-                                
-                                // Marker tại POI đầu
-                                var fromMarker = L.marker([route.fromLat, route.fromLng], {
-                                    icon: L.divIcon({
-                                        className: 'custom-div-icon',
-                                        html: "<div style='background-color:#0d6efd;width:14px;height:14px;border-radius:50%;border:2px solid white;'></div>",
-                                        iconSize: [14, 14], iconAnchor: [7, 7]
-                                    })
-                                }).bindPopup('<b>' + route.fromPoiName + '</b><br>Điểm bắt đầu').addTo(map);
-                                pathLayers.push(fromMarker);
-                                
-                                // Marker tại POI cuối
-                                var toMarker = L.marker([route.toLat, route.toLng], {
-                                    icon: L.divIcon({
-                                        className: 'custom-div-icon',
-                                        html: "<div style='background-color:#dc3545;width:14px;height:14px;border-radius:50%;border:2px solid white;'></div>",
-                                        iconSize: [14, 14], iconAnchor: [7, 7]
-                                    })
-                                }).bindPopup('<b>' + route.toPoiName + '</b><br>Điểm kết thúc<br><span class="badge bg-primary">' + route.count + ' lượt</span>').addTo(map);
-                                pathLayers.push(toMarker);
-                                
-                                // Popup cho polyline (click đường line)
-                                polyline.bindPopup('<b>Tuyến:</b> ' + route.fromPoiName + ' → ' + route.toPoiName + '<br><b>Số lượt:</b> ' + route.count);
-                            });
-                        }
-                    })
-                    .catch(err => console.error('[Paths] Error:', err));
-            }
-            
-            // Update map theo layerStates - BUG FIX: Không xóa markers object
-            function updateMapLayers() {
-                if (layerStates.live) showLiveMarkers();
-                else clearLiveFromMapOnly();
-                
-                if (layerStates.heatmap) {
-                    if (!heatmapLayer) loadHeatmap();
-                } else clearHeatmapLayer();
-                
-                if (layerStates.paths) {
-                    if (pathLayers.length === 0) loadPaths();
-                } else clearPathLayers();
-            }
-            
-            // ===== SYNC LIVE MARKERS FROM /stats - Đồng bộ online users =====
-            function syncLiveMarkersFromStats(data) {
-                if (!data.onlineLocations) return;
-                
-                var activeDeviceIds = new Set();
-                
-                data.onlineLocations.forEach(function (loc) {
-                    var deviceId = loc.deviceId || loc.DeviceId;
-                    var lat = loc.latitude || loc.Latitude;
-                    var lng = loc.longitude || loc.Longitude;
-                    activeDeviceIds.add(deviceId);
-                    
-                    // Update hoặc tạo marker
-                    if (markers[deviceId]) {
-                        map.removeLayer(markers[deviceId]);
-                    }
-                    
-                    var marker = L.marker([lat, lng], { icon: onlineIcon })
-                        .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Last seen:</b> ' + new Date(loc.timestamp || loc.Timestamp).toLocaleString());
-                    
-                    markers[deviceId] = marker;
-                    if (layerStates.live) marker.addTo(map);
-                });
-                
-                // Xóa markers của device đã offline
-                Object.keys(markers).forEach(function(deviceId) {
-                    if (!activeDeviceIds.has(deviceId)) {
-                        map.removeLayer(markers[deviceId]);
-                        delete markers[deviceId];
-                    }
-                });
-                
-                onlineCount = Object.keys(markers).length;
-                document.getElementById('onlineCount').textContent = onlineCount;
-            }
-            
-            // ===== SIGNALR - Real-time events =====
-            connection.on('LocationUpdated', function (data) {
-                var deviceId = data.deviceId || data.DeviceId;
-                var lat = data.latitude || data.Latitude;
-                var lng = data.longitude || data.Longitude;
-                
-                if (markers[deviceId]) {
-                    map.removeLayer(markers[deviceId]);
-                }
-                
-                var marker = L.marker([lat, lng], { icon: onlineIcon })
-                    .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Time:</b> ' + new Date().toLocaleTimeString());
-                
-                markers[deviceId] = marker;
-                if (layerStates.live) marker.addTo(map);
-                
-                onlineCount = Object.keys(markers).length;
-                document.getElementById('onlineCount').textContent = onlineCount;
-            });
-            
-            // UserOnline - Thêm marker mới ngay lập tức
-            connection.on('UserOnline', function (data) {
-                var deviceId = data.deviceId || data.DeviceId;
-                var lat = data.latitude || data.Latitude || 0;
-                var lng = data.longitude || data.Longitude || 0;
-                
-                // Chỉ thêm marker nếu có tọa độ hợp lệ
-                if (lat !== 0 && lng !== 0) {
-                    if (markers[deviceId]) {
-                        map.removeLayer(markers[deviceId]);
-                    }
-                    
-                    var marker = L.marker([lat, lng], { icon: onlineIcon })
-                        .bindPopup('<b>Device:</b> ' + deviceId + '<br><b>Status:</b> Online<br><b>Time:</b> ' + new Date().toLocaleTimeString());
-                    
-                    markers[deviceId] = marker;
-                    if (layerStates.live) marker.addTo(map);
-                    
-                    onlineCount = Object.keys(markers).length;
-                    document.getElementById('onlineCount').textContent = onlineCount;
-                    console.log('[SignalR] User online:', deviceId);
-                }
-            });
-            
-            // UserOffline - Xóa marker ngay lập tức
-            connection.on('UserOffline', function (data) {
-                var deviceId = data.deviceId || data.DeviceId;
-                
-                if (markers[deviceId]) {
-                    map.removeLayer(markers[deviceId]);
-                    delete markers[deviceId];
-                    
-                    onlineCount = Object.keys(markers).length;
-                    document.getElementById('onlineCount').textContent = onlineCount;
-                    console.log('[SignalR] User offline:', deviceId);
-                }
-            });
-            
-            // Polling 5 giây để sync online users (nhanh hơn để đồng bộ với mobile heartbeat)
-            function startPolling() {
-                if (pollingInterval) clearInterval(pollingInterval);
-                pollingInterval = setInterval(function() {
-                    fetch(apiBaseUrl + '/api/userlocation/stats')
-                        .then(r => r.json())
-                        .then(data => {
-                            document.getElementById('onlineCount').textContent = data.onlineNow || 0;
-                            document.getElementById('active24hCount').textContent = data.active24h || 0;
-                            syncLiveMarkersFromStats(data); // Sync markers
-                        })
-                        .catch(err => console.error('[Polling] Error:', err));
-                }, 5000); // 5 giây - đồng bộ với mobile heartbeat
-            }
-            
-            // ===== USER HISTORY =====
-            function loadUserHistory() {
-                fetch(apiBaseUrl + '/api/userlocation/history')
-                    .then(r => r.json())
-                    .then(data => {
-                        document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-                        document.getElementById('anonymousUsers').textContent = data.anonymousUsers || 0;
-                        
-                        var listEl = document.getElementById('userHistoryList');
-                        if (data.users && data.users.length > 0) {
-                            var html = data.users.map(user => {
-                                var isAnon = user.isAnonymous;
-                                var userClass = isAnon ? 'user-anonymous' : 'user-registered';
-                                var badge = isAnon ? 
-                                    '<span class="badge bg-secondary">Ẩn danh</span>' : 
-                                    '<span class="badge bg-success">Đăng ký</span>';
-                                var timeAgo = new Date(user.lastSeen).toLocaleString('vi-VN');
-                                
-                                return `
-                                    <div class="user-history-item p-3 border-bottom ${userClass}">
-                                        <div class="d-flex justify-content-between align-items-start mb-1">
-                                            <div class="fw-semibold small text-truncate" style="max-width: 150px;" title="${user.deviceId}">
-                                                <i class="fa-solid fa-mobile-screen me-1 text-muted"></i>
-                                                ${user.deviceId.substring(0, 12)}...
-                                            </div>
-                                            ${badge}
-                                        </div>
-                                        <div class="small text-muted mb-1">
-                                            <i class="fa-regular fa-clock me-1"></i>${timeAgo}
-                                        </div>
-                                        <div class="d-flex justify-content-between small">
-                                            <span class="text-muted">${user.locationCount} điểm</span>
-                                            <span class="text-primary cursor-pointer" onclick="focusOnMap(${user.lastLocation.lat}, ${user.lastLocation.lng})">
-                                                <i class="fa-solid fa-location-dot"></i> Xem
-                                            </span>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('');
-                            listEl.innerHTML = html;
-                        } else {
-                            listEl.innerHTML = `
-                                <div class="text-center py-5 text-muted">
-                                    <i class="fa-solid fa-users fs-1 mb-2"></i>
-                                    <p class="mb-0">Chưa có dữ liệu người dùng</p>
-                                    <small>Dữ liệu sẽ xuất hiện khi có người dùng hoạt động</small>
-                                </div>
-                            `;
-                        }
-                    })
-                    .catch(err => {
-                        console.error('[History] Error:', err);
-                        document.getElementById('userHistoryList').innerHTML = `
-                            <div class="text-center py-5 text-muted">
-                                <i class="fa-solid fa-triangle-exclamation fs-1 mb-2"></i>
-                                <p class="mb-0">Không thể tải dữ liệu</p>
-                            </div>
-                        `;
-                    });
-            }
-            
-            // Global function để focus map
-            window.focusOnMap = function(lat, lng) {
-                map.setView([lat, lng], 18);
-                // Tạo marker tạm thời
-                var tempMarker = L.marker([lat, lng], { icon: onlineIcon }).addTo(map);
-                tempMarker.bindPopup('<b>Vị trí người dùng</b>').openPopup();
-                setTimeout(() => {
-                    map.removeLayer(tempMarker);
-                }, 3000);
-            };
-            
-            // ===== EVENT LISTENERS =====
-            function updateIcon(checkboxId, iconId) {
-                var checkbox = document.getElementById(checkboxId);
-                var icon = document.getElementById(iconId);
-                if (checkbox.checked) {
-                    icon.classList.remove('fa-circle');
-                    icon.classList.add('fa-circle-check');
-                } else {
-                    icon.classList.remove('fa-circle-check');
-                    icon.classList.add('fa-circle');
-                }
-            }
-            
-            // Toggle Live - chỉ show/hide, không xóa markers object
-            document.getElementById('toggleLive').addEventListener('change', function(e) {
-                layerStates.live = e.target.checked;
-                updateIcon('toggleLive', 'iconLive');
-                if (layerStates.live) showLiveMarkers();
-                else clearLiveFromMapOnly();
-            });
-            
-            // Toggle Heatmap - dùng hàm clear riêng
-            document.getElementById('toggleHeatmap').addEventListener('change', function(e) {
-                layerStates.heatmap = e.target.checked;
-                updateIcon('toggleHeatmap', 'iconHeatmap');
-                if (layerStates.heatmap) loadHeatmap();
-                else clearHeatmapLayer();
-            });
-            
-            // Toggle Paths - dùng hàm clear riêng
-            document.getElementById('togglePaths').addEventListener('change', function(e) {
-                layerStates.paths = e.target.checked;
-                updateIcon('togglePaths', 'iconPaths');
-                if (layerStates.paths) loadPaths();
-                else clearPathLayers();
-            });
-            
-            // Refresh - dùng đúng hàm clear riêng, không xóa markers object
-            document.getElementById('refreshMap').addEventListener('click', function() {
-                if (layerStates.heatmap) {
-                    clearHeatmapLayer();
-                    loadHeatmap();
-                }
-                if (layerStates.paths) {
-                    clearPathLayers();
-                    loadPaths();
-                }
-                if (layerStates.live) {
-                    // Sync lại từ API, không xóa markers object mà update
-                    fetch(apiBaseUrl + '/api/userlocation/stats')
-                        .then(r => r.json())
-                        .then(data => syncLiveMarkersFromStats(data))
-                        .catch(err => console.error('[Refresh] Error:', err));
-                }
-                loadUserHistory();
-            });
-            
-            // ===== INITIALIZATION =====
-            function initMapData() {
-                // Load initial stats và sync markers
-                fetch(apiBaseUrl + '/api/userlocation/stats')
-                    .then(r => r.json())
-                    .then(data => {
-                        document.getElementById('active24hCount').textContent = data.active24h || 0;
-                        syncLiveMarkersFromStats(data); // Sync markers từ API
-                        
-                        // Load các layer static (heatmap, paths)
-                        if (layerStates.heatmap) loadHeatmap();
-                        if (layerStates.paths) loadPaths();
-                    })
-                    .catch(err => console.error('[Init] Error:', err));
-                
-                loadUserHistory();
-            }
-            
-            // Start SignalR + Polling
-            connection.start()
-                .then(function () {
-                    console.log('[SignalR] Connected!');
-                    updateConnectionStatus('Kết nối real-time thành công', 'text-success');
-                    initMapData();
-                    startPolling(); // Bắt đầu polling 30s
-                })
-                .catch(function (err) {
-                    console.error('[SignalR] Connection failed:', err);
-                    updateConnectionStatus('Mất kết nối real-time (dùng polling)', 'text-warning');
-                    initMapData();
-                    startPolling(); // Vẫn polling nếu SignalR fail
-                });
-            
-            connection.onreconnecting(function (err) {
-                updateConnectionStatus('Đang kết nối lại...', 'text-warning');
-            });
-            
-            connection.onreconnected(function (connectionId) {
-                updateConnectionStatus('Kết nối real-time thành công', 'text-success');
-            });
-            
-            console.log('Statistics page initialized with Heatmap + Popular Routes + Live Monitoring');
+    document.addEventListener('DOMContentLoaded', function () {
+        var apiBaseUrl = '@(ViewBag.ApiBaseUrl ?? "https://localhost:7244")';
+        var GOONG_MAPTILE_KEY = '2Dnp8yaRq6ivkjX5c7D7RFcx5tDSi5g512jA5dG9';
+        goongjs.accessToken = GOONG_MAPTILE_KEY;
+
+        var map = new goongjs.Map({
+            container: 'goongMap',
+            style: 'https://tiles.goong.io/assets/goong_map_web.json?api_key=' + GOONG_MAPTILE_KEY,
+            center: [106.702, 10.762],
+            zoom: 14
         });
+
+        var liveMarkers = {};
+        var heatmapCanvas = null;
+        var pathLines = [];
+        var pathMarkers = [];
+        var layerStates = { live: true, heatmap: true, paths: true };
+        var heatmapData = [];
+
+        function updateConnectionStatus(msg, cls) {
+            var el = document.getElementById('connectionStatus');
+            if (el) el.innerHTML = '<span class="' + cls + '"><i class="fa-solid fa-circle me-1" style="font-size:8px"></i>' + msg + '</span>';
+        }
+
+        // ===== LIVE MARKERS =====
+        function clearLiveMarkers() {
+            Object.values(liveMarkers).forEach(m => m.remove());
+            liveMarkers = {};
+        }
+
+        function showLiveMarkers() {
+            Object.values(liveMarkers).forEach(m => m.addTo(map));
+        }
+
+        function syncLive(data) {
+            if (!data.onlineLocations) return;
+            var activeIds = new Set();
+            data.onlineLocations.forEach(function (loc) {
+                var did = loc.deviceId || loc.DeviceId;
+                var lat = loc.latitude || loc.Latitude;
+                var lng = loc.longitude || loc.Longitude;
+                activeIds.add(did);
+                if (liveMarkers[did]) liveMarkers[did].remove();
+
+                var el = document.createElement('div');
+                el.style.cssText = 'width:16px;height:16px;background:#28a745;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);';
+
+                var marker = new goongjs.Marker({ element: el })
+                    .setLngLat([lng, lat])
+                    .setPopup(new goongjs.Popup({ offset: 12 }).setHTML('<b>Device:</b> ' + did + '<br><b>Time:</b> ' + new Date(loc.timestamp || loc.Timestamp).toLocaleTimeString()));
+                liveMarkers[did] = marker;
+                if (layerStates.live) marker.addTo(map);
+            });
+            Object.keys(liveMarkers).forEach(function (did) {
+                if (!activeIds.has(did)) { liveMarkers[did].remove(); delete liveMarkers[did]; }
+            });
+            document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
+        }
+
+        // ===== HEATMAP (Canvas overlay) =====
+        function drawHeatmap() {
+            removeHeatmapCanvas();
+            if (!layerStates.heatmap || heatmapData.length === 0) return;
+
+            var canvas = document.createElement('canvas');
+            canvas.id = 'heatmapOverlay';
+            canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;opacity:0.6;';
+            document.getElementById('goongMap').appendChild(canvas);
+            heatmapCanvas = canvas;
+
+            var rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            var ctx = canvas.getContext('2d');
+
+            heatmapData.forEach(function (pt) {
+                var projected = map.project([pt[1], pt[0]]); // [lng, lat]
+                var x = projected.x;
+                var y = projected.y;
+                var gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
+                gradient.addColorStop(0, 'rgba(255,0,0,0.4)');
+                gradient.addColorStop(0.5, 'rgba(255,165,0,0.2)');
+                gradient.addColorStop(1, 'rgba(255,255,0,0)');
+                ctx.beginPath();
+                ctx.fillStyle = gradient;
+                ctx.arc(x, y, 30, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function removeHeatmapCanvas() {
+            var old = document.getElementById('heatmapOverlay');
+            if (old) old.remove();
+            heatmapCanvas = null;
+        }
+
+        map.on('moveend', function () { if (layerStates.heatmap) drawHeatmap(); });
+        map.on('zoomend', function () { if (layerStates.heatmap) drawHeatmap(); });
+
+        function loadHeatmap() {
+            fetch(apiBaseUrl + '/api/userlocation/heatmap')
+                .then(r => r.json())
+                .then(data => {
+                    heatmapData = (data.points || []).map(p => [p[1], p[0]]); // [lng, lat]
+                    if (layerStates.heatmap) drawHeatmap();
+                }).catch(err => console.error('[Heatmap]', err));
+        }
+
+        // ===== PATHS (Route lines) =====
+        function clearPaths() {
+            pathLines.forEach(function (id) { if (map.getLayer(id)) map.removeLayer(id); if (map.getSource(id)) map.removeSource(id); });
+            pathLines = [];
+            pathMarkers.forEach(m => m.remove());
+            pathMarkers = [];
+        }
+
+        function loadPaths() {
+            fetch(apiBaseUrl + '/api/userlocation/paths')
+                .then(r => r.json())
+                .then(data => {
+                    clearPaths();
+                    if (!data.routes || !layerStates.paths) return;
+                    data.routes.forEach(function (route, i) {
+                        var id = 'route-' + i;
+                        map.addSource(id, {
+                            type: 'geojson',
+                            data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [[route.fromLng, route.fromLat], [route.toLng, route.toLat]] } }
+                        });
+                        map.addLayer({
+                            id: id,
+                            type: 'line',
+                            source: id,
+                            paint: {
+                                'line-color': '#0d6efd',
+                                'line-width': 3 + Math.min(route.count, 5),
+                                'line-opacity': 0.7,
+                                'line-dasharray': [2, 2]
+                            }
+                        });
+                        pathLines.push(id);
+
+                        // Start/End markers
+                        var startEl = document.createElement('div');
+                        startEl.style.cssText = 'width:12px;height:12px;background:#0d6efd;border-radius:50%;border:2px solid white;';
+                        var startM = new goongjs.Marker({ element: startEl }).setLngLat([route.fromLng, route.fromLat])
+                            .setPopup(new goongjs.Popup({ offset: 8 }).setHTML('<b>' + route.fromPoiName + '</b><br>Điểm bắt đầu'));
+                        startM.addTo(map);
+                        pathMarkers.push(startM);
+
+                        var endEl = document.createElement('div');
+                        endEl.style.cssText = 'width:12px;height:12px;background:#dc3545;border-radius:50%;border:2px solid white;';
+                        var endM = new goongjs.Marker({ element: endEl }).setLngLat([route.toLng, route.toLat])
+                            .setPopup(new goongjs.Popup({ offset: 8 }).setHTML('<b>' + route.toPoiName + '</b><br>' + route.count + ' lượt'));
+                        endM.addTo(map);
+                        pathMarkers.push(endM);
+                    });
+                }).catch(err => console.error('[Paths]', err));
+        }
+
+        // ===== TOGGLE =====
+        window.toggleLayer = function (layer) {
+            layerStates[layer] = !layerStates[layer];
+            var btn = document.getElementById('btn' + layer.charAt(0).toUpperCase() + layer.slice(1));
+            btn.classList.toggle('active', layerStates[layer]);
+            var icon = btn.querySelector('i');
+            icon.className = layerStates[layer] ? 'fa-solid fa-circle-check me-1' : 'fa-regular fa-circle me-1';
+
+            if (layer === 'live') { if (layerStates.live) showLiveMarkers(); else clearLiveMarkers(); }
+            if (layer === 'heatmap') { if (layerStates.heatmap) drawHeatmap(); else removeHeatmapCanvas(); }
+            if (layer === 'paths') { if (layerStates.paths) loadPaths(); else clearPaths(); }
+        };
+
+        // ===== SIGNALR =====
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl(apiBaseUrl + '/hubs/userlocation')
+            .withAutomaticReconnect([0, 1000, 2000, 5000])
+            .build();
+
+        connection.on('UserOnline', function (data) {
+            var did = data.deviceId || data.DeviceId;
+            var lat = data.latitude || data.Latitude || 0;
+            var lng = data.longitude || data.Longitude || 0;
+            if (lat !== 0 && lng !== 0 && layerStates.live) {
+                if (liveMarkers[did]) liveMarkers[did].remove();
+                var el = document.createElement('div');
+                el.style.cssText = 'width:16px;height:16px;background:#28a745;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);';
+                liveMarkers[did] = new goongjs.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+                document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
+            }
+        });
+
+        connection.on('LocationUpdated', function (data) {
+            var did = data.deviceId || data.DeviceId;
+            var lat = data.latitude || data.Latitude;
+            var lng = data.longitude || data.Longitude;
+            if (liveMarkers[did]) liveMarkers[did].remove();
+            if (layerStates.live) {
+                var el = document.createElement('div');
+                el.style.cssText = 'width:16px;height:16px;background:#28a745;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);';
+                liveMarkers[did] = new goongjs.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+            }
+        });
+
+        connection.on('UserOffline', function (data) {
+            var did = data.deviceId || data.DeviceId;
+            if (liveMarkers[did]) { liveMarkers[did].remove(); delete liveMarkers[did]; }
+            document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
+        });
+
+        // ===== POLLING 3s =====
+        function poll() {
+            fetch(apiBaseUrl + '/api/userlocation/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('onlineCount').textContent = data.onlineNow || 0;
+                    document.getElementById('active24hCount').textContent = data.active24h || 0;
+                    var total = (data.onlineLocations || []).length;
+                    document.getElementById('locationPoints').textContent = data.active24h || 0;
+                    syncLive(data);
+                }).catch(err => console.error('[Poll]', err));
+        }
+
+        document.getElementById('refreshMap').addEventListener('click', function () {
+            poll();
+            if (layerStates.heatmap) loadHeatmap();
+            if (layerStates.paths) { clearPaths(); loadPaths(); }
+        });
+
+        // ===== INIT =====
+        map.on('load', function () {
+            poll();
+            loadHeatmap();
+            loadPaths();
+        });
+
+        connection.start().then(function () {
+            updateConnectionStatus('Real-time kết nối thành công', 'text-success');
+            setInterval(poll, 3000);
+        }).catch(function () {
+            updateConnectionStatus('Dùng polling (3s)', 'text-warning');
+            setInterval(poll, 3000);
+        });
+
+        connection.onreconnecting(function () { updateConnectionStatus('Đang kết nối lại...', 'text-warning'); });
+        connection.onreconnected(function () { updateConnectionStatus('Real-time kết nối thành công', 'text-success'); });
+    });
     </script>
 }
