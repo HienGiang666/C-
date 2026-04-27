@@ -24,10 +24,37 @@
                        HorizontalOptions="Fill"
                        BackgroundColor="Transparent"
                        ReturnType="Search"
+                       TextChanged="OnSearchTextChanged"
                        Completed="OnSearchCompleted"/>
                 <Button Grid.Column="2" Text="{Binding [Search], Source={x:Static services:LocalizationResourceManager.Instance}}" BackgroundColor="#00B14F" TextColor="White" CornerRadius="16"
                         HeightRequest="36" Padding="12,0" FontSize="13" Clicked="OnSearchClicked"/>
             </Grid>
+        </Border>
+
+        <!-- Search Autocomplete Dropdown -->
+        <Border x:Name="SearchDropdown" IsVisible="False" Margin="15,60,15,0"
+                VerticalOptions="Start" HorizontalOptions="Fill"
+                BackgroundColor="White" StrokeShape="RoundRectangle 12" StrokeThickness="0"
+                Shadow="{Shadow Brush=Black, Offset='0,4', Opacity=0.12, Radius=10}"
+                MaximumHeightRequest="260">
+            <CollectionView x:Name="SearchResultsView" SelectionMode="Single"
+                            SelectionChanged="OnSearchResultSelected">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="14,10" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                            <Label Grid.Column="0" Text="{x:Static helpers:IconFont.MapMarker}"
+                                   FontFamily="MaterialIcons" FontSize="18"
+                                   TextColor="#00B14F" VerticalOptions="Center"/>
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"
+                                       TextColor="#1A1D26" LineBreakMode="TailTruncation" MaxLines="1"/>
+                                <Label Text="{Binding Address}" FontSize="11"
+                                       TextColor="#94A3B8" LineBreakMode="TailTruncation" MaxLines="1"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
         </Border>
 
         <!-- Re-center GPS button -->

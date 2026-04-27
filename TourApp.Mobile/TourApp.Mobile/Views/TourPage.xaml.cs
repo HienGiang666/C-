@@ -60,6 +60,15 @@ public partial class TourPage : ContentPage
             try
             {
                 UpdateLocalizedText();
+                
+                // Refresh tour items to re-evaluate LocalizedDescription bindings
+                if (_allTours != null)
+                {
+                    var current = Tours.ToList();
+                    Tours.Clear();
+                    foreach (var tour in current)
+                        Tours.Add(tour);
+                }
             }
             catch (Exception ex)
             {
