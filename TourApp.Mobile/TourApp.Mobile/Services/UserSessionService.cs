@@ -88,18 +88,34 @@ namespace TourApp.Mobile.Services
                 await ApiService.AutoDiscoverApiAsync();
                 var baseUrl = ApiService.BaseUrl;
 
+                // Kiểm tra mock mode từ LocationService
+                var isMocking = LocationService.Current?.IsMocking == true;
+                var mockLoc = LocationService.Current?.MockLocation;
+
                 // Lấy GPS hiện tại để gửi kèm heartbeat
                 double lat = 0, lng = 0;
-                try
+                bool isMock = false;
+
+                if (isMocking && mockLoc != null)
                 {
-                    var location = await Geolocation.GetLastKnownLocationAsync();
-                    if (location != null)
-                    {
-                        lat = location.Latitude;
-                        lng = location.Longitude;
-                    }
+                    // Đang mock → gửi vị trí giả lập
+                    lat = mockLoc.Latitude;
+                    lng = mockLoc.Longitude;
+                    isMock = true;
                 }
-                catch { }
+                else
+                {
+                    try
+                    {
+                        var location = await Geolocation.GetLastKnownLocationAsync();
+                        if (location != null)
+                        {
+                            lat = location.Latitude;
+                            lng = location.Longitude;
+                        }
+                    }
+                    catch { }
+                }
 
                 using var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
                 client.Timeout = TimeSpan.FromSeconds(5);
@@ -115,7 +131,8 @@ namespace TourApp.Mobile.Services
                     Version = DeviceInfo.Version.ToString(),
                     Latitude = lat,
                     Longitude = lng,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    IsMock = isMock
                 };
 
                 var response = await client.PostAsJsonAsync("/api/userlocation/session", request);

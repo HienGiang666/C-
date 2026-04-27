@@ -584,6 +584,8 @@ public partial class MapPage : ContentPage
                     var mockLoc = new Location(lat, lng);
                     _locationService.MockLocation = mockLoc;
                     _lastLocation = mockLoc;
+                    // Gửi mock location đến API ngay lập tức → heatmap CMS cập nhật real-time
+                    _ = Task.Run(async () => await _locationService.SendMockLocationNowAsync());
                     MainThread.BeginInvokeOnMainThread(() => {
                         if (_isJsMapReady)
                         {
@@ -640,6 +642,13 @@ public partial class MapPage : ContentPage
         if (_isJsMapReady)
         {
             MapWebView.Eval($"toggleMockClick({_locationService.IsMocking.ToString().ToLower()});");
+        }
+
+        // Khi tắt mock: xóa vị trí giả lập, gửi vị trí thật ngay lập tức
+        if (!_locationService.IsMocking)
+        {
+            _locationService.MockLocation = null;
+            _ = Task.Run(async () => await _locationService.SendRealLocationNowAsync());
         }
     }
 

@@ -46,7 +46,8 @@ public class UserLocationController : ControllerBase
             log.Latitude,
             log.Longitude,
             log.Timestamp,
-            log.IsActive
+            log.IsActive,
+            log.IsMock
         });
         
         return Ok(log);
@@ -70,7 +71,8 @@ public class UserLocationController : ControllerBase
                 Longitude = request.Longitude,
                 Timestamp = DateTime.Now,
                 SessionId = request.GuestId,
-                IsActive = true
+                IsActive = true,
+                IsMock = request.IsMock
             });
             await _context.SaveChangesAsync();
 
@@ -83,7 +85,8 @@ public class UserLocationController : ControllerBase
                 Platform = request.Platform,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude,
-                Timestamp = DateTime.Now
+                Timestamp = DateTime.Now,
+                IsMock = request.IsMock
             });
         }
         else
@@ -119,13 +122,27 @@ public class UserLocationController : ControllerBase
             .Where(l => l.TriggerType == "qr")
             .CountAsync();
 
-        // Logs 24h
+        // Logs 24h (chỉ lấy vị trí thật)
         var recentLogs = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= since24h)
+            .Where(l => l.Timestamp >= since24h && !l.IsMock)
             .OrderByDescending(l => l.Timestamp)
             .ToListAsync();
 
         var byDevice = recentLogs.GroupBy(l => l.DeviceId).ToList();
+
+        // Lấy tên user từ bảng Users cho deviceId dạng user_X
+        var userDeviceIds = byDevice
+            .Select(g => g.Key)
+            .Where(d => d != null && d.StartsWith("user_"))
+            .Select(d => int.TryParse(d!.Substring(5), out var id) ? id : (int?)null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
+
+        var userNames = await _context.Users
+            .Where(u => userDeviceIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.FullName })
+            .ToDictionaryAsync(u => $"user_{u.Id}", u => u.FullName ?? $"user_{u.Id}");
 
         // Chi tiết từng user
         var users = byDevice.Select(g =>
@@ -134,10 +151,13 @@ public class UserLocationController : ControllerBase
             var firstLog = logs.Last();
             var lastLog = logs.First();
             var isOnline = lastLog.Timestamp >= oneMinuteAgo;
+            var deviceId = g.Key ?? "unknown";
+            var name = userNames.TryGetValue(deviceId, out var userName) ? userName : deviceId;
 
             return new
             {
-                deviceId = g.Key ?? "unknown",
+                deviceId,
+                name,
                 isAnonymous = g.Key == null || !g.Key.StartsWith("user_"),
                 isOnline,
                 firstSeen = firstLog.Timestamp,
@@ -234,7 +254,7 @@ public class UserLocationController : ControllerBase
     {
         var since24h = DateTime.Now.AddHours(-24);
         var logs = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= since24h)
+            .Where(l => l.Timestamp >= since24h && !l.IsMock)
             .Select(l => new[] { l.Latitude, l.Longitude, 0.5 })
             .ToListAsync();
 
@@ -250,7 +270,7 @@ public class UserLocationController : ControllerBase
         var since24h = DateTime.Now.AddHours(-24);
 
         var logs = await _context.UserLocationLogs
-            .Where(l => l.Timestamp >= since24h)
+            .Where(l => l.Timestamp >= since24h && !l.IsMock)
             .OrderBy(l => l.DeviceId).ThenBy(l => l.Timestamp)
             .Select(l => new { l.DeviceId, l.Latitude, l.Longitude, l.Timestamp })
             .ToListAsync();

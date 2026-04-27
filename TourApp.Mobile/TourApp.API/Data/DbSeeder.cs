@@ -1,15 +1,32 @@
 using TourApp.API.Models;
 using System.Linq;
 using TourApp.API.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace TourApp.API.Data
 {
     public static class DbSeeder
     {
         // Hệ thống đã được chuyển sang dùng SQL Script gốc để khởi tạo Database.
+
   
 
-        public static void ApplySchemaPatches(AppDbContext context) { }
+        public static void ApplySchemaPatches(AppDbContext context)
+        {
+            try
+            {
+                // Thêm cột IsMock nếu chưa có (tương thích PostgreSQL & SQL Server)
+                var sql = context.Database.ProviderName?.Contains("PostgreSQL") == true
+                    ? "ALTER TABLE \"UserLocationLogs\" ADD COLUMN IF NOT EXISTS \"IsMock\" boolean NOT NULL DEFAULT false;"
+                    : "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[UserLocationLogs]') AND name = 'IsMock') ALTER TABLE [UserLocationLogs] ADD [IsMock] bit NOT NULL DEFAULT 0;";
+                context.Database.ExecuteSqlRaw(sql);
+                Console.WriteLine("[SchemaPatch] IsMock column ensured on UserLocationLogs.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SchemaPatch] {ex.Message}");
+            }
+        }
 
         public static void EnsureBusinessKeyCodes(AppDbContext context) { }
 

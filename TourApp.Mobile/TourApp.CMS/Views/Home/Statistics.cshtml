@@ -120,6 +120,7 @@ else
         var pathMarkers = [];
         var layerStates = { live: true, heatmap: true, paths: true };
         var heatmapData = [];
+        var heatmapDevices = {}; // deviceId -> [lng, lat] real-time
 
         function updateConnectionStatus(msg, cls) {
             var el = document.getElementById('connectionStatus');
@@ -139,11 +140,13 @@ else
         function syncLive(data) {
             if (!data.onlineLocations) return;
             var activeIds = new Set();
+            heatmapDevices = {}; // rebuild from polling snapshot
             data.onlineLocations.forEach(function (loc) {
                 var did = loc.deviceId || loc.DeviceId;
                 var lat = loc.latitude || loc.Latitude;
                 var lng = loc.longitude || loc.Longitude;
                 activeIds.add(did);
+                heatmapDevices[did] = [lng, lat];
                 if (liveMarkers[did]) liveMarkers[did].remove();
 
                 var el = document.createElement('div');
@@ -156,19 +159,21 @@ else
                 if (layerStates.live) marker.addTo(map);
             });
             Object.keys(liveMarkers).forEach(function (did) {
-                if (!activeIds.has(did)) { liveMarkers[did].remove(); delete liveMarkers[did]; }
+                if (!activeIds.has(did)) { liveMarkers[did].remove(); delete liveMarkers[did]; delete heatmapDevices[did]; }
             });
             document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
+            if (layerStates.heatmap) drawHeatmap();
         }
 
         // ===== HEATMAP (Canvas overlay) =====
         function drawHeatmap() {
             removeHeatmapCanvas();
-            if (!layerStates.heatmap || heatmapData.length === 0) return;
+            var livePts = Object.values(heatmapDevices);
+            if (!layerStates.heatmap || livePts.length === 0) return;
 
             var canvas = document.createElement('canvas');
             canvas.id = 'heatmapOverlay';
-            canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;opacity:0.6;';
+            canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;opacity:0.65;';
             document.getElementById('goongMap').appendChild(canvas);
             heatmapCanvas = canvas;
 
@@ -177,17 +182,18 @@ else
             canvas.height = rect.height;
             var ctx = canvas.getContext('2d');
 
-            heatmapData.forEach(function (pt) {
-                var projected = map.project([pt[0], pt[1]]); // [lng, lat]
+            // Chỉ vẽ user online hiện tại — mật độ thiết bị đang hoạt động
+            livePts.forEach(function (pt) {
+                var projected = map.project([pt[0], pt[1]]);
                 var x = projected.x;
                 var y = projected.y;
-                var gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
-                gradient.addColorStop(0, 'rgba(255,0,0,0.4)');
-                gradient.addColorStop(0.5, 'rgba(255,165,0,0.2)');
+                var gradient = ctx.createRadialGradient(x, y, 0, x, y, 25);
+                gradient.addColorStop(0, 'rgba(255,0,0,0.5)');
+                gradient.addColorStop(0.5, 'rgba(255,80,0,0.25)');
                 gradient.addColorStop(1, 'rgba(255,255,0,0)');
                 ctx.beginPath();
                 ctx.fillStyle = gradient;
-                ctx.arc(x, y, 30, 0, Math.PI * 2);
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
                 ctx.fill();
             });
         }
@@ -270,12 +276,16 @@ else
             var did = data.deviceId || data.DeviceId;
             var lat = data.latitude || data.Latitude || 0;
             var lng = data.longitude || data.Longitude || 0;
-            if (lat !== 0 && lng !== 0 && layerStates.live) {
-                if (liveMarkers[did]) liveMarkers[did].remove();
-                var el = document.createElement('div');
-                el.style.cssText = 'width:16px;height:16px;background:#28a745;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);';
-                liveMarkers[did] = new goongjs.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-                document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
+            if (lat !== 0 && lng !== 0) {
+                heatmapDevices[did] = [lng, lat];
+                if (layerStates.heatmap) drawHeatmap();
+                if (layerStates.live) {
+                    if (liveMarkers[did]) liveMarkers[did].remove();
+                    var el = document.createElement('div');
+                    el.style.cssText = 'width:16px;height:16px;background:#28a745;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(40,167,69,0.5);';
+                    liveMarkers[did] = new goongjs.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+                    document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
+                }
             }
         });
 
@@ -283,6 +293,8 @@ else
             var did = data.deviceId || data.DeviceId;
             var lat = data.latitude || data.Latitude;
             var lng = data.longitude || data.Longitude;
+            heatmapDevices[did] = [lng, lat];
+            if (layerStates.heatmap) drawHeatmap();
             if (liveMarkers[did]) liveMarkers[did].remove();
             if (layerStates.live) {
                 var el = document.createElement('div');
@@ -293,6 +305,8 @@ else
 
         connection.on('UserOffline', function (data) {
             var did = data.deviceId || data.DeviceId;
+            delete heatmapDevices[did];
+            if (layerStates.heatmap) drawHeatmap();
             if (liveMarkers[did]) { liveMarkers[did].remove(); delete liveMarkers[did]; }
             document.getElementById('onlineCount').textContent = Object.keys(liveMarkers).length;
         });

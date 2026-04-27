@@ -164,12 +164,13 @@
                 var statusCls = u.isOnline ? 'status-online' : 'status-offline';
                 var statusText = u.isOnline ? '<span class="text-success fw-semibold">Online</span>' : '<span class="text-muted">Offline</span>';
                 var langs = n.languages.length > 0 ? n.languages.map(langBadge).join(' ') : '<span class="text-muted small">-</span>';
-                var deviceShort = u.deviceId.length > 16 ? u.deviceId.substring(0, 16) + '...' : u.deviceId;
+                var displayName = u.name || u.deviceId;
+                var nameShort = displayName.length > 18 ? displayName.substring(0, 18) + '...' : displayName;
                 var typeBadge = u.isAnonymous ? '<span class="badge bg-secondary ms-1">Khách</span>' : '<span class="badge bg-success ms-1">User</span>';
 
                 return '<tr class="user-row' + (isNew ? ' highlight' : '') + '">' +
                     '<td class="text-muted small">' + (i + 1) + '</td>' +
-                    '<td><div class="d-flex align-items-center"><span class="status-dot ' + statusCls + ' me-2"></span><span class="fw-medium small" title="' + u.deviceId + '">' + deviceShort + '</span>' + typeBadge + '</div></td>' +
+                    '<td><div class="d-flex align-items-center"><span class="status-dot ' + statusCls + ' me-2"></span><span class="fw-medium small" title="' + displayName + '">' + nameShort + '</span>' + typeBadge + '</div></td>' +
                     '<td>' + statusText + '</td>' +
                     '<td>' + langs + '</td>' +
                     '<td class="small">' + formatTime(u.firstSeen) + '</td>' +

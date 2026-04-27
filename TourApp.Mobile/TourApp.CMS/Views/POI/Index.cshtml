@@ -61,7 +61,7 @@
                             </div>
                         </div>
                         <div class="card-footer bg-white border-top-0 p-2 pt-0 d-flex flex-wrap gap-1">
-                            <button type="button" class="btn btn-outline-success btn-sm flex-fill" style="font-size:0.7rem;" onclick="showQRCode(@item.Id, '@item.Name.Replace("'", "\\'")'))"><i class="fa-solid fa-qrcode"></i></button>
+                            <button type="button" class="btn btn-outline-success btn-sm flex-fill" style="font-size:0.7rem;" onclick='showQRCode(@item.Id, @Json.Serialize(item.Name))'><i class="fa-solid fa-qrcode"></i></button>
                             <a asp-controller="Audio" asp-action="Index" asp-route-poiId="@item.Id" class="btn btn-outline-info btn-sm flex-fill" style="font-size:0.7rem;"><i class="fa-solid fa-headphones"></i></a>
                             <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm flex-fill" style="font-size:0.7rem;"><i class="fa-solid fa-pen"></i></a>
                             <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm flex-fill" style="font-size:0.7rem;" onclick="return confirm('Xóa địa điểm này?');"><i class="fa-solid fa-trash"></i></a>
