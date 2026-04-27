@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<UserLocationLog> UserLocationLogs { get; set; } // 8. UserLocationLogs
     public DbSet<NarrationLog> NarrationLogs { get; set; } // 9. NarrationLogs
     public DbSet<POITranslation> POITranslations { get; set; } // 10. POITranslations
+    public DbSet<TourTranslation> TourTranslations { get; set; } // 11. TourTranslations
     // Note: ActivityLogs không có trong DB, CMS dùng in-memory
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,6 +39,12 @@ public class AppDbContext : DbContext
             .HasForeignKey(tp => tp.POIId);
 
         // Cấu hình các ràng buộc Unique nếu cần (giống SQL)
+        modelBuilder.Entity<TourTranslation>()
+            .HasOne(tt => tt.Tour)
+            .WithMany(t => t.Translations)
+            .HasForeignKey(tt => tt.TourId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
     }

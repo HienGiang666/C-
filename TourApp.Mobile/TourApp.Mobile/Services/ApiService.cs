@@ -507,17 +507,23 @@ namespace TourApp.Mobile.Services
             h.AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate;
             handler = h;
 #else
+#if WINDOWS
+            var winHandler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            };
+            handler = winHandler;
+#else
             var socketHandler = new SocketsHttpHandler
             {
-                PooledConnectionLifetime = TimeSpan.FromMinutes(5), // Refresh connections every 5 minutes for DNS changes
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
                 MaxConnectionsPerServer = 10,
                 EnableMultipleHttp2Connections = true,
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             };
-#if WINDOWS
-            socketHandler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
-#endif
             handler = socketHandler;
+#endif
 #endif
             var client = new HttpClient(handler)
             {

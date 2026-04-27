@@ -29,5 +29,7 @@ namespace TourApp.CMS.Models
 
         /// <summary>Mã hiển thị đầy đủ (VD: TR-1).</summary>
         public string DisplayCode => string.IsNullOrEmpty(Code) ? $"TR-{Id}" : Code;
+
+        public List<TourTranslation> Translations { get; set; } = new();
     }
 }

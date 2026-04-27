@@ -207,10 +207,10 @@ public partial class MapPage : ContentPage
                 
                 // Xử lý pending POI ID nếu có
                 ProcessPendingPoiId();
-                
-                // Xử lý pending Tour ID nếu có
-                ProcessPendingTourId();
             }
+            
+            // Xử lý pending Tour ID nếu có (luôn gọi, bất kể POIs đã load hay chưa)
+            ProcessPendingTourId();
         }
         catch (Exception ex)
         {
@@ -315,13 +315,8 @@ public partial class MapPage : ContentPage
                 System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending Tour ID: {_pendingTourId.Value}");
                 
                 var tour = await _apiService.GetTourByIdAsync(_pendingTourId.Value);
-                if (tour != null && _pois != null)
+                if (tour != null)
                 {
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        DisplayAlert("Tour", $"Đang hiển thị lộ trình tour: {tour.Name}", "OK");
-                    });
-                    
                     var tourPois = await _apiService.GetTourStopsAsync(tour.Id);
                     if (tourPois != null && tourPois.Any())
                     {
@@ -332,34 +327,45 @@ public partial class MapPage : ContentPage
                         var dest = new Location(destPOI!.Latitude, destPOI.Longitude);
                         
                         var waypoints = new List<Location>();
-                        // If user location is used as origin, we must pass the first POI as waypoint
                         if (_locationService.MockLocation != null || _lastLocation != null)
                         {
                             waypoints.Add(new Location(originPOI.Latitude, originPOI.Longitude));
                         }
-                        
-                        // Add middle POIs
                         for (int i = 1; i < tourPois.Count - 1; i++)
                         {
                             waypoints.Add(new Location(tourPois[i].POI!.Latitude, tourPois[i].POI!.Longitude));
                         }
                         
-                        // Highlight POIs in red
-                        if (_isJsMapReady)
+                        // Highlight tour POIs on map (if POIs loaded)
+                        if (_isJsMapReady && _pois != null)
                         {
                             var jsArray = string.Join(",", tourPois.Select(tp => tp.POIId.ToString()));
                             MapWebView.Eval($@"
                                 document.querySelectorAll('.poi-marker').forEach(function(m) {{
                                     if([{jsArray}].includes(parseInt(m.getAttribute('data-poi-id')))) {{
-                                        m.style.backgroundColor = '#FF0000'; // Make Tour POIs Red
+                                        m.style.backgroundColor = '#FF0000';
                                         m.classList.add('triggered');
                                     }}
                                 }});
                             ");
                         }
 
-                        // Draw Route
+                        // Draw directions route via API
                         await DrawRouteAsync(origin, dest, waypoints);
+                        
+                        // Also draw straight line connecting all tour stops + user location for visual reference
+                        var allCoords = new List<string>();
+                        allCoords.Add($"[{origin.Longitude},{origin.Latitude}]");
+                        foreach (var tp in tourPois)
+                        {
+                            allCoords.Add($"[{tp.POI!.Longitude},{tp.POI.Latitude}]");
+                        }
+                        var coordsStr = string.Join(",", allCoords);
+                        
+                        if (_isJsMapReady)
+                        {
+                            MapWebView.Eval($"drawRoute([{coordsStr}]);");
+                        }
                     }
                 }
             }
@@ -426,6 +432,7 @@ public partial class MapPage : ContentPage
 
     private void OnPoiTriggered(object? sender, POI poi)
     {
+        System.Diagnostics.Debug.WriteLine($"[MapPage] OnPoiTriggered: {poi.Name} (ID={poi.Id})");
         MainThread.BeginInvokeOnMainThread(() => ShowPoiDetails(poi));
     }
 
@@ -496,6 +503,8 @@ public partial class MapPage : ContentPage
                     TryRefreshMapMarkers();
                     // Process pending POI if POIs are already loaded
                     ProcessPendingPoiId();
+                    // Process pending Tour route when map JS is ready
+                    ProcessPendingTourId();
                 }
                 catch (Exception ex)
                 {
@@ -537,9 +546,37 @@ public partial class MapPage : ContentPage
                     double.TryParse(query["lng"], System.Globalization.CultureInfo.InvariantCulture, out double lng))
                 {
                     System.Diagnostics.Debug.WriteLine($"[MapPage] Set Mock GPS to {lat}, {lng}");
-                    _locationService.MockLocation = new Location(lat, lng);
-                    MainThread.BeginInvokeOnMainThread(async () => {
-                         await DisplayAlert("Mock GPS", $"Lat: {lat:F6}\nLng: {lng:F6}", LanguageService.GetString("OK"));
+                    var mockLoc = new Location(lat, lng);
+                    _locationService.MockLocation = mockLoc;
+                    _lastLocation = mockLoc;
+                    MainThread.BeginInvokeOnMainThread(() => {
+                        if (_isJsMapReady)
+                        {
+                            MapWebView.Eval($"updateUserLocation({lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
+                            MapWebView.Eval($"map.flyTo({{center: [{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
+                        }
+                        // Trigger geofence check immediately for mock location
+                        System.Diagnostics.Debug.WriteLine($"[MapPage] Mock set: POIs loaded={_pois?.Count ?? 0}, geofenceService={_geofenceService != null}");
+                        if (_pois != null && _pois.Any())
+                        {
+                            foreach (var p in _pois)
+                                System.Diagnostics.Debug.WriteLine($"[MapPage] POI #{p.Id}: {p.Name} lat={p.Latitude:F6} lng={p.Longitude:F6} active={p.IsActive} radius={p.Radius}m");
+                            var nearby = _pois
+                                .Where(p => p.IsActive)
+                                .Select(p => new { Poi = p, Dist = Location.CalculateDistance(mockLoc.Latitude, mockLoc.Longitude, p.Latitude, p.Longitude, DistanceUnits.Kilometers) * 1000 })
+                                .Where(x => x.Dist <= Math.Max(x.Poi.Radius, 50))
+                                .OrderBy(x => x.Dist)
+                                .ToList();
+                            var inactive = _pois.Where(p => !p.IsActive).ToList();
+                            System.Diagnostics.Debug.WriteLine($"[MapPage] Mock geofence: {nearby.Count} POIs in range, {inactive.Count} inactive POIs");
+                            foreach (var n in nearby)
+                                System.Diagnostics.Debug.WriteLine($"  -> {n.Poi.Name}: {n.Dist:F0}m (radius={Math.Max(n.Poi.Radius, 50)}m)");
+                            _geofenceService.CheckGeofences(mockLoc);
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("[MapPage] Mock geofence: POIs not loaded yet, cannot check");
+                        }
                     });
                 }
             }

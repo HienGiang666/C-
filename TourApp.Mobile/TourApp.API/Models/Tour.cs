@@ -27,6 +27,8 @@ namespace TourApp.API.Models
         /// <summary>Mã nghiệp vụ TR-1, TR-2... (Business Key, VARCHAR).</summary>
         public string? Code { get; set; }
         
+        public virtual ICollection<TourTranslation> Translations { get; set; } = new List<TourTranslation>();
+
         // Navigation property for many-to-many with POIs
         public virtual ICollection<TourPOI> TourPOIs { get; set; } = new List<TourPOI>();
     }

@@ -11,4 +11,7 @@ public class TourFormViewModel
 
     /// <summary>Thứ tự POI trong tour (cùng thứ tự hiển thị trên mobile).</summary>
     public List<int> StopPoiIds { get; set; } = new();
+
+    /// <summary>Bản dịch mô tả tour theo ngôn ngữ.</summary>
+    public List<TourTranslation> Translations { get; set; } = new();
 }

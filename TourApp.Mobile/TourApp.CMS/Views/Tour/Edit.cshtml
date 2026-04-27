@@ -69,8 +69,28 @@
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Tour.Description" class="form-label fw-medium">Ghi chú</label>
-                        <textarea asp-for="Tour.Description" class="form-control" rows="5"></textarea>
+                        <label asp-for="Tour.Description" class="form-label fw-medium">Ghi chú (Tiếng Việt)</label>
+                        <textarea asp-for="Tour.Description" id="tourDesc" class="form-control" rows="5"></textarea>
+                        <div class="form-text text-muted small">Rời khỏi ô này để tự động dịch sang các ngôn ngữ khác.</div>
+                    </div>
+
+                    <div class="border rounded-3 p-3 mb-4 bg-light">
+                        <label class="form-label fw-medium">Mô tả đa ngôn ngữ (dùng cho app mobile)</label>
+                        <div id="translate-status" class="small text-muted mb-2" style="display:none;"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">English</label>
+                                <textarea id="desc-en" name="Translation_en" class="form-control" rows="3">@(Model.Translations?.FirstOrDefault(t => t.Language == "en")?.Description ?? "")</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">中文 (Chinese)</label>
+                                <textarea id="desc-zh" name="Translation_zh" class="form-control" rows="3">@(Model.Translations?.FirstOrDefault(t => t.Language == "zh")?.Description ?? "")</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">日本語 (Japanese)</label>
+                                <textarea id="desc-ja" name="Translation_ja" class="form-control" rows="3">@(Model.Translations?.FirstOrDefault(t => t.Language == "ja")?.Description ?? "")</textarea>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-check form-switch mb-4">
@@ -148,5 +168,53 @@ function checkDuplicatePOIs(currentSelect) {
 
 document.getElementById('restaurantCount').addEventListener('input', buildPickers);
 buildPickers();
+
+    async function translateText(text, targetLang) {
+        try {
+            const url = `/api/Translate?text=${encodeURIComponent(text)}&target=${targetLang}&source=vi`;
+            const response = await fetch(url);
+            if (!response.ok) return text;
+            const data = await response.json();
+            if (Array.isArray(data) && data[0] && Array.isArray(data[0][0]) && data[0][0][0]) {
+                return data[0][0][0];
+            }
+            if (data.translatedText) return data.translatedText;
+            return text;
+        } catch (err) {
+            console.error('Translation error:', err);
+            return text;
+        }
+    }
+
+    let _translateTimer = null;
+    const tourDescEl = document.getElementById('tourDesc');
+    if (tourDescEl) {
+        tourDescEl.addEventListener('input', () => {
+            clearTimeout(_translateTimer);
+            _translateTimer = setTimeout(autoTranslateAll, 1500);
+        });
+        tourDescEl.addEventListener('blur', autoTranslateAll);
+    }
+
+    async function autoTranslateAll() {
+        const tourDesc = tourDescEl?.value?.trim();
+        if (!tourDesc) return;
+        const status = document.getElementById('translate-status');
+        const langMap = { 'en': 'English', 'zh': 'Chinese', 'ja': 'Japanese' };
+        const codes = ['en', 'zh', 'ja'];
+        const allEmpty = codes.every(c => !document.getElementById(`desc-${c}`)?.value?.trim());
+        if (!allEmpty) return;
+        status.style.display = 'block';
+        for (const code of codes) {
+            const box = document.getElementById(`desc-${code}`);
+            if (!box || box.value.trim()) continue;
+            status.textContent = `Đang dịch sang ${langMap[code]}...`;
+            try {
+                box.value = await translateText(tourDesc, code);
+            } catch (e) { console.error(e); }
+        }
+        status.textContent = 'Dịch tự động hoàn tất!';
+        setTimeout(() => status.style.display = 'none', 3000);
+    }
 </script>
 }

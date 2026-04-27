@@ -45,7 +45,7 @@ public partial class TourDetailPage : ContentPage
                     PriceLabel.Text = $"{_currentTour.Price:N0} đ";
                     DurationLabel.Text = _currentTour.Duration.ToString();
                     ParticipantsLabel.Text = LanguageService.GetString("MaxPeople", _currentTour.MaxParticipants);
-                    TourDescriptionLabel.Text = _currentTour.Description;
+                    TourDescriptionLabel.Text = _currentTour.GetLocalizedDescription(LanguageService.CurrentLanguage);
                     
                     if (!string.IsNullOrEmpty(_currentTour.ImageUrl))
                         TourImage.Source = ApiService.BaseUrl + _currentTour.ImageUrl;
@@ -67,6 +67,11 @@ public partial class TourDetailPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"[TourDetailPage] error: {ex.Message}");
         }
+    }
+
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//TourPage");
     }
 
     private async void OnViewMapClicked(object sender, EventArgs e)
@@ -91,13 +96,6 @@ public partial class TourDetailPage : ContentPage
         {
             await DisplayAlert(LanguageService.GetString("Notice"), LanguageService.GetString("NoDestinations"), LanguageService.GetString("OK"));
             return;
-        }
-
-        var btn = sender as Button;
-        if (btn != null)
-        {
-            btn.IsEnabled = false;
-            btn.Text = $"⏳ {LanguageService.GetString("Loading")}";
         }
 
         try
@@ -126,14 +124,6 @@ public partial class TourDetailPage : ContentPage
         {
             await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("DownloadAudioFailed"), LanguageService.GetString("OK"));
             System.Diagnostics.Debug.WriteLine($"[DownloadAudio] error: {ex.Message}");
-        }
-        finally
-        {
-            if (btn != null)
-            {
-                btn.IsEnabled = true;
-                btn.Text = LanguageService.GetString("DownloadOfflineAudio");
-            }
         }
     }
 }

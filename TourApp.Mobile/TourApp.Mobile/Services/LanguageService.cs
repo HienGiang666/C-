@@ -296,7 +296,7 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 Gợi ý Lộ trình", ["SeeMore"] = "Xem thêm >", ["TopPlaces"] = "Top Nổi Bật",
                 ["SearchFood"] = "Tìm quán ăn...", ["DiscoverTours"] = "Khám Phá Tour", ["SearchTour"] = "Tìm tour...", ["StartTour"] = "Bắt đầu Tour",
                 ["SearchMap"] = "Tìm quán ăn, điểm tham quan...", ["Search"] = "Tìm", ["ListenAudio"] = "🔊 Nghe", ["Directions"] = "🗺️ Đường đi", ["Close"] = "❌ Đóng",
-                ["TourDetailTitle"] = "Chi tiết Tour", ["Introduction"] = "Giới thiệu", ["Destinations"] = "Các điểm đến", ["DownloadOfflineAudio"] = "⬇️ Tải Audio Offline", ["ViewTour"] = "Xem Tour", ["BookTour"] = "Đặt Tour",
+                ["TourDetailTitle"] = "Chi tiết Tour", ["Introduction"] = "Giới thiệu", ["Destinations"] = "Các điểm đến", ["DownloadOfflineAudio"] = "⬇️ Tải Audio Offline", ["ViewTour"] = "Xem Tour", ["Route"] = "Lộ trình", ["BookTour"] = "Đặt Tour",
                 // ChangePasswordPage keys
                 ["CurrentPassword"] = "Mật khẩu hiện tại", ["CurrentPasswordPlaceholder"] = "Nhập mật khẩu hiện tại",
                 ["NewPassword"] = "Mật khẩu mới", ["NewPasswordPlaceholder"] = "Nhập mật khẩu mới (tối thiểu 6 ký tự)",
@@ -384,7 +384,7 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 Suggested Tours", ["SeeMore"] = "See more >", ["TopPlaces"] = "Top Rated",
                 ["SearchFood"] = "Search food...", ["DiscoverTours"] = "Discover Tours", ["SearchTour"] = "Search tours...", ["StartTour"] = "Start Tour",
                 ["SearchMap"] = "Search places, tours...", ["Search"] = "Search", ["ListenAudio"] = "🔊 Listen", ["Directions"] = "🗺️ Directions", ["Close"] = "❌ Close",
-                ["TourDetailTitle"] = "Tour Details", ["Introduction"] = "Introduction", ["Destinations"] = "Destinations", ["DownloadOfflineAudio"] = "⬇️ Download Offline Audio", ["ViewTour"] = "View Tour", ["BookTour"] = "Book Tour",
+                ["TourDetailTitle"] = "Tour Details", ["Introduction"] = "Introduction", ["Destinations"] = "Destinations", ["DownloadOfflineAudio"] = "⬇️ Download Offline Audio", ["ViewTour"] = "View Tour", ["Route"] = "Route", ["BookTour"] = "Book Tour",
                 // ChangePasswordPage keys
                 ["CurrentPassword"] = "Current Password", ["CurrentPasswordPlaceholder"] = "Enter current password",
                 ["NewPassword"] = "New Password", ["NewPasswordPlaceholder"] = "Enter new password (min 6 chars)",
@@ -472,7 +472,7 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 推荐路线", ["SeeMore"] = "查看更多 >", ["TopPlaces"] = "热门推荐",
                 ["SearchFood"] = "搜索餐厅...", ["DiscoverTours"] = "探索旅游", ["SearchTour"] = "搜索旅游...", ["StartTour"] = "开始旅游",
                 ["SearchMap"] = "搜索餐厅、景点...", ["Search"] = "搜索", ["ListenAudio"] = "🔊 收听", ["Directions"] = "🗺️ 导航", ["Close"] = "❌ 关闭",
-                ["TourDetailTitle"] = "旅游详情", ["Introduction"] = "简介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ 下载离线音频", ["ViewTour"] = "查看旅游", ["BookTour"] = "预订旅游",
+                ["TourDetailTitle"] = "旅游详情", ["Introduction"] = "简介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ 下载离线音频", ["ViewTour"] = "查看旅游", ["Route"] = "路线", ["BookTour"] = "预订旅游",
                 // ChangePasswordPage keys
                 ["CurrentPassword"] = "当前密码", ["CurrentPasswordPlaceholder"] = "请输入当前密码",
                 ["NewPassword"] = "新密码", ["NewPasswordPlaceholder"] = "请输入新密码（至少6个字符）",
@@ -560,7 +560,7 @@ namespace TourApp.Mobile.Services
                 ["SuggestedTours"] = "🔥 おすすめルート", ["SeeMore"] = "もっと見る >", ["TopPlaces"] = "人気スポット",
                 ["SearchFood"] = "レストラン検索...", ["DiscoverTours"] = "ツアーを探す", ["SearchTour"] = "ツアー検索...", ["StartTour"] = "ツアー開始",
                 ["SearchMap"] = "レストラン、観光地を検索...", ["Search"] = "検索", ["ListenAudio"] = "🔊 再生", ["Directions"] = "🗺️ 経路", ["Close"] = "❌ 閉じる",
-                ["TourDetailTitle"] = "ツアー詳細", ["Introduction"] = "紹介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ オフライン音声DL", ["ViewTour"] = "ツアーを見る", ["BookTour"] = "ツアー予約",
+                ["TourDetailTitle"] = "ツアー詳細", ["Introduction"] = "紹介", ["Destinations"] = "目的地", ["DownloadOfflineAudio"] = "⬇️ オフライン音声DL", ["ViewTour"] = "ツアーを見る", ["Route"] = "ルート", ["BookTour"] = "ツアー予約",
                 // ChangePasswordPage keys
                 ["CurrentPassword"] = "現在のパスワード", ["CurrentPasswordPlaceholder"] = "現在のパスワードを入力",
                 ["NewPassword"] = "新しいパスワード", ["NewPasswordPlaceholder"] = "新しいパスワードを入力（6文字以上）",

@@ -114,6 +114,10 @@ public class TourController : Controller
                     TempData["error"] = "Tour đã tạo nhưng lưu danh sách điểm dừng thất bại.";
             }
 
+            // Save translations
+            vm.Translations = ParseTranslationsFromForm();
+            await SaveTranslationsAsync(client, tourId, vm);
+
             _activityLogger.LogActivity(HttpContext, "Create", "Tour", null, vm.Tour.Name);
             TempData["success"] = "Thêm tour thành công!";
             return RedirectToAction(nameof(Index));
@@ -153,11 +157,20 @@ public class TourController : Controller
                 }
             }
 
+            // Load translations
+            var transResp = await client.GetAsync($"api/tour/{id}/translations");
+            var translations = new List<TourTranslation>();
+            if (transResp.IsSuccessStatusCode)
+            {
+                translations = await transResp.Content.ReadFromJsonAsync<List<TourTranslation>>() ?? new();
+            }
+
             var vm = new TourFormViewModel
             {
                 Tour = tour,
                 RestaurantCount = stopIds.Count,
-                StopPoiIds = stopIds
+                StopPoiIds = stopIds,
+                Translations = translations
             };
             return View(vm);
         }
@@ -216,7 +229,12 @@ public class TourController : Controller
             var put = await client.PutAsJsonAsync($"api/tour/{id}/stops", vm.StopPoiIds.ToArray());
             if (!put.IsSuccessStatusCode)
                 TempData["error"] = "Cập nhật tour OK nhưng lưu điểm dừng thất bại.";
-            else
+
+            // Save translations
+            vm.Translations = ParseTranslationsFromForm();
+            await SaveTranslationsAsync(client, id, vm);
+
+            if (string.IsNullOrEmpty(TempData["error"] as string))
                 TempData["success"] = "Cập nhật tour thành công!";
 
             _activityLogger.LogActivity(HttpContext, "Update", "Tour", null, vm.Tour.Name);
@@ -309,6 +327,34 @@ public class TourController : Controller
         if (vm.RestaurantCount < 1) { error = "Số quán / điểm dừng phải lớn hơn 0."; return false; }
         if (vm.StopPoiIds.Count != vm.RestaurantCount) { error = "Vui lòng chọn đủ địa điểm cho từng điểm dừng."; return false; }
         return true;
+    }
+
+    private List<TourTranslation> ParseTranslationsFromForm()
+    {
+        var translations = new List<TourTranslation>();
+        var languages = new[] { "vi", "en", "zh", "ja" };
+        foreach (var lang in languages)
+        {
+            var desc = Request.Form[$"Translation_{lang}"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(desc))
+            {
+                translations.Add(new TourTranslation { Language = lang, Description = desc.Trim() });
+            }
+        }
+        return translations;
+    }
+
+    private async Task SaveTranslationsAsync(HttpClient client, int tourId, TourFormViewModel vm)
+    {
+        if (vm.Translations == null || !vm.Translations.Any()) return;
+        foreach (var t in vm.Translations)
+        {
+            t.TourId = tourId;
+            if (t.Id > 0)
+                await client.PutAsJsonAsync($"api/tour/{tourId}/translations/{t.Id}", t);
+            else
+                await client.PostAsJsonAsync($"api/tour/{tourId}/translations", t);
+        }
     }
 
     private static string BuildTourSearchKeywords(Tour tour, List<int> stopPoiIds, List<POI> pois)

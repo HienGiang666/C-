@@ -25,7 +25,9 @@ public class TourController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Tour>> GetTour(int id)
     {
-        var tour = await _context.Tours.FindAsync(id);
+        var tour = await _context.Tours
+            .Include(t => t.Translations)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (tour == null) return NotFound();
         return tour;
     }
@@ -137,6 +139,56 @@ public class TourController : ControllerBase
         var stops = _context.TourPOIs.Where(x => x.TourId == id);
         _context.TourPOIs.RemoveRange(stops);
         _context.Tours.Remove(tour);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // --- TourTranslation CRUD ---
+
+    [HttpGet("{tourId}/translations")]
+    public async Task<ActionResult<IEnumerable<TourTranslation>>> GetTranslations(int tourId)
+    {
+        if (!await _context.Tours.AnyAsync(t => t.Id == tourId))
+            return NotFound();
+        return await _context.TourTranslations
+            .Where(tt => tt.TourId == tourId)
+            .ToListAsync();
+    }
+
+    [HttpPost("{tourId}/translations")]
+    public async Task<ActionResult<TourTranslation>> AddTranslation(int tourId, TourTranslation translation)
+    {
+        if (!await _context.Tours.AnyAsync(t => t.Id == tourId))
+            return NotFound();
+        translation.TourId = tourId;
+        _context.TourTranslations.Add(translation);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetTranslations), new { tourId }, translation);
+    }
+
+    [HttpPut("{tourId}/translations/{translationId}")]
+    public async Task<IActionResult> UpdateTranslation(int tourId, int translationId, TourTranslation translation)
+    {
+        if (translationId != translation.Id || tourId != translation.TourId)
+            return BadRequest();
+        if (!await _context.Tours.AnyAsync(t => t.Id == tourId))
+            return NotFound();
+        if (!await _context.TourTranslations.AnyAsync(tt => tt.Id == translationId && tt.TourId == tourId))
+            return NotFound();
+
+        _context.Entry(translation).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("{tourId}/translations/{translationId}")]
+    public async Task<IActionResult> DeleteTranslation(int tourId, int translationId)
+    {
+        var tt = await _context.TourTranslations
+            .FirstOrDefaultAsync(x => x.Id == translationId && x.TourId == tourId);
+        if (tt == null) return NotFound();
+
+        _context.TourTranslations.Remove(tt);
         await _context.SaveChangesAsync();
         return NoContent();
     }

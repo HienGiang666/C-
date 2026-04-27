@@ -245,49 +245,30 @@ namespace TourApp.Mobile.Services
             return always == PermissionStatus.Granted;
         }
 
+        // --- Cross-platform foreground service stubs ---
 #if ANDROID
         private bool _useAndroidForegroundService = false;
 
-        /// <summary>
-        /// Enable foreground service mode (Android only)
-        /// </summary>
-        public void SetUseForegroundService(bool use)
-        {
-            _useAndroidForegroundService = use;
-        }
+        public void SetUseForegroundService(bool use) => _useAndroidForegroundService = use;
 
-        /// <summary>
-        /// Start tracking with Android foreground service support
-        /// </summary>
         public async Task StartTrackingWithForegroundAsync()
         {
             if (_useAndroidForegroundService)
             {
-                // CHECK LOCATION PERMISSION FIRST (required for Android 14+ foreground service)
                 var locStatus = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
                 if (locStatus != PermissionStatus.Granted)
-                {
                     locStatus = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-                }
                 if (locStatus != PermissionStatus.Granted)
                 {
-                    System.Diagnostics.Debug.WriteLine("[LocationService] Location permission denied, cannot start foreground service");
-                    // Fall back to standard tracking
                     await StartTracking();
                     return;
                 }
-
-                // Request notification permission for foreground service (Android 13+)
                 if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Tiramisu)
                 {
                     var notifStatus = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
                     if (notifStatus != PermissionStatus.Granted)
-                    {
                         notifStatus = await Permissions.RequestAsync<Permissions.PostNotifications>();
-                    }
                 }
-
-                // Start foreground service
                 var context = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
                 if (context != null)
                 {
@@ -295,26 +276,23 @@ namespace TourApp.Mobile.Services
                     return;
                 }
             }
-
-            // Fall back to standard tracking
             await StartTracking();
         }
 
-        /// <summary>
-        /// Stop tracking with foreground service cleanup (Android only)
-        /// </summary>
         public void StopTrackingWithForeground()
         {
             if (_useAndroidForegroundService)
             {
                 var context = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
                 if (context != null)
-                {
                     TourApp.Mobile.Platforms.Android.Services.LocationForegroundService.Stop(context);
-                }
             }
             StopTracking();
         }
+#else
+        public void SetUseForegroundService(bool use) { }
+        public async Task StartTrackingWithForegroundAsync() => await StartTracking();
+        public void StopTrackingWithForeground() => StopTracking();
 #endif
 
         private async Task SendLocationToApiAsync(Location location)

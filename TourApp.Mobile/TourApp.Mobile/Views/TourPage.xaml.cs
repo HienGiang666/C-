@@ -15,11 +15,11 @@ public partial class TourPage : ContentPage
     // Localized properties
     private string _pageTitle = "";
     private string _searchPlaceholder = "";
-    private string _startTourText = "";
+    private string _viewTourText = "";
     
     public string PageTitle { get => _pageTitle; set { _pageTitle = value; OnPropertyChanged(nameof(PageTitle)); } }
     public string SearchPlaceholder { get => _searchPlaceholder; set { _searchPlaceholder = value; OnPropertyChanged(nameof(SearchPlaceholder)); } }
-    public string StartTourText { get => _startTourText; set { _startTourText = value; OnPropertyChanged(nameof(StartTourText)); } }
+    public string ViewTourText { get => _viewTourText; set { _viewTourText = value; OnPropertyChanged(nameof(ViewTourText)); } }
 
     public TourPage()
     {
@@ -72,7 +72,7 @@ public partial class TourPage : ContentPage
     {
         PageTitle = LanguageService.GetString("TourTitle");
         SearchPlaceholder = LanguageService.GetString("TourSearchPlaceholder");
-        StartTourText = LanguageService.GetString("StartTour");
+        ViewTourText = LanguageService.GetString("ViewTour");
     }
     
     protected override void OnAppearing()

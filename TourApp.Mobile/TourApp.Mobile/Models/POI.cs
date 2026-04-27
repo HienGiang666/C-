@@ -23,7 +23,7 @@ namespace TourApp.Mobile.Models
         public double Longitude { get; set; }
 
         [JsonPropertyName("radius")]
-        public double Radius { get; set; } = 80;
+        public double Radius { get; set; } = 100;
 
         [JsonPropertyName("priority")]
         public int Priority { get; set; }
