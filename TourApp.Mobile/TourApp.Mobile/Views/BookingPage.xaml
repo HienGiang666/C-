@@ -53,7 +53,7 @@
             <VerticalStackLayout>
                 <Label Text="{Binding [NotesOptional], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                 <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" HeightRequest="100" StrokeShape="RoundRectangle 12" Padding="0">
-                    <Editor x:Name="NotesEditor" Placeholder="{Binding [SpecialRequests], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Margin="10,5"/>
+                    <Editor x:Name="NotesEditor" Placeholder="{Binding [SpecialRequests], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Margin="10,5" IsTextPredictionEnabled="False"/>
                 </Border>
             </VerticalStackLayout>
 

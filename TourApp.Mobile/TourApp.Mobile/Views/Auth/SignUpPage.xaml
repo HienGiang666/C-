@@ -24,19 +24,19 @@
                 <VerticalStackLayout>
                     <Label Text="{Binding [FullName], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                        <Entry x:Name="FullNameEntry" Placeholder="{Binding [EnterFullName], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                        <Entry x:Name="FullNameEntry" Placeholder="{Binding [EnterFullName], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>
                     <Label Text="{Binding [Username], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                        <Entry x:Name="UsernameEntry" Placeholder="{Binding [UsernamePlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center"/>
+                        <Entry x:Name="UsernameEntry" Placeholder="{Binding [UsernamePlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>
                     <Label Text="{Binding [Email], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                     <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="50" StrokeShape="RoundRectangle 12">
-                        <Entry x:Name="EmailEntry" Placeholder="{Binding [EnterEmail], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" Keyboard="Email" VerticalOptions="Center"/>
+                        <Entry x:Name="EmailEntry" Placeholder="{Binding [EnterEmail], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" Keyboard="Email" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout>

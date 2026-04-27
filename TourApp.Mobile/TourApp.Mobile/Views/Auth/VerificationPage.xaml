@@ -27,16 +27,16 @@
 
             <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
                 <Border WidthRequest="56" HeightRequest="56" Stroke="#00B14F" StrokeThickness="2" Padding="0" BackgroundColor="White" StrokeShape="RoundRectangle 12">
-                    <Entry Text="1" FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+                    <Entry Text="1" FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                 </Border>
                 <Border WidthRequest="56" HeightRequest="56" Stroke="#E4E7ED" StrokeThickness="1" Padding="0" BackgroundColor="#F8F9FC" StrokeShape="RoundRectangle 12">
-                    <Entry FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+                    <Entry FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                 </Border>
                 <Border WidthRequest="56" HeightRequest="56" Stroke="#E4E7ED" StrokeThickness="1" Padding="0" BackgroundColor="#F8F9FC" StrokeShape="RoundRectangle 12">
-                    <Entry FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+                    <Entry FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                 </Border>
                 <Border WidthRequest="56" HeightRequest="56" Stroke="#E4E7ED" StrokeThickness="1" Padding="0" BackgroundColor="#F8F9FC" StrokeShape="RoundRectangle 12">
-                    <Entry FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+                    <Entry FontSize="24" TextColor="#1A1D26" HorizontalTextAlignment="Center" VerticalOptions="Center" IsTextPredictionEnabled="False"/>
                 </Border>
             </HorizontalStackLayout>
 
