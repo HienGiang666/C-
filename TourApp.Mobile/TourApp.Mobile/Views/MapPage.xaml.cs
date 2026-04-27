@@ -69,6 +69,54 @@ public partial class MapPage : ContentPage
     private const string GoongMaptileKey = "2Dnp8yaRq6ivkjX5c7D7RFcx5tDSi5g512jA5dG9";
     private const string GoongRestApiKey = "FEx6pcCh7bba5bfwJC4M7truNtLS7rEAwkZQZZ8g";
 
+    // ── Offline Map Asset Caching ──
+    private static readonly string MapCacheDir = Path.Combine(FileSystem.AppDataDirectory, "map_cache");
+    private const string GoongJsUrl = "https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js";
+    private const string GoongCssUrl = "https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css";
+    private const string StyleJsonUrl = "https://tiles.goong.io/assets/goong_map_web.json";
+    private static string JsCachePath => Path.Combine(MapCacheDir, "goong-js.js");
+    private static string CssCachePath => Path.Combine(MapCacheDir, "goong-js.css");
+    private static string StyleCachePath => Path.Combine(MapCacheDir, "style.json");
+
+    private static bool AreMapAssetsCached() =>
+        File.Exists(JsCachePath) && File.Exists(CssCachePath) && File.Exists(StyleCachePath);
+
+    private static async Task CacheMapAssetsAsync()
+    {
+        try
+        {
+            if (!NetworkService.IsConnected) return;
+            if (AreMapAssetsCached()) return;
+
+            Directory.CreateDirectory(MapCacheDir);
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+            if (!File.Exists(JsCachePath))
+            {
+                var js = await client.GetStringAsync(GoongJsUrl);
+                await File.WriteAllTextAsync(JsCachePath, js);
+                System.Diagnostics.Debug.WriteLine($"[MapAssetCache] JS cached ({js.Length} chars)");
+            }
+            if (!File.Exists(CssCachePath))
+            {
+                var css = await client.GetStringAsync(GoongCssUrl);
+                await File.WriteAllTextAsync(CssCachePath, css);
+                System.Diagnostics.Debug.WriteLine($"[MapAssetCache] CSS cached ({css.Length} chars)");
+            }
+            if (!File.Exists(StyleCachePath))
+            {
+                var style = await client.GetStringAsync(StyleJsonUrl);
+                await File.WriteAllTextAsync(StyleCachePath, style);
+                System.Diagnostics.Debug.WriteLine($"[MapAssetCache] Style JSON cached ({style.Length} chars)");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapAssetCache] Error: {ex.Message}");
+        }
+    }
+    // ─────────────────────────────────
+
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly HttpClient _http = new();
 
@@ -104,6 +152,9 @@ public partial class MapPage : ContentPage
 
             // Offline banner
             NetworkService.ConnectivityChanged += OnConnectivityChanged;
+
+            // Enable aggressive WebView caching for offline map
+            MapWebView.HandlerChanged += OnWebViewHandlerChanged;
         }
         catch (Exception ex)
         {
@@ -145,7 +196,14 @@ public partial class MapPage : ContentPage
             UpdateOfflineBanner();
 
             // Bắt đầu tracking GPS với background support
-            await _locationService.StartTrackingWithForegroundAsync();
+            try
+            {
+                await _locationService.StartTrackingWithForegroundAsync();
+            }
+            catch (Exception gpsEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] GPS tracking start error: {gpsEx.Message}");
+            }
 
             // Xử lý pending POI ID nếu có (khi navigate từ tab khác)
             if (_pendingPoiId.HasValue && _isJsMapReady && _pois != null)
@@ -244,9 +302,19 @@ public partial class MapPage : ContentPage
         MainThread.BeginInvokeOnMainThread(() =>
         {
             UpdateOfflineBanner();
-            if (isOnline && (_pois == null || !_pois.Any()))
+            if (isOnline)
             {
-                _ = LoadPoisInBackgroundAsync();
+                // Reload map + POIs khi có mạng trở lại
+                if (!_isJsMapReady)
+                {
+                    _isMapLoaded = false;
+                    LoadMap();
+                    _isMapLoaded = true;
+                }
+                if (_pois == null || !_pois.Any())
+                {
+                    _ = LoadPoisInBackgroundAsync();
+                }
             }
         });
     }
@@ -254,6 +322,36 @@ public partial class MapPage : ContentPage
     private void UpdateOfflineBanner()
     {
         OfflineBanner.IsVisible = !NetworkService.IsConnected;
+    }
+
+    private void OnWebViewHandlerChanged(object? sender, EventArgs e)
+    {
+#if ANDROID
+        try
+        {
+            if (MapWebView.Handler?.PlatformView is Android.Webkit.WebView androidWebView)
+            {
+                var settings = androidWebView.Settings;
+                // LOAD_CACHE_ELSE_NETWORK = 1
+                settings.CacheMode = (Android.Webkit.CacheModes)1;
+                settings.DomStorageEnabled = true;
+                settings.DatabaseEnabled = true;
+                settings.SetGeolocationEnabled(true);
+                settings.AllowFileAccess = true;
+                settings.AllowContentAccess = true;
+                // Tăng kích thước cache
+                settings.SetAppCacheMaxSize(50 * 1024 * 1024); // 50MB
+                var cachePath = System.IO.Path.Combine(FileSystem.CacheDirectory, "webview_cache");
+                settings.SetAppCachePath(cachePath);
+                settings.SetAppCacheEnabled(true);
+                System.Diagnostics.Debug.WriteLine("[MapPage] Android WebView cache enabled (LOAD_CACHE_ELSE_NETWORK)");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] WebView cache setup error: {ex.Message}");
+        }
+#endif
     }
 
     /// <summary>
@@ -595,6 +693,8 @@ public partial class MapPage : ContentPage
                     System.Diagnostics.Debug.WriteLine($"[MapPage] Map ready error: {ex.Message}");
                 }
             });
+            // Cache map assets (JS/CSS/Style) cho lần offline sau
+            _ = CacheMapAssetsAsync();
             return;
         }
 
@@ -1320,7 +1420,26 @@ if (!_locationService.IsMocking)
         _isJsMapReady = false;
         _pendingMapPoisJson = SerializeMapPois(_pois);
         var poisJson = _pendingMapPoisJson;
-        var html = BuildMapHtml(poisJson);
+
+        // Offline mode: dùng file:// URL cho JS/CSS + data URI cho style JSON
+        var useOffline = !NetworkService.IsConnected && AreMapAssetsCached();
+        string? styleBase64 = null;
+        if (useOffline)
+        {
+            try
+            {
+                var styleBytes = File.ReadAllBytes(StyleCachePath);
+                styleBase64 = Convert.ToBase64String(styleBytes);
+                System.Diagnostics.Debug.WriteLine("[MapPage] Offline map: file:// JS/CSS + data URI style");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Read offline style error: {ex.Message}");
+                useOffline = false;
+            }
+        }
+
+        var html = BuildMapHtml(poisJson, useOffline, styleBase64);
         MapWebView.Source = new HtmlWebViewSource { Html = html };
     }
 
@@ -1368,8 +1487,23 @@ if (!_locationService.IsMocking)
         }
     }
 
-    private static string BuildMapHtml(string poisJson)
+    private static string BuildMapHtml(string poisJson, bool useOfflineAssets = false, string? styleBase64 = null)
     {
+        // JS tag: file:// khi offline (tránh </script> trong JS break HTML), CDN khi online
+        var jsTag = useOfflineAssets
+            ? $"<script src='file://{JsCachePath}'></script>\n<script>setTimeout(function(){{ if(window.goongjs) onGoongLoaded(); else onGoongLoadError(); }}, 50);</script>"
+            : $"<script src='{GoongJsUrl}' onload='onGoongLoaded()' onerror='onGoongLoadError()'></script>";
+
+        // CSS tag: file:// khi offline, CDN khi online
+        var cssTag = useOfflineAssets
+            ? $"<link href='file://{CssCachePath}' rel='stylesheet'>"
+            : $"<link href='{GoongCssUrl}' rel='stylesheet'>";
+
+        // Style JSON: data URI khi offline (goongjs.Map dùng fetch() → data URI hoạt động), null khi online
+        var styleObj = !string.IsNullOrEmpty(styleBase64)
+            ? "'data:application/json;base64," + styleBase64 + "'"
+            : "null";
+
         return $@"<!DOCTYPE html>
 <html>
 <head>
@@ -1433,13 +1567,14 @@ if (!_locationService.IsMocking)
 <div id='loading'>
   <div class='spinner'></div>
   <p>🗺️ Đang tải bản đồ...</p>
-  <p class='sub'>Cần kết nối internet</p>
+  <p class='sub' id='loading-sub'>Đang kết nối...</p>
 </div>
 
-<!-- Error fallback -->
+<!-- Error fallback (chỉ hiện khi thực sự không có cache) -->
 <div id='errmsg'>
   <h3>⚠️ Không thể tải bản đồ</h3>
-  <p>Goong Maps cần kết nối internet.<br>Kiểm tra WiFi và thử lại.</p>
+  <p>Hãy mở app khi có mạng một lần để cache bản đồ.<br>Sau đó bản đồ sẽ hoạt động offline.</p>
+  <button onclick='location.reload()' style='margin-top:16px;padding:10px 24px;background:#00B14F;color:white;border:none;border-radius:12px;font-size:14px;cursor:pointer;'>🔄 Thử lại</button>
 </div>
 
 <div id='map'></div>
@@ -1450,32 +1585,74 @@ if (!_locationService.IsMocking)
 <script>
 var map, pois = {poisJson}, userMarker = null, poiMarkers = [];
 
+var STYLE_URL = 'https://tiles.goong.io/assets/goong_map_web.json';
+var OFFLINE_STYLE = {styleObj};
+var _mapInitialized = false;
+
 function onGoongLoadError() {{
   clearTimeout(window.goongLoadTimeout);
+  // CDN không load được — nếu goongjs đã có trong WebView cache thì vẫn dùng được
+  if (window.goongjs) {{
+    console.log('[Map] CDN error nhưng goongjs có trong cache, init map...');
+    initMapWithFallback();
+    return;
+  }}
+  // Thực sự không có goong-js → hiện lỗi
   document.getElementById('loading').style.display = 'none';
   document.getElementById('errmsg').classList.add('show');
 }}
 
 function onGoongLoaded() {{
   clearTimeout(window.goongLoadTimeout);
+  console.log('[Map] Goong JS loaded OK');
+  initMapWithFallback();
+}}
+
+function initMapWithFallback() {{
+  if (_mapInitialized) return;
+  _mapInitialized = true;
   try {{
     goongjs.accessToken = '{GoongMaptileKey}';
+    
+    // Dùng cached style khi offline (được embed từ C# file cache)
+    var styleToUse = OFFLINE_STYLE || STYLE_URL;
+    if (OFFLINE_STYLE) {{
+      console.log('[Map] Using cached style JSON (offline)');
+      document.getElementById('loading-sub').textContent = '📡 Chế độ offline — dùng cache';
+    }}
+    
     map = new goongjs.Map({{
       container: 'map',
-      style: 'https://tiles.goong.io/assets/goong_map_web.json',
+      style: styleToUse,
       center: [106.7018, 10.7596],
       zoom: 16
     }});
+    
     map.on('load', function() {{
       document.getElementById('loading').classList.add('hide');
       addMarkers(pois);
+      // Style JSON được cache bởi C# (CacheMapAssetsAsync) — không cần localStorage
       setTimeout(function() {{
         window.location.href = 'http://map/ready';
       }}, 0);
     }});
+    
     map.on('error', function(e) {{
+      console.warn('[Map] Map error:', e.error);
+      // Ẩn loading ngay cả khi tile lỗi — map vẫn hiện
       document.getElementById('loading').classList.add('hide');
     }});
+    
+    // Nếu map load quá lâu (tile lỗi offline), vẫn ẩn loading sau 5s
+    setTimeout(function() {{
+      var loadEl = document.getElementById('loading');
+      if (loadEl && !loadEl.classList.contains('hide')) {{
+        loadEl.classList.add('hide');
+        addMarkers(pois);
+        window.location.href = 'http://map/ready';
+      }}
+    }}, 5000);
+    
     // Mock location: right-click on desktop, click on mobile touch
     map.on('contextmenu', function(e) {{
       window.location.href = 'http://map/setmock?lat=' + e.lngLat.lat + '&lng=' + e.lngLat.lng;
@@ -1491,7 +1668,9 @@ function onGoongLoaded() {{
       window._mockClickEnabled = enabled;
     }};
   }} catch(e) {{
-    onGoongLoadError();
+    console.error('[Map] initMap error:', e);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('errmsg').classList.add('show');
   }}
 }}
 
@@ -1691,19 +1870,21 @@ function highlightPoisGreen(poiIds) {{
   }});
 }}
 
-// Timeout 5s nếu CDN chưa load
+// Timeout 8s nếu CDN chưa load (tăng lên cho mạng chậm)
 window.goongLoadTimeout = setTimeout(function() {{
-  if (!window.goongjs) onGoongLoadError();
-}}, 5000);
+  if (!_mapInitialized) {{
+    if (window.goongjs) {{
+      console.log('[Map] Timeout nhưng goongjs có sẵn, init...');
+      initMapWithFallback();
+    }} else {{
+      onGoongLoadError();
+    }}
+  }}
+}}, 8000);
 </script>
 
-<!-- Load Goong JS CDN - gọi onGoongLoaded/onGoongLoadError đã define ở trên -->
-<script
-  src='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js'
-  onload='onGoongLoaded()'
-  onerror='onGoongLoadError()'>
-</script>
-<link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet'>
+{jsTag}
+{cssTag}
 </body>
 </html>";
     }

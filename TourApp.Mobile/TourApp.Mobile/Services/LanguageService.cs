@@ -366,7 +366,12 @@ namespace TourApp.Mobile.Services
                 ["ChangePasswordSuccess"] = "Đổi mật khẩu thành công!",
                 ["ChangePasswordFailed"] = "Đổi mật khẩu thất bại: {0}",
                 ["NoToursFound"] = "Không tìm thấy tour nào cho '{0}'",
-                ["CameraPermissionRequired"] = "Cần quyền camera để quét QR"
+                ["CameraPermissionRequired"] = "Cần quyền camera để quét QR",
+                // Offline mode
+                ["OfflineBanner"] = "Bạn đang offline — dữ liệu từ cache",
+                ["OfflineBannerShort"] = "Offline — dữ liệu cache",
+                ["OfflineBannerProfile"] = "Bạn đang offline",
+                ["OfflineBookingSaved"] = "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng."
             };
             
             var enDict = new Dictionary<string, string>
@@ -455,7 +460,12 @@ namespace TourApp.Mobile.Services
                 ["ChangePasswordSuccess"] = "Password changed successfully!",
                 ["ChangePasswordFailed"] = "Failed to change password: {0}",
                 ["NoToursFound"] = "No tours found for '{0}'",
-                ["CameraPermissionRequired"] = "Camera permission is required to scan QR"
+                ["CameraPermissionRequired"] = "Camera permission is required to scan QR",
+                // Offline mode
+                ["OfflineBanner"] = "You are offline — using cached data",
+                ["OfflineBannerShort"] = "Offline — cached data",
+                ["OfflineBannerProfile"] = "You are offline",
+                ["OfflineBookingSaved"] = "Booking saved. Will sync when back online."
             };
 
             var zhDict = new Dictionary<string, string>(enDict)
@@ -544,7 +554,12 @@ namespace TourApp.Mobile.Services
                 ["ChangePasswordSuccess"] = "密码修改成功！",
                 ["ChangePasswordFailed"] = "密码修改失败：{0}",
                 ["NoToursFound"] = "未找到'{0}'相关旅游",
-                ["CameraPermissionRequired"] = "需要相机权限来扫描二维码"
+                ["CameraPermissionRequired"] = "需要相机权限来扫描二维码",
+                // Offline mode
+                ["OfflineBanner"] = "您当前处于离线状态 — 使用缓存数据",
+                ["OfflineBannerShort"] = "离线 — 缓存数据",
+                ["OfflineBannerProfile"] = "您当前离线",
+                ["OfflineBookingSaved"] = "预订已保存。网络恢复后将自动同步。"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
@@ -633,7 +648,12 @@ namespace TourApp.Mobile.Services
                 ["ChangePasswordSuccess"] = "パスワードを変更しました！",
                 ["ChangePasswordFailed"] = "パスワード変更失敗：{0}",
                 ["NoToursFound"] = "'{0}' のツアーが見つかりません",
-                ["CameraPermissionRequired"] = "QRスキャンにはカメラ権限が必要です"
+                ["CameraPermissionRequired"] = "QRスキャンにはカメラ権限が必要です",
+                // Offline mode
+                ["OfflineBanner"] = "オフラインです — キャッシュデータを使用",
+                ["OfflineBannerShort"] = "オフライン — キャッシュ",
+                ["OfflineBannerProfile"] = "オフラインです",
+                ["OfflineBookingSaved"] = "予約を保存しました。オンラインに戻ったら同期します。"
             };
 
             _resources["vi"] = fallbackDict;

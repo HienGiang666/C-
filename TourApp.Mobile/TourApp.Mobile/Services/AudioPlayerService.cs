@@ -252,7 +252,9 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
         }
 
         var cacheFileName = $"audio_{Math.Abs(item.Url.GetHashCode())}.mp3";
-        var localFile = Path.Combine(FileSystem.CacheDirectory, cacheFileName);
+        var audioCacheDir = Path.Combine(FileSystem.AppDataDirectory, "audio_cache");
+        Directory.CreateDirectory(audioCacheDir);
+        var localFile = Path.Combine(audioCacheDir, cacheFileName);
 
         if (!File.Exists(localFile))
         {
@@ -460,7 +462,9 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
         try
         {
             var cacheFileName = $"audio_{Math.Abs(url.GetHashCode())}.mp3";
-            var localFile = Path.Combine(FileSystem.CacheDirectory, cacheFileName);
+            var audioCacheDir = Path.Combine(FileSystem.AppDataDirectory, "audio_cache");
+            Directory.CreateDirectory(audioCacheDir);
+            var localFile = Path.Combine(audioCacheDir, cacheFileName);
 
             if (!File.Exists(localFile))
             {

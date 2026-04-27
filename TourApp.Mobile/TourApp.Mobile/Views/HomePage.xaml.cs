@@ -153,61 +153,73 @@ public partial class HomePage : ContentPage
     {
         try
         {
-            await ApiService.AutoDiscoverApiAsync();
+            // Chỉ discover API khi có mạng
+            if (NetworkService.IsConnected)
+            {
+                await ApiService.AutoDiscoverApiAsync();
+                // Đồng bộ bản dịch UI từ server (fire-and-forget, không block UI)
+                _ = LanguageService.SyncFromServerAsync();
+            }
             
-            // Đồng bộ bản dịch UI từ server (fire-and-forget, không block UI)
-            _ = LanguageService.SyncFromServerAsync();
-            
-            // Load POIs
+            // Load POIs (có cache offline trong ApiService)
             _allPois = await _apiService.GetAllPOIsAsync();
             System.Diagnostics.Debug.WriteLine($"[HomePage] Loaded {_allPois?.Count ?? 0} POIs");
             if (_allPois?.Any() == true)
             {
                 var topPois = _allPois.Take(10).ToList();
-                // Pre-download tất cả ảnh
+                // Pre-download ảnh (chỉ khi có mạng, offline dùng cache có sẵn)
                 await ImageCacheService.PreloadAsync(topPois.Select(p => p.ImageUrl));
+
+                // Lấy đường dẫn local cho từng ảnh TRƯỚC khi vào MainThread (tránh .Result deadlock)
+                var poiItems = new List<MockItem>();
+                foreach (var poi in topPois)
+                {
+                    var localPath = await ImageCacheService.GetLocalPathAsync(poi.ImageUrl);
+                    poiItems.Add(new MockItem 
+                    { 
+                        Name = poi.Name ?? "Unknown", 
+                        Summary = $"⭐ {poi.Rating:F1}",
+                        ImageUrl = localPath,
+                        PoiId = poi.Id,
+                        Latitude = poi.Latitude,
+                        Longitude = poi.Longitude
+                    });
+                }
 
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     MockPois.Clear();
-                    foreach (var poi in topPois)
-                    {
-                        var localPath = ImageCacheService.GetLocalPathAsync(poi.ImageUrl).Result;
-                        System.Diagnostics.Debug.WriteLine($"[HomePage] POI {poi.Id}: {poi.Name}, local={localPath ?? "null"}");
-                        MockPois.Add(new MockItem 
-                        { 
-                            Name = poi.Name ?? "Unknown", 
-                            Summary = $"⭐ {poi.Rating:F1}",
-                            ImageUrl = localPath,
-                            PoiId = poi.Id,
-                            Latitude = poi.Latitude,
-                            Longitude = poi.Longitude
-                        });
-                    }
+                    foreach (var item in poiItems)
+                        MockPois.Add(item);
                 });
             }
 
-            // Load Tours
+            // Load Tours (có cache offline trong ApiService)
             _allTours = await _apiService.GetAllToursAsync();
             if (_allTours?.Any() == true)
             {
                 var topTours = _allTours.Take(5).ToList();
                 await ImageCacheService.PreloadAsync(topTours.Select(t => t.ImageUrl));
 
+                // Lấy đường dẫn local TRƯỚC khi vào MainThread
+                var tourItems = new List<MockItem>();
+                foreach (var tour in topTours)
+                {
+                    var localPath = await ImageCacheService.GetLocalPathAsync(tour.ImageUrl);
+                    tourItems.Add(new MockItem
+                    {
+                        Name = tour.Name ?? "Tour",
+                        Summary = $"{tour.PoiCount} điểm",
+                        ImageUrl = localPath,
+                        TourId = tour.Id
+                    });
+                }
+
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     MockTours.Clear();
-                    foreach (var tour in topTours)
-                    {
-                        var localPath = ImageCacheService.GetLocalPathAsync(tour.ImageUrl).Result;
-                        MockTours.Add(new MockItem
-                        {
-                            Name = tour.Name ?? "Tour",
-                            Summary = $"{tour.PoiCount} điểm",
-                            ImageUrl = localPath,
-                            TourId = tour.Id
-                        });
-                    }
+                    foreach (var item in tourItems)
+                        MockTours.Add(item);
                 });
             }
         }

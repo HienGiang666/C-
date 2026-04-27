@@ -41,6 +41,13 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public static async Task AutoDiscoverApiAsync()
         {
+            // Bỏ qua discovery khi offline — dùng URL đã lưu hoặc default
+            if (!IsOnline)
+            {
+                Debug.WriteLine("[ApiService] Auto-Discovery skipped — offline");
+                return;
+            }
+
             // Timeout 5s cho toàn bộ discovery để tránh treo login
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             try
@@ -176,7 +183,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public async Task<List<POI>> GetAllPOIsAsync()
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "pois.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, "pois.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -204,7 +211,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public async Task<List<Tour>> GetAllToursAsync()
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "tours.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, "tours.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -232,7 +239,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public async Task<Tour?> GetTourByIdAsync(int tourId)
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"tour_{tourId}.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, $"tour_{tourId}.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -260,7 +267,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public async Task<List<TourPOI>> GetTourStopsAsync(int tourId)
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"tour_stops_{tourId}.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, $"tour_stops_{tourId}.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -328,7 +335,7 @@ namespace TourApp.Mobile.Services
         /// <summary>Lấy danh sách booking của user (có cache offline)</summary>
         public async Task<List<Booking>> GetUserBookingsAsync(int userId)
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"bookings_{userId}.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, $"bookings_{userId}.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -356,7 +363,7 @@ namespace TourApp.Mobile.Services
         /// <summary>Lấy profile user (có cache offline)</summary>
         public async Task<User?> GetUserProfileAsync(int userId)
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"profile_{userId}.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, $"profile_{userId}.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -384,7 +391,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public async Task<List<Language>> GetLanguagesAsync()
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "languages.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, "languages.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -411,7 +418,7 @@ namespace TourApp.Mobile.Services
 
         public async Task<Audio?> GetAudioByPoiAsync(int poiId, string lang = "vi")
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"audio_{poiId}_{lang}.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, $"audio_{poiId}_{lang}.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -645,7 +652,7 @@ namespace TourApp.Mobile.Services
         [DebuggerNonUserCode]
         public async Task<Dictionary<string, Dictionary<string, string>>?> GetUiTranslationsAsync()
         {
-            var cacheFile = Path.Combine(FileSystem.CacheDirectory, "ui_translations.json");
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, "ui_translations.json");
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));

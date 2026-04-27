@@ -118,7 +118,7 @@
                 VerticalOptions="Start" Margin="0,70,0,0" ZIndex="10">
             <HorizontalStackLayout Spacing="6">
                 <Label Text="{x:Static helpers:IconFont.WifiOff}" FontFamily="MaterialIcons" FontSize="14" TextColor="#92400E" VerticalOptions="Center"/>
-                <Label x:Name="OfflineBannerText" Text="Offline — dữ liệu cache" FontSize="12" TextColor="#92400E" VerticalOptions="Center"/>
+                <Label Text="{Binding [OfflineBannerShort], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="12" TextColor="#92400E" VerticalOptions="Center"/>
             </HorizontalStackLayout>
         </Border>
 

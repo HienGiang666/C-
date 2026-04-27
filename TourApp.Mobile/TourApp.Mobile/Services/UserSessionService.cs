@@ -85,6 +85,13 @@ namespace TourApp.Mobile.Services
         {
             try
             {
+                // Bỏ qua khi không có mạng — tránh crash do tạo HTTP connection khi offline
+                if (!NetworkService.IsConnected)
+                {
+                    Debug.WriteLine("[UserSessionService] Skipped — offline");
+                    return;
+                }
+
                 await ApiService.AutoDiscoverApiAsync();
                 var baseUrl = ApiService.BaseUrl;
 

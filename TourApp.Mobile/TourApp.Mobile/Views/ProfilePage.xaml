@@ -23,7 +23,7 @@
                 <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
                     <Label Text="{x:Static helpers:IconFont.WifiOff}" FontFamily="MaterialIcons"
                            FontSize="16" TextColor="#92400E" VerticalOptions="Center"/>
-                    <Label Text="Bạn đang offline" FontSize="13" TextColor="#92400E" VerticalOptions="Center"/>
+                    <Label Text="{Binding [OfflineBannerProfile], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" TextColor="#92400E" VerticalOptions="Center"/>
                 </HorizontalStackLayout>
             </Border>
 
