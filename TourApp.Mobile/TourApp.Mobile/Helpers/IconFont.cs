@@ -83,5 +83,9 @@ namespace TourApp.Mobile.Helpers
         public const string Menu = "\U000F035C";
         public const string DotsVertical = "\U000F01D9";
         public const string CalendarBlank = "\U000F00EF";
+        public const string WifiOff = "\U000F05AA";
+        public const string WifiCheck = "\U000F0E08";
+        public const string CloudOff = "\U000F0164";
+        public const string Sync = "\U000F04E7";
     }
 }

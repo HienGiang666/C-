@@ -9,6 +9,9 @@ namespace TourApp.Mobile.Services
         // IP WiFi hiện tại của máy dev — cập nhật nếu đổi mạng
         private const string DefaultUrl = "https://hypocrite-ground-tackle.ngrok-free.dev";
 
+        /// <summary>Kiểm tra mạng nhanh trước khi gọi API</summary>
+        public static bool IsOnline => NetworkService.IsConnected;
+
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
             PropertyNameCaseInsensitive = true
@@ -284,6 +287,17 @@ namespace TourApp.Mobile.Services
 
         public async Task<(bool Success, string Message)> BookTourAsync(Booking booking)
         {
+            // Offline → queue lại, sync khi có mạng
+            if (!IsOnline)
+            {
+                await OfflineQueueService.EnqueueAsync(new OfflineAction
+                {
+                    Type = OfflineActionType.Booking,
+                    Payload = JsonSerializer.Serialize(booking)
+                });
+                return (true, "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng.");
+            }
+
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -301,8 +315,70 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                return (false, $"Lỗi kết nối mạng: {ex.Message}");
+                // Mạng lỗi giữa chừng → queue offline
+                await OfflineQueueService.EnqueueAsync(new OfflineAction
+                {
+                    Type = OfflineActionType.Booking,
+                    Payload = JsonSerializer.Serialize(booking)
+                });
+                return (true, $"Lỗi mạng. Đã lưu offline, sẽ sync khi có mạng.");
             }
+        }
+
+        /// <summary>Lấy danh sách booking của user (có cache offline)</summary>
+        public async Task<List<Booking>> GetUserBookingsAsync(int userId)
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"bookings_{userId}.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/booking/user/{userId}", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<List<Booking>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetUserBookingsAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<List<Booking>>(cached, JsonOpts) ?? new();
+            }
+            return new List<Booking>();
+        }
+
+        /// <summary>Lấy profile user (có cache offline)</summary>
+        public async Task<User?> GetUserProfileAsync(int userId)
+        {
+            var cacheFile = Path.Combine(FileSystem.CacheDirectory, $"profile_{userId}.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/user/{userId}", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<User>(body, JsonOpts);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetUserProfileAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<User>(cached, JsonOpts);
+            }
+            return null;
         }
 
         [DebuggerNonUserCode]
@@ -362,6 +438,21 @@ namespace TourApp.Mobile.Services
 
         public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
         {
+            // Offline → queue
+            if (!IsOnline)
+            {
+                await OfflineQueueService.EnqueueAsync(new OfflineAction
+                {
+                    Type = OfflineActionType.NarrationLog,
+                    Payload = JsonSerializer.Serialize(new NarrationLogPayload
+                    {
+                        PoiId = poiId, AudioId = audioId, TriggerType = triggerType
+                    })
+                });
+                Debug.WriteLine($"[ApiService] LogNarration queued offline: {triggerType}");
+                return;
+            }
+
             try
             {
                 string deviceId = "Unknown";
@@ -387,7 +478,16 @@ namespace TourApp.Mobile.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ApiService] LogNarration error: {ex.Message}");
+                // Mạng lỗi giữa chừng → queue
+                await OfflineQueueService.EnqueueAsync(new OfflineAction
+                {
+                    Type = OfflineActionType.NarrationLog,
+                    Payload = JsonSerializer.Serialize(new NarrationLogPayload
+                    {
+                        PoiId = poiId, AudioId = audioId, TriggerType = triggerType
+                    })
+                });
+                Debug.WriteLine($"[ApiService] LogNarration error, queued offline: {ex.Message}");
             }
         }
 

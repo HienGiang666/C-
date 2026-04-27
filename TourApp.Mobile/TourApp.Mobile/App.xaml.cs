@@ -26,6 +26,7 @@ namespace TourApp.Mobile
             };
 
             // ─────────────────────────────────────────────────────────────────
+            NetworkService.Initialize();
             InitializeComponent();
         }
 

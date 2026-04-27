@@ -112,6 +112,16 @@
             </Border.GestureRecognizers>
         </Border>
 
+        <!-- Offline banner -->
+        <Border x:Name="OfflineBanner" IsVisible="False" BackgroundColor="#FEF3C7" StrokeThickness="0"
+                StrokeShape="RoundRectangle 12" Padding="12,6" HorizontalOptions="Center"
+                VerticalOptions="Start" Margin="0,70,0,0" ZIndex="10">
+            <HorizontalStackLayout Spacing="6">
+                <Label Text="{x:Static helpers:IconFont.WifiOff}" FontFamily="MaterialIcons" FontSize="14" TextColor="#92400E" VerticalOptions="Center"/>
+                <Label x:Name="OfflineBannerText" Text="Offline — dữ liệu cache" FontSize="12" TextColor="#92400E" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+        </Border>
+
         <!-- Mock mode banner -->
         <Border x:Name="MockBanner" IsVisible="False" BackgroundColor="#FF6B00" StrokeThickness="0" 
                 StrokeShape="RoundRectangle 12" Padding="12,6" HorizontalOptions="Center" 
