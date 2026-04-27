@@ -12,4 +12,5 @@ public class UserLocationLog
     public DateTime Timestamp { get; set; } = DateTime.Now;
     public string? SessionId { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsMock { get; set; } = false;
 }

@@ -11,6 +11,8 @@ namespace TourApp.Mobile.Services
     /// </summary>
     public class LocationService
     {
+        public static LocationService? Current { get; private set; }
+
         public event EventHandler<Location>? LocationChanged;
         private bool _isTracking = false;
         private readonly object _trackingLock = new();
@@ -19,6 +21,11 @@ namespace TourApp.Mobile.Services
 
         public bool IsMocking { get; set; } = false;
         public Location? MockLocation { get; set; }
+
+        public LocationService()
+        {
+            Current = this;
+        }
         public bool IsTracking 
         { 
             get 
@@ -295,6 +302,45 @@ namespace TourApp.Mobile.Services
         public void StopTrackingWithForeground() => StopTracking();
 #endif
 
+        /// <summary>
+        /// Gửi vị trí giả lập ngay lập tức đến API (dùng khi đặt mock location)
+        /// </summary>
+        public async Task SendMockLocationNowAsync()
+        {
+            if (MockLocation == null) return;
+            try
+            {
+                _lastApiLogTime = DateTime.Now;
+                await SendLocationToApiAsync(MockLocation);
+                System.Diagnostics.Debug.WriteLine($"[LocationService] Mock location sent immediately: {MockLocation.Latitude}, {MockLocation.Longitude}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LocationService] SendMockLocationNow error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gửi vị trí thật ngay lập tức (dùng khi tắt mock mode)
+        /// </summary>
+        public async Task SendRealLocationNowAsync()
+        {
+            try
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(5));
+                var location = await Geolocation.Default.GetLocationAsync(request);
+                if (location != null)
+                {
+                    _lastApiLogTime = DateTime.Now;
+                    await SendLocationToApiAsync(location);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LocationService] SendRealLocationNow error: {ex.Message}");
+            }
+        }
+
         private async Task SendLocationToApiAsync(Location location)
         {
             try
@@ -323,7 +369,8 @@ namespace TourApp.Mobile.Services
                     Latitude = location.Latitude,
                     Longitude = location.Longitude,
                     Timestamp = DateTime.Now,
-                    IsActive = true
+                    IsActive = true,
+                    IsMock = IsMocking
                 };
 
                 var response = await client.PostAsJsonAsync("/api/userlocation", request);

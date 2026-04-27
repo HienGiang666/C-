@@ -610,6 +610,8 @@ public partial class MapPage : ContentPage
                     var mockLoc = new Location(lat, lng);
                     _locationService.MockLocation = mockLoc;
                     _lastLocation = mockLoc;
+                    // Gửi mock location đến API ngay lập tức → heatmap CMS cập nhật real-time
+                    _ = Task.Run(async () => await _locationService.SendMockLocationNowAsync());
                     MainThread.BeginInvokeOnMainThread(() => {
                         if (_isJsMapReady)
                         {
@@ -668,29 +670,44 @@ public partial class MapPage : ContentPage
             MapWebView.Eval($"toggleMockClick({_locationService.IsMocking.ToString().ToLower()});");
         }
 
-        // When turning off mock mode, clear mock location and restore real GPS
-        if (!_locationService.IsMocking)
+// When turning off mock mode, clear mock location and restore real GPS
+if (!_locationService.IsMocking)
+{
+    _locationService.MockLocation = null;
+
+    try
+    {
+        var request = new GeolocationRequest(
+            GeolocationAccuracy.Medium,
+            TimeSpan.FromSeconds(8));
+
+        var realLocation = await Geolocation.Default.GetLocationAsync(request);
+
+        if (realLocation != null)
         {
-            _locationService.MockLocation = null;
-            try
+            _lastLocation = realLocation;
+
+            if (_isJsMapReady)
             {
-                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(8));
-                var realLocation = await Geolocation.Default.GetLocationAsync(request);
-                if (realLocation != null)
-                {
-                    _lastLocation = realLocation;
-                    if (_isJsMapReady)
-                    {
-                        MapWebView.Eval($"updateUserLocation({realLocation.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {realLocation.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
-                        MapWebView.Eval($"map.flyTo({{center: [{realLocation.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {realLocation.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}], zoom: 17}});");
-                    }
-                    System.Diagnostics.Debug.WriteLine($"[MapPage] Restored real GPS: {realLocation.Latitude}, {realLocation.Longitude}");
-                }
+                var lng = realLocation.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var lat = realLocation.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                MapWebView.Eval($"updateUserLocation({lng}, {lat})");
+                MapWebView.Eval($"map.flyTo({{center: [{lng}, {lat}], zoom: 16}})");
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] Failed to restore real GPS: {ex.Message}");
-            }
+
+            System.Diagnostics.Debug.WriteLine(
+                $"[MapPage] Restored real GPS: {realLocation.Latitude}, {realLocation.Longitude}");
+        }
+
+        _ = Task.Run(async () => await _locationService.SendRealLocationNowAsync());
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine(
+            $"[MapPage] Failed to restore real GPS: {ex.Message}");
+    }
+}
         }
     }
 
