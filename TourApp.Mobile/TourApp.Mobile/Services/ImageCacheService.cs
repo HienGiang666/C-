@@ -6,7 +6,7 @@ namespace TourApp.Mobile.Services
     public static class ImageCacheService
     {
         private static readonly ConcurrentDictionary<string, string> _cache = new();
-        private static readonly string _cacheDir = Path.Combine(FileSystem.CacheDirectory, "img_cache");
+        private static readonly string _cacheDir = Path.Combine(FileSystem.AppDataDirectory, "img_cache");
         private static HttpClient? _client;
 
         private static HttpClient Client
@@ -68,9 +68,20 @@ namespace TourApp.Mobile.Services
             var fullUrl = ResolveUrl(imageUrl);
             if (string.IsNullOrEmpty(fullUrl)) return null;
 
-            // Check cache
+            // Check in-memory cache
             if (_cache.TryGetValue(fullUrl, out var cached) && File.Exists(cached))
                 return cached;
+
+            // App restart: dictionary empty nhưng file vẫn còn trên disk
+            var hash = fullUrl.GetHashCode().ToString("X8");
+            var diskExt = GetExtension(fullUrl);
+            var diskPath = Path.Combine(_cacheDir, $"{hash}{diskExt}");
+            if (File.Exists(diskPath))
+            {
+                _cache[fullUrl] = diskPath;
+                Debug.WriteLine($"[ImageCache] Disk hit (restart): {diskPath}");
+                return diskPath;
+            }
 
             try
             {
@@ -85,14 +96,11 @@ namespace TourApp.Mobile.Services
                 var bytes = await response.Content.ReadAsByteArrayAsync();
                 if (bytes.Length == 0) return null;
 
-                var hash = fullUrl.GetHashCode().ToString("X8");
-                var ext = GetExtension(fullUrl);
-                var filePath = Path.Combine(_cacheDir, $"{hash}{ext}");
-                await File.WriteAllBytesAsync(filePath, bytes);
-                _cache[fullUrl] = filePath;
+                await File.WriteAllBytesAsync(diskPath, bytes);
+                _cache[fullUrl] = diskPath;
 
-                Debug.WriteLine($"[ImageCache] OK {bytes.Length}B → {filePath}");
-                return filePath;
+                Debug.WriteLine($"[ImageCache] OK {bytes.Length}B → {diskPath}");
+                return diskPath;
             }
             catch (Exception ex)
             {
