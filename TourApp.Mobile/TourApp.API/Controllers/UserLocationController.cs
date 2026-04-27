@@ -62,20 +62,17 @@ public class UserLocationController : ControllerBase
         
         if (request.IsOnline)
         {
-            // Lưu location log khi online (heartbeat)
-            if (request.Latitude != 0 || request.Longitude != 0)
+            // Lưu location log khi online (heartbeat) — luôn lưu dù GPS tắt
+            _context.UserLocationLogs.Add(new UserLocationLog
             {
-                _context.UserLocationLogs.Add(new UserLocationLog
-                {
-                    DeviceId = deviceId,
-                    Latitude = request.Latitude,
-                    Longitude = request.Longitude,
-                    Timestamp = DateTime.Now,
-                    SessionId = request.GuestId,
-                    IsActive = true
-                });
-                await _context.SaveChangesAsync();
-            }
+                DeviceId = deviceId,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                Timestamp = DateTime.Now,
+                SessionId = request.GuestId,
+                IsActive = true
+            });
+            await _context.SaveChangesAsync();
 
             await _hubContext.Clients.All.SendAsync("UserOnline", new
             {
@@ -245,40 +242,89 @@ public class UserLocationController : ControllerBase
     }
 
     /// <summary>
-    /// Paths: trả về tuyến đường phổ biến (POI → POI) dựa trên dữ liệu location
+    /// Paths: trả về các tuyến di chuyển phổ biến (polyline đầy đủ điểm GPS, bỏ noise)
     /// </summary>
     [HttpGet("paths")]
     public async Task<IActionResult> GetPaths()
     {
         var since24h = DateTime.Now.AddHours(-24);
-        
-        // Lấy logs theo device, sắp xếp theo thời gian
+
         var logs = await _context.UserLocationLogs
             .Where(l => l.Timestamp >= since24h)
             .OrderBy(l => l.DeviceId).ThenBy(l => l.Timestamp)
+            .Select(l => new { l.DeviceId, l.Latitude, l.Longitude, l.Timestamp })
             .ToListAsync();
 
-        // Tạo tuyến đường từ mỗi device (nối điểm đầu → cuối)
-        var routes = logs
-            .GroupBy(l => l.DeviceId)
-            .Where(g => g.Count() >= 2)
-            .Select(g =>
+        var routes = new List<(string deviceId, List<double[]> coords, double totalMeters)>();
+
+        foreach (var g in logs.GroupBy(l => l.DeviceId))
+        {
+            var pts = g.ToList();
+            if (pts.Count < 3) continue;
+
+            // Simplify: chỉ giữ điểm cách điểm trước > 100m (loại noise đứng yên)
+            var simplified = new List<double[]>();
+            double lastLat = pts[0].Latitude, lastLng = pts[0].Longitude;
+            double totalDist = 0;
+            simplified.Add(new[] { lastLng, lastLat });
+
+            for (int i = 1; i < pts.Count; i++)
             {
-                var pts = g.ToList();
-                return new
+                var dist = HaversineMeters(lastLat, lastLng, pts[i].Latitude, pts[i].Longitude);
+                if (dist > 100)
                 {
-                    fromLat = pts.First().Latitude,
-                    fromLng = pts.First().Longitude,
-                    toLat = pts.Last().Latitude,
-                    toLng = pts.Last().Longitude,
-                    fromPoiName = pts.First().DeviceId ?? "Start",
-                    toPoiName = pts.Last().DeviceId ?? "End",
-                    count = pts.Count
-                };
+                    simplified.Add(new[] { pts[i].Longitude, pts[i].Latitude });
+                    totalDist += dist;
+                    lastLat = pts[i].Latitude;
+                    lastLng = pts[i].Longitude;
+                }
+            }
+
+            if (simplified.Count >= 3 && totalDist > 500)
+            {
+                routes.Add((g.Key ?? "anon", simplified, totalDist));
+            }
+        }
+
+        // Chỉ lấy các tuyến phổ biến (nhiều device có đường gần giống nhau)
+        // Làm tròn start và end để gộp các tuyến tương tự
+        var grouped = routes
+            .Select(r => new
+            {
+                r.deviceId,
+                r.coords,
+                r.totalMeters,
+                StartLat = Math.Round(r.coords.First()[1], 2),
+                StartLng = Math.Round(r.coords.First()[0], 2),
+                EndLat = Math.Round(r.coords.Last()[1], 2),
+                EndLng = Math.Round(r.coords.Last()[0], 2)
             })
+            .GroupBy(x => new { x.StartLat, x.StartLng, x.EndLat, x.EndLng })
+            .Select(g => new
+            {
+                coordinates = g.OrderByDescending(x => x.totalMeters).First().coords,
+                count = g.Count(),
+                devices = g.Select(x => x.deviceId).Distinct().Count(),
+                totalMeters = g.Max(x => x.totalMeters)
+            })
+            .Where(x => x.count >= 2 || x.devices >= 2)
+            .OrderByDescending(x => x.totalMeters)
+            .Take(100)
             .ToList();
 
-        return Ok(new { routes });
+        return Ok(new { routes = grouped });
+    }
+
+    private static double HaversineMeters(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371000;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
     }
 
     /// <summary>
