@@ -331,6 +331,7 @@ namespace TourApp.Mobile.Services
                 ["UpdateFailed"] = "Cập nhật thất bại: {0}", ["ConnectionError"] = "Lỗi kết nối: {0}",
                 // TourDetailPage extra keys
                 ["TourName"] = "Tên Tour", ["MaxPeople"] = "Tối đa {0}", ["PoiCount"] = "{0} điểm",
+                ["Duration"] = "Thời lượng", ["PerPerson"] = "/ người", ["MaxPeopleLabel"] = "Tối đa",
                 // Auth pages keys
                 ["AppSlogan"] = "Khám phá ẩm thực quanh bạn", ["Username"] = "Tài khoản", ["RememberLogin"] = "Ghi nhớ đăng nhập",
                 ["NoAccount"] = "Chưa có tài khoản? ", ["SignUpNow"] = "Đăng ký ngay", ["ContinueAsGuest"] = "Tiếp tục với tư cách khách",
@@ -419,6 +420,7 @@ namespace TourApp.Mobile.Services
                 ["UpdateFailed"] = "Update failed: {0}", ["ConnectionError"] = "Connection error: {0}",
                 // TourDetailPage extra keys
                 ["TourName"] = "Tour Name", ["MaxPeople"] = "Max {0}", ["PoiCount"] = "{0} stops",
+                ["Duration"] = "Duration", ["PerPerson"] = "/ person", ["MaxPeopleLabel"] = "Max people",
                 // Auth pages keys
                 ["AppSlogan"] = "Discover food around you", ["Username"] = "Username", ["RememberLogin"] = "Remember me",
                 ["NoAccount"] = "Don't have an account? ", ["SignUpNow"] = "Sign up now", ["ContinueAsGuest"] = "Continue as guest",
@@ -507,6 +509,7 @@ namespace TourApp.Mobile.Services
                 ["UpdateFailed"] = "更新失败：{0}", ["ConnectionError"] = "连接错误：{0}",
                 // TourDetailPage extra keys
                 ["TourName"] = "旅游名称", ["MaxPeople"] = "最多{0}人", ["PoiCount"] = "{0}个景点",
+                ["Duration"] = "时长", ["PerPerson"] = "/ 每人", ["MaxPeopleLabel"] = "最多人数",
                 // Auth pages keys
                 ["AppSlogan"] = "发现你身边的美食", ["Username"] = "用户名", ["RememberLogin"] = "记住登录",
                 ["NoAccount"] = "还没有账号？", ["SignUpNow"] = "立即注册", ["ContinueAsGuest"] = "以游客身份继续",
@@ -595,6 +598,7 @@ namespace TourApp.Mobile.Services
                 ["UpdateFailed"] = "更新失敗：{0}", ["ConnectionError"] = "接続エラー：{0}",
                 // TourDetailPage extra keys
                 ["TourName"] = "ツアー名", ["MaxPeople"] = "最大{0}人", ["PoiCount"] = "{0}箇所",
+                ["Duration"] = "所要時間", ["PerPerson"] = "/ 1人", ["MaxPeopleLabel"] = "最大人数",
                 // Auth pages keys
                 ["AppSlogan"] = "周りのグルメを探索", ["Username"] = "ユーザー名", ["RememberLogin"] = "ログインを記憶",
                 ["NoAccount"] = "アカウントがない？", ["SignUpNow"] = "今すぐ登録", ["ContinueAsGuest"] = "ゲストとして続行",

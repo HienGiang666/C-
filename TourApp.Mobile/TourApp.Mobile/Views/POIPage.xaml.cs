@@ -118,10 +118,45 @@ public partial class POIPage : ContentPage
 
     private async void OnQRScanClicked(object sender, EventArgs e)
     {
-        // Navigate to real QR scanner
         await Shell.Current.GoToAsync("QRScannerPage");
     }
-    
+
+    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        var query = e.NewTextValue?.Trim();
+        if (string.IsNullOrEmpty(query) || query.Length < 1)
+        {
+            SearchDropdown.IsVisible = false;
+            return;
+        }
+
+        var results = _allPois?
+            .Where(p => p.Name != null && p.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(6)
+            .ToList();
+
+        if (results != null && results.Count > 0)
+        {
+            SearchResultsView.ItemsSource = results;
+            SearchDropdown.IsVisible = true;
+        }
+        else
+        {
+            SearchDropdown.IsVisible = false;
+        }
+    }
+
+    private async void OnSearchResultSelected(object? sender, SelectionChangedEventArgs e)
+    {
+        if (e.CurrentSelection?.FirstOrDefault() is POI selectedPoi)
+        {
+            SearchDropdown.IsVisible = false;
+            SearchEntry.Text = selectedPoi.Name;
+            SearchResultsView.SelectedItem = null;
+            await Shell.Current.GoToAsync($"//MapPage?poiId={selectedPoi.Id}");
+        }
+    }
+
     private async void OnSearchCompleted(object sender, EventArgs e)
     {
         if (sender is not Entry searchEntry) return;

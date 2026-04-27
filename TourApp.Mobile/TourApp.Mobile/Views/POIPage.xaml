@@ -32,13 +32,32 @@
                 </Border>
             </Grid>
 
-            <!-- Search Bar -->
-            <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="48" StrokeShape="RoundRectangle 12">
-                <Grid ColumnDefinitions="30,*">
-                    <Label Grid.Column="0" Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center"/>
-                    <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchFood], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" BackgroundColor="Transparent" Completed="OnSearchCompleted"/>
-                </Grid>
-            </Border>
+            <!-- Search Bar with Dropdown -->
+            <Grid>
+                <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="14,0" HeightRequest="48" StrokeShape="RoundRectangle 12">
+                    <Grid ColumnDefinitions="30,*">
+                        <Label Grid.Column="0" Text="{x:Static helpers:IconFont.Magnify}" FontFamily="MaterialIcons" FontSize="20" TextColor="#A0A8B8" VerticalOptions="Center"/>
+                        <Entry x:Name="SearchEntry" Grid.Column="1" Placeholder="{Binding [SearchFood], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#1A1D26" PlaceholderColor="#A0A8B8" FontSize="14" BackgroundColor="Transparent" TextChanged="OnSearchTextChanged" Completed="OnSearchCompleted"/>
+                    </Grid>
+                </Border>
+
+                <!-- Search Autocomplete Dropdown -->
+                <Border x:Name="SearchDropdown" IsVisible="False" Margin="0,52,0,0" VerticalOptions="Start" HorizontalOptions="Fill" BackgroundColor="White" StrokeShape="RoundRectangle 12" StrokeThickness="0" Shadow="{Shadow Brush=Black, Offset='0,4', Opacity=0.12, Radius=10}" MaximumHeightRequest="260">
+                    <CollectionView x:Name="SearchResultsView" SelectionMode="Single" SelectionChanged="OnSearchResultSelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:POI">
+                                <Grid Padding="14,10" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                    <Label Grid.Column="0" Text="{x:Static helpers:IconFont.MapMarker}" FontFamily="MaterialIcons" FontSize="18" TextColor="#00B14F" VerticalOptions="Center"/>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                        <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold" TextColor="#1A1D26" LineBreakMode="TailTruncation" MaxLines="1"/>
+                                        <Label Text="{Binding Address}" FontSize="11" TextColor="#94A3B8" LineBreakMode="TailTruncation" MaxLines="1"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Border>
+            </Grid>
         </VerticalStackLayout>
 
         <!-- Main Content -->

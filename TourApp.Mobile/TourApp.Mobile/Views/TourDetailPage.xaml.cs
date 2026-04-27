@@ -28,6 +28,41 @@ public partial class TourDetailPage : ContentPage
         InitializeComponent();
         _apiService = new ApiService();
         StopsCollectionView.ItemsSource = TourStops;
+        LanguageService.LanguageChanged += OnLanguageChanged;
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+        LanguageService.LanguageChanged += OnLanguageChanged;
+        // Refresh code-behind labels in case language changed while away
+        RefreshLocalizedLabels();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        LanguageService.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, string newLang)
+    {
+        MainThread.BeginInvokeOnMainThread(() => RefreshLocalizedLabels());
+    }
+
+    private void RefreshLocalizedLabels()
+    {
+        if (_currentTour == null) return;
+        try
+        {
+            ParticipantsLabel.Text = LanguageService.GetString("MaxPeople", _currentTour.MaxParticipants);
+            TourDescriptionLabel.Text = _currentTour.GetLocalizedDescription(LanguageService.CurrentLanguage);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TourDetailPage] RefreshLocalizedLabels error: {ex.Message}");
+        }
     }
 
     private async Task LoadTourData()

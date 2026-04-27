@@ -32,14 +32,14 @@
                     </BoxView>
 
                     <!-- Back button -->
-                    <Button Text="&#xE5C4;"
+                    <Button Text="{x:Static helpers:IconFont.ArrowLeft}"
                             FontFamily="MaterialIcons"
                             FontSize="24"
                             TextColor="White"
-                            BackgroundColor="#00000040"
-                            CornerRadius="20"
-                            WidthRequest="40"
-                            HeightRequest="40"
+                            BackgroundColor="#00000099"
+                            CornerRadius="22"
+                            WidthRequest="44"
+                            HeightRequest="44"
                             HorizontalOptions="Start"
                             VerticalOptions="Start"
                             Margin="16,16,0,0"
@@ -73,7 +73,8 @@
                                FontAttributes="Bold"
                                TextColor="#00B14F"
                                VerticalOptions="Center" />
-                        <Label Text="/ person"
+                        <Label x:Name="PerPersonLabel"
+                               Text="{Binding [PerPerson], Source={x:Static services:LocalizationResourceManager.Instance}}"
                                FontSize="14"
                                TextColor="#9AA0A6"
                                VerticalOptions="End"
@@ -122,7 +123,7 @@
                                        VerticalOptions="Center" />
                             </Border>
                             <VerticalStackLayout Spacing="0" VerticalOptions="Center">
-                                <Label Text="{Binding [MaxPeople], Source={x:Static services:LocalizationResourceManager.Instance}}"
+                                <Label Text="{Binding [MaxPeopleLabel], Source={x:Static services:LocalizationResourceManager.Instance}}"
                                        FontSize="11"
                                        TextColor="#9AA0A6" />
                                 <Label x:Name="ParticipantsLabel"

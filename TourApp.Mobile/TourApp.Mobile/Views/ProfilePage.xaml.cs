@@ -39,6 +39,13 @@ public partial class ProfilePage : ContentPage
                                ?? LanguageService.GetLanguageName(newLang);
                 LanguageLabel.Text = langName;
 
+                // Update guest mode labels when language changes
+                if (AuthService.IsGuestMode)
+                {
+                    UserNameLabel.Text = LanguageService.GetString("Guest");
+                    UserEmailLabel.Text = LanguageService.GetString("GuestMode");
+                }
+
                 // Notify user about language change
                 System.Diagnostics.Debug.WriteLine($"[ProfilePage] UI updated to language: {newLang}");
             }
@@ -58,7 +65,9 @@ public partial class ProfilePage : ContentPage
         // Update user info
         if (AuthService.CurrentUser != null)
         {
-            UserNameLabel.Text = AuthService.CurrentUser.DisplayName;
+            UserNameLabel.Text = isGuest 
+                ? LanguageService.GetString("Guest") 
+                : AuthService.CurrentUser.DisplayName;
             UserEmailLabel.Text = isGuest 
                 ? LanguageService.GetString("GuestMode") 
                 : (AuthService.CurrentUser.Email ?? LanguageService.GetString("NoEmail"));
