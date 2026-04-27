@@ -341,7 +341,8 @@ public partial class MapPage : ContentPage
                 settings.AllowContentAccess = true;
                 // Tăng kích thước cache
                 settings.SetAppCacheMaxSize(50 * 1024 * 1024); // 50MB
-                var cachePath = System.IO.Path.Combine(FileSystem.CacheDirectory, "webview_cache");
+                var cachePath = System.IO.Path.Combine(FileSystem.AppDataDirectory, "webview_cache");
+                Directory.CreateDirectory(cachePath);
                 settings.SetAppCachePath(cachePath);
                 settings.SetAppCacheEnabled(true);
                 System.Diagnostics.Debug.WriteLine("[MapPage] Android WebView cache enabled (LOAD_CACHE_ELSE_NETWORK)");
@@ -649,9 +650,17 @@ public partial class MapPage : ContentPage
 
                 if (PoiImage != null)
                 {
-                    PoiImage.Source = !string.IsNullOrEmpty(poi.ImageUrl)
-                        ? ImageSource.FromUri(new Uri(poi.ImageUrl))
-                        : null;
+                    if (!string.IsNullOrEmpty(poi.ImageUrl))
+                    {
+                        if (File.Exists(poi.ImageUrl))
+                            PoiImage.Source = ImageSource.FromFile(poi.ImageUrl);
+                        else
+                            PoiImage.Source = ImageSource.FromUri(new Uri(poi.ImageUrl));
+                    }
+                    else
+                    {
+                        PoiImage.Source = null;
+                    }
                 }
 
                 bool isFav = Preferences.Default.Get($"fav_{poi.Id}", false);
@@ -1421,25 +1430,26 @@ if (!_locationService.IsMocking)
         _pendingMapPoisJson = SerializeMapPois(_pois);
         var poisJson = _pendingMapPoisJson;
 
-        // Offline mode: dùng file:// URL cho JS/CSS + data URI cho style JSON
+        // Offline mode: dùng base64 data URI cho JS/CSS/Style (tránh file:// bị chặn trên device thật)
         var useOffline = !NetworkService.IsConnected && AreMapAssetsCached();
-        string? styleBase64 = null;
+        string? jsBase64 = null, cssBase64 = null, styleBase64 = null;
         if (useOffline)
         {
             try
             {
-                var styleBytes = File.ReadAllBytes(StyleCachePath);
-                styleBase64 = Convert.ToBase64String(styleBytes);
-                System.Diagnostics.Debug.WriteLine("[MapPage] Offline map: file:// JS/CSS + data URI style");
+                jsBase64 = Convert.ToBase64String(File.ReadAllBytes(JsCachePath));
+                cssBase64 = Convert.ToBase64String(File.ReadAllBytes(CssCachePath));
+                styleBase64 = Convert.ToBase64String(File.ReadAllBytes(StyleCachePath));
+                System.Diagnostics.Debug.WriteLine("[MapPage] Offline map: base64 data URI for JS/CSS/Style");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] Read offline style error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Read offline assets error: {ex.Message}");
                 useOffline = false;
             }
         }
 
-        var html = BuildMapHtml(poisJson, useOffline, styleBase64);
+        var html = BuildMapHtml(poisJson, useOffline, jsBase64, cssBase64, styleBase64);
         MapWebView.Source = new HtmlWebViewSource { Html = html };
     }
 
@@ -1487,16 +1497,16 @@ if (!_locationService.IsMocking)
         }
     }
 
-    private static string BuildMapHtml(string poisJson, bool useOfflineAssets = false, string? styleBase64 = null)
+    private static string BuildMapHtml(string poisJson, bool useOfflineAssets = false, string? jsBase64 = null, string? cssBase64 = null, string? styleBase64 = null)
     {
-        // JS tag: file:// khi offline (tránh </script> trong JS break HTML), CDN khi online
-        var jsTag = useOfflineAssets
-            ? $"<script src='file://{JsCachePath}'></script>\n<script>setTimeout(function(){{ if(window.goongjs) onGoongLoaded(); else onGoongLoadError(); }}, 50);</script>"
+        // JS tag: data URI base64 khi offline (tránh </script> và file:// bị chặn), CDN khi online
+        var jsTag = useOfflineAssets && !string.IsNullOrEmpty(jsBase64)
+            ? $"<script src='data:text/javascript;base64,{jsBase64}'></script>\n<script>setTimeout(function(){{ if(window.goongjs) onGoongLoaded(); else onGoongLoadError(); }}, 50);</script>"
             : $"<script src='{GoongJsUrl}' onload='onGoongLoaded()' onerror='onGoongLoadError()'></script>";
 
-        // CSS tag: file:// khi offline, CDN khi online
-        var cssTag = useOfflineAssets
-            ? $"<link href='file://{CssCachePath}' rel='stylesheet'>"
+        // CSS tag: data URI base64 khi offline, CDN khi online
+        var cssTag = useOfflineAssets && !string.IsNullOrEmpty(cssBase64)
+            ? $"<link href='data:text/css;base64,{cssBase64}' rel='stylesheet'>"
             : $"<link href='{GoongCssUrl}' rel='stylesheet'>";
 
         // Style JSON: data URI khi offline (goongjs.Map dùng fetch() → data URI hoạt động), null khi online

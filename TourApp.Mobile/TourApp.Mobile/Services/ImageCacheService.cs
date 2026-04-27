@@ -65,6 +65,13 @@ namespace TourApp.Mobile.Services
         {
             if (string.IsNullOrWhiteSpace(imageUrl)) return null;
 
+            // Nếu đã là local file path (do model ImageUrl bị mutate trong lần online trước)
+            if (File.Exists(imageUrl))
+            {
+                Debug.WriteLine($"[ImageCache] Already local path: {imageUrl}");
+                return imageUrl;
+            }
+
             var fullUrl = ResolveUrl(imageUrl);
             if (string.IsNullOrEmpty(fullUrl)) return null;
 

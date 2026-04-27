@@ -27,7 +27,19 @@ namespace TourApp.Mobile
 
             // ─────────────────────────────────────────────────────────────────
             NetworkService.Initialize();
+
+            // Warm cache khi online — tải POI, Tour, ảnh, map assets về local
+            NetworkService.ConnectivityChanged += OnNetworkConnectivityChanged;
+            if (NetworkService.IsConnected)
+                OfflineDataPreloadService.StartPreload();
+
             InitializeComponent();
+        }
+
+        private void OnNetworkConnectivityChanged(bool isOnline)
+        {
+            if (isOnline)
+                OfflineDataPreloadService.StartPreload();
         }
 
 
