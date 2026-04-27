@@ -147,6 +147,12 @@ public partial class MapPage : ContentPage
             {
                 ProcessPendingPoiId();
             }
+
+            // Xử lý pending Tour ID nếu có (vẽ lộ trình)
+            if (_pendingTourId.HasValue)
+            {
+                ProcessPendingTourId();
+            }
         }
         catch (Exception ex)
         {
@@ -208,9 +214,6 @@ public partial class MapPage : ContentPage
                 // Xử lý pending POI ID nếu có
                 ProcessPendingPoiId();
             }
-            
-            // Xử lý pending Tour ID nếu có (luôn gọi, bất kể POIs đã load hay chưa)
-            ProcessPendingTourId();
         }
         catch (Exception ex)
         {
@@ -308,71 +311,103 @@ public partial class MapPage : ContentPage
     /// </summary>
     private async void ProcessPendingTourId()
     {
-        if (_pendingTourId.HasValue)
+        if (!_pendingTourId.HasValue) return;
+
+        try
         {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending Tour ID: {_pendingTourId.Value}, JS ready={_isJsMapReady}");
+            
+            var tour = await _apiService.GetTourByIdAsync(_pendingTourId.Value);
+            if (tour == null) { _pendingTourId = null; return; }
+
+            var tourPois = await _apiService.GetTourStopsAsync(tour.Id);
+            if (tourPois == null || !tourPois.Any()) { _pendingTourId = null; return; }
+
+            var originPOI = tourPois.First().POI;
+            var destPOI = tourPois.Last().POI;
+            
+            var origin = _locationService.MockLocation ?? _lastLocation ?? new Location(originPOI!.Latitude, originPOI.Longitude);
+            var dest = new Location(destPOI!.Latitude, destPOI.Longitude);
+            
+            var waypoints = new List<Location>();
+            if (_locationService.MockLocation != null || _lastLocation != null)
+            {
+                waypoints.Add(new Location(originPOI.Latitude, originPOI.Longitude));
+            }
+            for (int i = 1; i < tourPois.Count - 1; i++)
+            {
+                waypoints.Add(new Location(tourPois[i].POI!.Latitude, tourPois[i].POI!.Longitude));
+            }
+            
+            // Nếu map JS chưa ready thì giữ lại pending để retry sau
+            if (!_isJsMapReady)
+            {
+                System.Diagnostics.Debug.WriteLine("[MapPage] Map JS not ready yet, will retry when ready");
+                return;
+            }
+            
+            // Highlight tour POIs on map (if POIs loaded)
+            if (_pois != null)
+            {
+                try
+                {
+                    var jsArray = string.Join(",", tourPois.Select(tp => tp.POIId.ToString()));
+                    MainThread.BeginInvokeOnMainThread(() => {
+                        MapWebView.Eval($@"
+                            document.querySelectorAll('.poi-marker').forEach(function(m) {{
+                                if([{jsArray}].includes(parseInt(m.getAttribute('data-poi-id')))) {{
+                                    m.style.backgroundColor = '#FF0000';
+                                    m.classList.add('triggered');
+                                }}
+                            }});
+                        ");
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Highlight POIs error: {ex.Message}");
+                }
+            }
+
+            // Draw directions route via API (riêng try-catch để không block straight-line fallback)
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] Processing pending Tour ID: {_pendingTourId.Value}");
-                
-                var tour = await _apiService.GetTourByIdAsync(_pendingTourId.Value);
-                if (tour != null)
-                {
-                    var tourPois = await _apiService.GetTourStopsAsync(tour.Id);
-                    if (tourPois != null && tourPois.Any())
-                    {
-                        var originPOI = tourPois.First().POI;
-                        var destPOI = tourPois.Last().POI;
-                        
-                        var origin = _locationService.MockLocation ?? _lastLocation ?? new Location(originPOI!.Latitude, originPOI.Longitude);
-                        var dest = new Location(destPOI!.Latitude, destPOI.Longitude);
-                        
-                        var waypoints = new List<Location>();
-                        if (_locationService.MockLocation != null || _lastLocation != null)
-                        {
-                            waypoints.Add(new Location(originPOI.Latitude, originPOI.Longitude));
-                        }
-                        for (int i = 1; i < tourPois.Count - 1; i++)
-                        {
-                            waypoints.Add(new Location(tourPois[i].POI!.Latitude, tourPois[i].POI!.Longitude));
-                        }
-                        
-                        // Highlight tour POIs on map (if POIs loaded)
-                        if (_isJsMapReady && _pois != null)
-                        {
-                            var jsArray = string.Join(",", tourPois.Select(tp => tp.POIId.ToString()));
-                            MapWebView.Eval($@"
-                                document.querySelectorAll('.poi-marker').forEach(function(m) {{
-                                    if([{jsArray}].includes(parseInt(m.getAttribute('data-poi-id')))) {{
-                                        m.style.backgroundColor = '#FF0000';
-                                        m.classList.add('triggered');
-                                    }}
-                                }});
-                            ");
-                        }
-
-                        // Draw directions route via API
-                        await DrawRouteAsync(origin, dest, waypoints);
-                        
-                        // Also draw straight line connecting all tour stops + user location for visual reference
-                        var allCoords = new List<string>();
-                        allCoords.Add($"[{origin.Longitude},{origin.Latitude}]");
-                        foreach (var tp in tourPois)
-                        {
-                            allCoords.Add($"[{tp.POI!.Longitude},{tp.POI.Latitude}]");
-                        }
-                        var coordsStr = string.Join(",", allCoords);
-                        
-                        if (_isJsMapReady)
-                        {
-                            MapWebView.Eval($"drawRoute([{coordsStr}]);");
-                        }
-                    }
-                }
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Calling DrawRouteAsync: origin={origin.Latitude},{origin.Longitude} dest={dest.Latitude},{dest.Longitude} waypoints={waypoints.Count}");
+                await DrawRouteAsync(origin, dest, waypoints);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MapPage] ProcessPendingTourId error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[MapPage] DrawRouteAsync error: {ex.Message}");
             }
+            
+            // Luôn vẽ đường thẳng nối các điểm dừng + vị trí user (fallback nếu OSRM lỗi)
+            try
+            {
+                var allCoords = new List<string>();
+                allCoords.Add($"[{origin.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{origin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}]");
+                foreach (var tp in tourPois)
+                {
+                    allCoords.Add($"[{tp.POI!.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)},{tp.POI.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}]");
+                }
+                var coordsStr = string.Join(",", allCoords);
+                var js = $"drawRoute([{coordsStr}]);";
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Eval straight-line JS: {js.Substring(0, Math.Min(js.Length, 200))}...");
+                MainThread.BeginInvokeOnMainThread(() => {
+                    MapWebView.Eval(js);
+                });
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Straight-line route queued with {allCoords.Count} points");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] Straight-line route error: {ex.Message}");
+            }
+
+            // Chỉ clear pending sau khi đã vẽ xong
+            _pendingTourId = null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MapPage] ProcessPendingTourId fatal error: {ex.Message}");
             _pendingTourId = null;
         }
     }
@@ -1212,7 +1247,8 @@ function updateUserLocation(lng, lat) {{
 }}
 
 function drawRoute(coords) {{
-  if (!map) return;
+  console.log('drawRoute called with', coords.length, 'coords');
+  if (!map) {{ console.error('drawRoute: map not ready'); return; }}
   
   if (map.getSource('route')) {{
     map.getSource('route').setData({{
@@ -1223,6 +1259,7 @@ function drawRoute(coords) {{
         'coordinates': coords
       }}
     }});
+    console.log('drawRoute: updated existing source');
   }} else {{
     map.addSource('route', {{
       'type': 'geojson',
@@ -1244,11 +1281,12 @@ function drawRoute(coords) {{
         'line-cap': 'round'
       }},
       'paint': {{
-        'line-color': '#3B82F6',
-        'line-width': 6,
-        'line-opacity': 0.8
+        'line-color': '#FF0000',
+        'line-width': 8,
+        'line-opacity': 1.0
       }}
     }});
+    console.log('drawRoute: created new source+layer');
   }}
 
   if (coords.length > 0) {{
@@ -1256,6 +1294,7 @@ function drawRoute(coords) {{
       return b.extend(coord);
     }}, new goongjs.LngLatBounds(coords[0], coords[0]));
     map.fitBounds(bounds, {{ padding: 50 }});
+    console.log('drawRoute: fitBounds done');
   }}
 }}
 
