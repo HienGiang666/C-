@@ -682,6 +682,163 @@ namespace TourApp.Mobile.Services
             return null;
         }
 
+        #region Payment Methods (Migration v2)
+
+        /// <summary>Verify QR payment - Giả lập thanh toán thành công</summary>
+        public async Task<(bool Success, string Message, string? TransactionId)> VerifyQrPaymentAsync(int bookingId)
+        {
+            try
+            {
+                var qrData = QrCodeService.CreatePaymentQrData(bookingId, 0, "");
+                var request = new { BookingId = bookingId, QrData = qrData };
+                
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await GetClient().PostAsync("/api/payment/verify-qr", content, cts.Token);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(responseBody);
+                    var root = doc.RootElement;
+                    var message = root.TryGetProperty("message", out var msgProp) ? msgProp.GetString() : "Thành công";
+                    var transactionId = root.TryGetProperty("transactionId", out var transProp) ? transProp.GetString() : null;
+                    return (true, message ?? "Thành công", transactionId);
+                }
+                
+                return (false, $"Lỗi: {responseBody}", null);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Payment error: {ex.Message}");
+                return (false, "Lỗi kết nối. Vui lòng thử lại.", null);
+            }
+        }
+
+        /// <summary>Cancel booking with reason</summary>
+        public async Task<(bool Success, string Message)> CancelBookingAsync(int bookingId, string reason)
+        {
+            try
+            {
+                var request = new { Reason = reason };
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await GetClient().PostAsync($"/api/payment/{bookingId}/cancel", content, cts.Token);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                
+                if (response.IsSuccessStatusCode)
+                    return (true, "Đã hủy booking thành công");
+                
+                return (false, $"Lỗi: {responseBody}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Cancel error: {ex.Message}");
+                return (false, "Lỗi kết nối. Vui lòng thử lại.");
+            }
+        }
+
+        /// <summary>Lấy lịch sử thanh toán của user</summary>
+        public async Task<List<Payment>> GetUserPaymentsAsync(int userId)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/payment/user/{userId}", cts.Token);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token);
+                    return JsonSerializer.Deserialize<List<Payment>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Get payments error: {ex.Message}");
+            }
+            return new List<Payment>();
+        }
+
+        /// <summary>Lấy thông tin booking theo ID</summary>
+        public async Task<Booking?> GetBookingAsync(int bookingId)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/booking/{bookingId}", cts.Token);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token);
+                    return JsonSerializer.Deserialize<Booking>(body, JsonOpts);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Get booking error: {ex.Message}");
+            }
+            return null;
+        }
+
+        #endregion
+
+        #region Category Methods (Migration v2)
+
+        /// <summary>Lấy tất cả danh mục POI</summary>
+        public async Task<List<Category>> GetCategoriesAsync()
+        {
+            var cacheFile = Path.Combine(FileSystem.AppDataDirectory, "categories.json");
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync("/api/category", cts.Token).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(cacheFile, body);
+                    return JsonSerializer.Deserialize<List<Category>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Fallback to cache for GetCategoriesAsync: {ex.Message}");
+            }
+
+            if (File.Exists(cacheFile))
+            {
+                var cached = await File.ReadAllTextAsync(cacheFile);
+                return JsonSerializer.Deserialize<List<Category>>(cached, JsonOpts) ?? new();
+            }
+            return new List<Category>();
+        }
+
+        /// <summary>Lấy POI theo category</summary>
+        public async Task<List<POI>> GetPOIsByCategoryAsync(int categoryId)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await GetClient().GetAsync($"/api/category/{categoryId}/pois", cts.Token);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token);
+                    return JsonSerializer.Deserialize<List<POI>>(body, JsonOpts) ?? new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] Get POIs by category error: {ex.Message}");
+            }
+            return new List<POI>();
+        }
+
+        #endregion
+
         /// <summary>
         /// Lấy IP WiFi hiện tại của máy tính để hiển thị cho user
         /// </summary>

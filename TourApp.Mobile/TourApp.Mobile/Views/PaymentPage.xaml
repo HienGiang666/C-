@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TourApp.Mobile.Views.PaymentPage"
+             Title="Thanh toán QR">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F0F7F4" Offset="0.0"/>
+            <GradientStop Color="#FFF8F0" Offset="0.5"/>
+            <GradientStop Color="#EEF2F7" Offset="1.0"/>
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <!-- Header -->
+            <Label Text="Thanh toán giả lập" 
+                   FontSize="22" 
+                   FontAttributes="Bold" 
+                   TextColor="#1A1D26"
+                   HorizontalOptions="Center"/>
+
+            <Label Text="Quét mã QR để hoàn tất thanh toán" 
+                   FontSize="14" 
+                   TextColor="#6B7588"
+                   HorizontalOptions="Center"/>
+
+            <!-- Booking Summary -->
+            <Border StrokeThickness="0" BackgroundColor="White" Padding="18" StrokeShape="RoundRectangle 14">
+                <Border.Shadow>
+                    <Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.06"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Thông tin đặt tour" FontSize="12" TextColor="#A0A8B8"/>
+                    <Label x:Name="TourNameLabel" FontSize="17" FontAttributes="Bold" TextColor="#1A1D26"/>
+                    
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                        <Label Text="Mã booking:" FontSize="13" TextColor="#6B7588"/>
+                        <Label x:Name="BookingCodeLabel" Grid.Column="1" FontSize="13" FontAttributes="Bold" TextColor="#1A1D26"/>
+                    </Grid>
+                    
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Số người:" FontSize="13" TextColor="#6B7588"/>
+                        <Label x:Name="ParticipantsLabel" Grid.Column="1" FontSize="13" TextColor="#1A1D26"/>
+                    </Grid>
+                    
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                        <Label Text="Tổng thanh toán" FontSize="15" FontAttributes="Bold" TextColor="#1A1D26"/>
+                        <Label x:Name="TotalPriceLabel" Grid.Column="1" FontSize="18" FontAttributes="Bold" TextColor="#00B14F"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- QR Code Display -->
+            <Border StrokeThickness="0" BackgroundColor="White" Padding="24" StrokeShape="RoundRectangle 14"
+                    HorizontalOptions="Center">
+                <Border.Shadow>
+                    <Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                    <Label Text="Mã QR thanh toán" FontSize="14" FontAttributes="Bold" TextColor="#1A1D26" HorizontalOptions="Center"/>
+                    
+                    <!-- QR Image -->
+                    <Image x:Name="QrCodeImage" WidthRequest="200" HeightRequest="200" Aspect="AspectFit"/>
+                    
+                    <Label Text="Sử dụng app ngân hàng hoặc ví điện tử để quét" 
+                           FontSize="12" 
+                           TextColor="#A0A8B8"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Timer -->
+            <Label x:Name="TimerLabel" 
+                   Text="Mã QR hết hạn sau: 15:00" 
+                   FontSize="13" 
+                   TextColor="#FF6B35"
+                   HorizontalOptions="Center"/>
+
+            <!-- Simulate Buttons (Dev Mode) -->
+            <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" Padding="16" StrokeShape="RoundRectangle 12">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Chế độ giả lập (Dev)" FontSize="12" TextColor="#A0A8B8" HorizontalOptions="Center"/>
+                    
+                    <Button Text="✅ Giả lập quét thành công" 
+                            BackgroundColor="#00B14F"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            Clicked="OnSimulateSuccessClicked"/>
+                    
+                    <Button Text="❌ Giả lập quét thất bại" 
+                            BackgroundColor="#FF4444"
+                            TextColor="White"
+                            CornerRadius="12"
+                            HeightRequest="45"
+                            Clicked="OnSimulateFailClicked"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Cancel Button -->
+            <Button Text="Hủy thanh toán" 
+                    BackgroundColor="Transparent"
+                    TextColor="#6B7588"
+                    BorderColor="#E4E7ED"
+                    BorderWidth="1"
+                    CornerRadius="12"
+                    HeightRequest="48"
+                    Clicked="OnCancelClicked"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
