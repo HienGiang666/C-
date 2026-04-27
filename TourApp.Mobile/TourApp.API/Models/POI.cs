@@ -33,4 +33,7 @@ public class POI
 
     // Navigation property for many-to-many with Tours
     public virtual ICollection<TourPOI> TourPOIs { get; set; } = new List<TourPOI>();
+
+    // Navigation property for categories (Migration v2)
+    public ICollection<POICategory>? POICategories { get; set; } = new List<POICategory>();
 }

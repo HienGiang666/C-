@@ -24,5 +24,8 @@ namespace TourApp.CMS.Models
 
         /// <summary>Mã hiển thị đầy đủ (VD: #P1).</summary>
         public string DisplayCode => string.IsNullOrEmpty(Code) ? $"#P{Id}" : Code;
+
+        // Navigation property for categories (Migration v2)
+        public ICollection<POICategory>? POICategories { get; set; } = new List<POICategory>();
     }
 }

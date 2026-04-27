@@ -22,5 +22,12 @@ namespace TourApp.CMS.Models
 
         /// <summary>Mã hiển thị đầy đủ (VD: BK-1).</summary>
         public string DisplayCode => string.IsNullOrEmpty(Code) ? $"BK-{Id}" : Code;
+
+        // Payment fields (added in Migration v2)
+        public string? PaymentMethod { get; set; }      // QR, Momo, CreditCard...
+        public string? TransactionId { get; set; }      // Mã giao dịch giả lập
+        public DateTime? PaidAt { get; set; }           // Thời gian thanh toán thành công
+        public DateTime? CancelledAt { get; set; }      // Thời gian hủy
+        public string? CancelReason { get; set; }         // Lý do hủy
     }
 }
