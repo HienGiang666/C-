@@ -101,6 +101,9 @@ public partial class MapPage : ContentPage
 
             // Subscribe to language changes to refresh POI description
             LanguageService.LanguageChanged += OnLanguageChanged;
+
+            // Offline banner
+            NetworkService.ConnectivityChanged += OnConnectivityChanged;
         }
         catch (Exception ex)
         {
@@ -137,6 +140,9 @@ public partial class MapPage : ContentPage
                 if (t.IsFaulted)
                     System.Diagnostics.Debug.WriteLine($"[MapPage] POI load faulted: {t.Exception}");
             }, TaskContinuationOptions.OnlyOnFaulted);
+
+            // Update offline banner
+            UpdateOfflineBanner();
 
             // Bắt đầu tracking GPS với background support
             await _locationService.StartTrackingWithForegroundAsync();
@@ -233,6 +239,23 @@ public partial class MapPage : ContentPage
         LanguageService.LanguageChanged -= OnLanguageChanged;
     }
     
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateOfflineBanner();
+            if (isOnline && (_pois == null || !_pois.Any()))
+            {
+                _ = LoadPoisInBackgroundAsync();
+            }
+        });
+    }
+
+    private void UpdateOfflineBanner()
+    {
+        OfflineBanner.IsVisible = !NetworkService.IsConnected;
+    }
+
     /// <summary>
     /// Xử lý khi ngôn ngữ thay đổi - refresh mô tả POI nếu bottom sheet đang mở
     /// </summary>

@@ -5,6 +5,7 @@
              xmlns:services="clr-namespace:TourApp.Mobile.Services"
              xmlns:converters="clr-namespace:TourApp.Mobile.Converters"
              xmlns:helpers="clr-namespace:TourApp.Mobile.Helpers"
+             xmlns:models="clr-namespace:TourApp.Mobile.Models"
              x:Class="TourApp.Mobile.Views.HomePage"
              x:DataType="views:HomePage"
              Shell.NavBarIsVisible="False">
@@ -23,6 +24,18 @@
     
     <ScrollView>
         <VerticalStackLayout Spacing="0">
+
+            <!-- Offline Banner -->
+            <Border x:Name="OfflineBanner" IsVisible="False"
+                    BackgroundColor="#FEF3C7" StrokeThickness="0"
+                    Padding="14,8" HorizontalOptions="Fill">
+                <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Label Text="{x:Static helpers:IconFont.WifiOff}" FontFamily="MaterialIcons"
+                           FontSize="16" TextColor="#92400E" VerticalOptions="Center"/>
+                    <Label x:Name="OfflineBannerText" Text="Bạn đang offline — dữ liệu từ cache"
+                           FontSize="13" TextColor="#92400E" VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+            </Border>
 
             <!-- Green Gradient Header -->
             <Grid Padding="20,48,20,22">

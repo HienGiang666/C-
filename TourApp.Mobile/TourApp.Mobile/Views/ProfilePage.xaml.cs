@@ -18,12 +18,27 @@ public partial class ProfilePage : ContentPage
         
         // Subscribe to language changes để update UI
         LanguageService.LanguageChanged += OnLanguageChanged;
+
+        // Offline banner
+        NetworkService.ConnectivityChanged += OnConnectivityChanged;
+        UpdateOfflineBanner();
     }
-    
+
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateOfflineBanner);
+    }
+
+    private void UpdateOfflineBanner()
+    {
+        OfflineBanner.IsVisible = !NetworkService.IsConnected;
+    }
+
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
         LanguageService.LanguageChanged -= OnLanguageChanged;
+        NetworkService.ConnectivityChanged -= OnConnectivityChanged;
     }
     
     private void OnLanguageChanged(object? sender, string newLang)

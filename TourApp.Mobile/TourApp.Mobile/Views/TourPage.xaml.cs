@@ -36,16 +36,35 @@ public partial class TourPage : ContentPage
         
         BindingContext = this;
         
+        // Offline banner
+        NetworkService.ConnectivityChanged += OnConnectivityChanged;
+        UpdateOfflineBanner();
+
         // Load tours from API
         _ = LoadToursAsync();
     }
-    
+
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateOfflineBanner();
+            if (isOnline) _ = LoadToursAsync();
+        });
+    }
+
+    private void UpdateOfflineBanner()
+    {
+        OfflineBanner.IsVisible = !NetworkService.IsConnected;
+    }
+
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
         try
         {
             LanguageService.LanguageChanged -= OnLanguageChanged;
+            NetworkService.ConnectivityChanged -= OnConnectivityChanged;
         }
         catch (Exception ex)
         {

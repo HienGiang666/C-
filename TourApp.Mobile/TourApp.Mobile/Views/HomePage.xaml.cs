@@ -54,6 +54,10 @@ public partial class HomePage : ContentPage
         // Load POIs and Tours from API
         _ = LoadDataAsync();
         
+        // Offline banner
+        NetworkService.ConnectivityChanged += OnConnectivityChanged;
+        UpdateOfflineBanner();
+        
         BindingContext = this;
     }
     
@@ -63,11 +67,30 @@ public partial class HomePage : ContentPage
         try
         {
             LanguageService.LanguageChanged -= OnLanguageChanged;
+            NetworkService.ConnectivityChanged -= OnConnectivityChanged;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[HomePage] OnDisappearing error: {ex.Message}");
         }
+    }
+
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateOfflineBanner();
+            if (isOnline)
+            {
+                // Có mạng lại → reload data mới
+                _ = LoadDataAsync();
+            }
+        });
+    }
+
+    private void UpdateOfflineBanner()
+    {
+        OfflineBanner.IsVisible = !NetworkService.IsConnected;
     }
     
     private void OnLanguageChanged(object? sender, string newLang)

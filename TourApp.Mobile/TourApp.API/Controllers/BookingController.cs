@@ -31,6 +31,16 @@ public class BookingController : ControllerBase
         return booking;
     }
 
+    [HttpGet("user/{userId}")]
+    public async Task<ActionResult<IEnumerable<Booking>>> GetUserBookings(int userId)
+    {
+        var bookings = await _context.Bookings
+            .Where(b => b.UserId == userId)
+            .OrderByDescending(b => b.BookingDate)
+            .ToListAsync();
+        return Ok(bookings);
+    }
+
     /// <summary>
     /// POST /api/booking
     /// Chỉ khách hàng đã đăng nhập mới được đặt tour

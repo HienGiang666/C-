@@ -21,9 +21,18 @@
         <converters:LocalizedFormatConverter x:Key="LocalizedFormat" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Offline Banner -->
+        <Border x:Name="OfflineBanner" Grid.Row="0" IsVisible="False"
+                BackgroundColor="#FEF3C7" StrokeThickness="0" Padding="10,6" HorizontalOptions="Fill">
+            <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
+                <Label Text="{x:Static helpers:IconFont.WifiOff}" FontFamily="MaterialIcons" FontSize="14" TextColor="#92400E" VerticalOptions="Center"/>
+                <Label Text="Bạn đang offline — dữ liệu từ cache" FontSize="12" TextColor="#92400E" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+        </Border>
+
         <!-- Clean White Header -->
-        <VerticalStackLayout Grid.Row="0" BackgroundColor="White" Padding="20,48,20,18">
+        <VerticalStackLayout Grid.Row="1" BackgroundColor="White" Padding="20,48,20,18">
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
                 <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
                     <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0" BackgroundColor="#E6F9EE" StrokeShape="RoundRectangle 12">
@@ -50,7 +59,7 @@
         </VerticalStackLayout>
 
         <!-- Main Content -->
-        <ScrollView Grid.Row="1">
+        <ScrollView Grid.Row="2">
             <VerticalStackLayout Padding="20,16,20,40">
                 <CollectionView x:Name="TourCollectionView" SelectionMode="Single" SelectionChanged="OnTourSelected">
                     <CollectionView.ItemTemplate>
