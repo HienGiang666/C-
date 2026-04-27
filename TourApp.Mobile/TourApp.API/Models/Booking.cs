@@ -19,5 +19,17 @@ namespace TourApp.API.Models
 
         /// <summary>Mã nghiệp vụ BK-1, BK-2... (Business Key, VARCHAR).</summary>
         public string? Code { get; set; }
+
+        // Payment fields (added in Migration v2)
+        public string? PaymentMethod { get; set; }      // QR, Momo, CreditCard...
+        public string? TransactionId { get; set; }      // Mã giao dịch giả lập
+        public DateTime? PaidAt { get; set; }           // Thời gian thanh toán thành công
+        public DateTime? CancelledAt { get; set; }      // Thời gian hủy
+        public string? CancelReason { get; set; }         // Lý do hủy
+
+        // Navigation properties
+        public Tour? Tour { get; set; }
+        public User? User { get; set; }
+        public ICollection<Payment>? Payments { get; set; } = new List<Payment>();
     }
 }

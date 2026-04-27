@@ -34,8 +34,28 @@ namespace TourApp.Mobile.Models
         [JsonPropertyName("code")]
         public string? Code { get; set; }
         
+        // Payment fields (added in Migration v2)
+        [JsonPropertyName("paymentMethod")]
+        public string? PaymentMethod { get; set; }
+        
+        [JsonPropertyName("transactionId")]
+        public string? TransactionId { get; set; }
+        
+        [JsonPropertyName("paidAt")]
+        public DateTime? PaidAt { get; set; }
+        
+        [JsonPropertyName("cancelledAt")]
+        public DateTime? CancelledAt { get; set; }
+        
+        [JsonPropertyName("cancelReason")]
+        public string? CancelReason { get; set; }
+        
         // Dùng riêng cho UI Mobile để hiển thị tên Tour
         [JsonIgnore]
         public string? TourName { get; set; }
+        
+        // Helper property to check if booking is paid
+        [JsonIgnore]
+        public bool IsPaid => Status?.Equals("Paid", StringComparison.OrdinalIgnoreCase) == true || PaidAt != null;
     }
 }
