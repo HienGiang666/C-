@@ -5,7 +5,7 @@
     var ownerNames = ViewBag.OwnerNames as Dictionary<int, string> ?? new Dictionary<int, string>();
     var currentPage = (int)(ViewBag.CurrentPage ?? 1);
     var totalPages = (int)(ViewBag.TotalPages ?? 1);
-    int stt = (currentPage - 1) * 10;
+    int stt = (currentPage - 1) * 12;
     var cmsRole = Context.Session.GetString("Role") ?? "";
     var isAdminPoi = cmsRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }
@@ -102,7 +102,7 @@
                     <tbody>
                         @if (Model != null && Model.Any())
                         {
-                            int stt2 = (currentPage - 1) * 10;
+                            int stt2 = (currentPage - 1) * 12;
                             @foreach (var item in Model)
                             {
                                 stt2++;

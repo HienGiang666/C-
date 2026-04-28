@@ -320,7 +320,7 @@ namespace TourApp.Mobile.Services
                 var errorMsg = await response.Content.ReadAsStringAsync();
                 return (false, $"Lỗi server: {errorMsg}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Mạng lỗi giữa chừng → queue offline
                 await OfflineQueueService.EnqueueAsync(new OfflineAction
@@ -838,6 +838,35 @@ namespace TourApp.Mobile.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// Lưu tuyến đường vừa chỉ đường lên server để thống kê chuyến đi phổ biến
+        /// </summary>
+        public async Task SaveRouteAsync(List<double[]> coordinates, string? deviceId = null, int? userId = null)
+        {
+            if (coordinates == null || coordinates.Count < 2) return;
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var payload = new
+                {
+                    DeviceId = deviceId,
+                    UserId = userId,
+                    Coordinates = coordinates
+                };
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                var response = await GetClient().PostAsync("/api/userlocation/save-route", content, cts.Token);
+                if (response.IsSuccessStatusCode)
+                    Debug.WriteLine("[ApiService] Route saved successfully");
+                else
+                    Debug.WriteLine($"[ApiService] SaveRoute failed: {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] SaveRoute error: {ex.Message}");
+            }
+        }
 
         /// <summary>
         /// Lấy IP WiFi hiện tại của máy tính để hiển thị cho user

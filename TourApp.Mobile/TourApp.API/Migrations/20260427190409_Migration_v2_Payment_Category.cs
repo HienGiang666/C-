@@ -11,13 +11,6 @@ namespace TourApp.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsMock",
-                table: "UserLocationLogs",
-                type: "bit",
-                nullable: false,
-                defaultValue: false);
-
             migrationBuilder.AddColumn<string>(
                 name: "CancelReason",
                 table: "Bookings",
@@ -204,10 +197,6 @@ namespace TourApp.API.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_Bookings_UserId",
                 table: "Bookings");
-
-            migrationBuilder.DropColumn(
-                name: "IsMock",
-                table: "UserLocationLogs");
 
             migrationBuilder.DropColumn(
                 name: "CancelReason",

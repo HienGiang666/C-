@@ -81,7 +81,9 @@
         <div class="d-flex flex-wrap gap-3 justify-content-center small">
             <span><i class="fa-solid fa-circle text-success me-1"></i>Đang online</span>
             <span><i class="fa-solid fa-fire text-danger me-1"></i>Heatmap (mật độ)</span>
-            <span><i class="fa-solid fa-route text-primary me-1"></i>Tuyến di chuyển phổ biến</span>
+            <span><i class="fa-solid fa-route text-success me-1"></i>≤3 lượt</span>
+            <span><i class="fa-solid fa-route text-warning me-1"></i>4–7 lượt</span>
+            <span><i class="fa-solid fa-route text-danger me-1"></i>>7 lượt</span>
         </div>
     </div>
 </div>
@@ -224,33 +226,84 @@ else
             pathMarkers = [];
         }
 
+        function routeColor(count) {
+            if (count <= 3) return '#22c55e'; // green
+            if (count <= 7) return '#eab308'; // yellow
+            return '#ef4444';                 // red
+        }
+
         function loadPaths() {
-            fetch(apiBaseUrl + '/api/userlocation/paths')
+            fetch(apiBaseUrl + '/api/userlocation/popular-routes')
                 .then(r => r.json())
                 .then(data => {
                     clearPaths();
+                    populatePopularRoutesList(data.routes || []);
                     if (!data.routes || !layerStates.paths) return;
                     data.routes.forEach(function (route, i) {
                         var id = 'route-' + i;
+                        if (!route.coordinates || route.coordinates.length < 2) return;
                         map.addSource(id, {
                             type: 'geojson',
                             data: { type: 'Feature', geometry: { type: 'LineString', coordinates: route.coordinates } }
                         });
-                        var width = 3 + Math.min(route.count || 1, 6);
-                        var opacity = Math.min(0.5 + (route.count || 1) * 0.1, 0.85);
+                        var count = route.count || 1;
+                        var width = 3 + Math.min(count, 8);
+                        var opacity = Math.min(0.4 + count * 0.08, 0.9);
+                        var color = routeColor(count);
                         map.addLayer({
                             id: id,
                             type: 'line',
                             source: id,
                             paint: {
-                                'line-color': '#0d6efd',
+                                'line-color': color,
                                 'line-width': width,
                                 'line-opacity': opacity
                             }
                         });
+                        // Add origin/destination dots
+                        var origin = route.coordinates[0];
+                        var dest = route.coordinates[route.coordinates.length - 1];
+                        var mkO = document.createElement('div');
+                        mkO.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + color + ';border:2px solid white;';
+                        var markerO = new goongjs.Marker({ element: mkO }).setLngLat(origin).addTo(map);
+                        pathMarkers.push(markerO);
+                        var mkD = document.createElement('div');
+                        mkD.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + color + ';border:2px solid white;';
+                        var markerD = new goongjs.Marker({ element: mkD }).setLngLat(dest).addTo(map);
+                        pathMarkers.push(markerD);
                         pathLines.push(id);
                     });
                 }).catch(err => console.error('[Paths]', err));
+        }
+
+        function populatePopularRoutesList(routes) {
+            var container = document.getElementById('popularRoutesList');
+            if (!container) return;
+            container.innerHTML = '';
+            if (routes.length === 0) {
+                container.innerHTML = '<div class="list-group-item text-center text-muted py-4"><i class="fa-solid fa-route fs-1 mb-2"></i><p>Chưa có dữ liệu tuyến đường</p></div>';
+                return;
+            }
+            routes.slice(0, 10).forEach(function (route, i) {
+                var count = route.count || 1;
+                var color = routeColor(count);
+                var el = document.createElement('a');
+                el.className = 'list-group-item list-group-item-action d-flex align-items-center py-2';
+                el.href = '#';
+                el.onclick = function (e) {
+                    e.preventDefault();
+                    if (route.coordinates && route.coordinates.length > 0) {
+                        map.flyTo({ center: route.coordinates[Math.floor(route.coordinates.length / 2)], zoom: 15 });
+                    }
+                };
+                el.innerHTML =
+                    '<span class="badge rounded-pill me-2" style="background:' + color + ';width:32px;height:32px;display:flex;align-items:center;justify-content:center;">' +
+                    '<i class="fa-solid fa-route text-white"></i></span>' +
+                    '<div class="flex-grow-1"><div class="fw-semibold">Tuyến #' + (i + 1) + '</div>' +
+                    '<small class="text-muted">' + count + ' lượt chỉ đường</small></div>' +
+                    '<span class="badge" style="background:' + color + ';">' + count + '</span>';
+                container.appendChild(el);
+            });
         }
 
         // ===== TOGGLE =====

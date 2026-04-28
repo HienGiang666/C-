@@ -134,7 +134,7 @@
 <!-- Row 3: Analytics Stats -->
 <div class="row g-4 mb-4">
     <!-- Top địa điểm được nghe nhiều nhất -->
-    <div class="col-lg-6">
+    <div class="col-lg-12">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white">
                 <h5 class="mb-0 fw-bold"><i class="fa-solid fa-trophy text-warning me-2"></i> Top địa điểm được nghe nhiều nhất</h5>
@@ -179,56 +179,6 @@
         </div>
     </div>
 
-    <!-- Thời gian nghe trung bình tại POI -->
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white">
-                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-stopwatch text-info me-2"></i> Thời gian nghe trung bình tại POI</h5>
-            </div>
-            <div class="card-body p-0">
-                @{
-                    var durationStats = ViewBag.DurationStats as DurationStatsViewModel;
-                    var poiDurations = durationStats?.POIDurations ?? new List<POIDurationViewModel>();
-                }
-                @if (poiDurations.Any())
-                {
-                    <div class="list-group list-group-flush">
-                        @foreach (var poi in poiDurations.Take(5))
-                        {
-                            <div class="list-group-item d-flex align-items-center py-3">
-                                <div class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                    <i class="fa-solid fa-location-dot text-info"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold">@poi.PoiName</div>
-                                    <small class="text-muted">@poi.TotalListens lượt nghe</small>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge bg-info rounded-pill">
-                                        <i class="fa-regular fa-clock me-1"></i>@poi.AvgDurationFormatted
-                                    </span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-hourglass-half fs-1 mb-2"></i>
-                        <p class="mb-0">Chưa có dữ liệu thời gian nghe</p>
-                        <small>Thời gian nghe sẽ được ghi lại khi người dùng nghe audio</small>
-                    </div>
-                }
-            </div>
-            <div class="card-footer bg-white border-top-0 text-center">
-                <small class="text-muted">
-                    Thời gian nghe TB toàn hệ thống: 
-                    <strong class="text-info">@(durationStats?.GlobalAverageFormatted ?? "00:00")</strong>
-                </small>
-            </div>
-        </div>
-    </div>
 </div>
 }
 

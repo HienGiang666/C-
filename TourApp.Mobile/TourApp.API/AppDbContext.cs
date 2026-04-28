@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Booking> Bookings { get; set; }     // 6. Bookings
     public DbSet<FavoritePOI> FavoritePOIs { get; set; } // 7. FavoritePOIs
     public DbSet<UserLocationLog> UserLocationLogs { get; set; } // 8. UserLocationLogs
+    public DbSet<PopularRoute> PopularRoutes { get; set; } // 8b. PopularRoutes (chỉ đường phổ biến)
     public DbSet<NarrationLog> NarrationLogs { get; set; } // 9. NarrationLogs
     public DbSet<POITranslation> POITranslations { get; set; } // 10. POITranslations
     public DbSet<TourTranslation> TourTranslations { get; set; } // 11. TourTranslations

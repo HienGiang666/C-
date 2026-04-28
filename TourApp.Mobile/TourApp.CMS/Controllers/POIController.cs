@@ -7,7 +7,7 @@ namespace TourApp.CMS.Controllers;
 
 public class POIController : Controller
 {
-    private const int PageSize = 10;
+    private const int PageSize = 12;
     private readonly IHttpClientFactory _clientFactory;
     private readonly IActivityLogger _activityLogger;
     private readonly IFileUploadService _fileUploadService;

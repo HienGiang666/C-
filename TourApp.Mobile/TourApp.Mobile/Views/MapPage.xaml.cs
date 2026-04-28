@@ -890,8 +890,28 @@ if (!_locationService.IsMocking)
         }
 
         // Draw route and ensure user marker stays visible
-        await DrawRouteAsync(origin, new Location(_currentPoi.Latitude, _currentPoi.Longitude));
-        
+        var routeCoords = await DrawRouteAsync(origin, new Location(_currentPoi.Latitude, _currentPoi.Longitude));
+
+        // Save popular route for CMS analytics (fire-and-forget)
+        if (routeCoords != null && routeCoords.Count >= 2)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var coords = routeCoords.Select(l => new[] { l.Longitude, l.Latitude }).ToList();
+                    string deviceId = "Unknown";
+                    try { deviceId = DeviceInfo.Current.Platform + "-" + DeviceInfo.Current.Idiom; } catch { }
+                    await _apiService.SaveRouteAsync(coords, deviceId);
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Popular route saved: {coords.Count} points");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MapPage] Save route error: {ex.Message}");
+                }
+            });
+        }
+
         // Re-draw user marker after route to ensure visibility
         if (_isJsMapReady && origin != null)
         {
@@ -900,7 +920,7 @@ if (!_locationService.IsMocking)
         }
     }
 
-    private async Task DrawRouteAsync(Location origin, Location destination, List<Location>? waypoints = null)
+    private async Task<List<Location>> DrawRouteAsync(Location origin, Location destination, List<Location>? waypoints = null)
     {
         var allInputPoints = new List<Location> { origin };
         if (waypoints != null) allInputPoints.AddRange(waypoints);
@@ -912,7 +932,8 @@ if (!_locationService.IsMocking)
         {
             try
             {
-                if (await TryGoongDirections(allInputPoints, ci)) return;
+                var goongResult = await TryGoongDirections(allInputPoints, ci);
+                if (goongResult != null) return goongResult;
             }
             catch (Exception ex)
             {
@@ -923,7 +944,8 @@ if (!_locationService.IsMocking)
         // Fallback to OSRM
         try
         {
-            if (await TryOsrmDirections(allInputPoints, ci)) return;
+            var osrmResult = await TryOsrmDirections(allInputPoints, ci);
+            if (osrmResult != null) return osrmResult;
         }
         catch (Exception ex)
         {
@@ -941,7 +963,7 @@ if (!_locationService.IsMocking)
     /// <summary>
     /// Goong Directions API - xử lý waypoints như Google Maps (mỗi POI là đích thực sự)
     /// </summary>
-    private async Task<bool> TryGoongDirections(List<Location> allPoints, System.Globalization.CultureInfo ci)
+    private async Task<List<Location>?> TryGoongDirections(List<Location> allPoints, System.Globalization.CultureInfo ci)
     {
         var allPolyCoords = new List<Location>();
         var dashedSegments = new List<string>();
@@ -963,12 +985,12 @@ if (!_locationService.IsMocking)
             using var doc = JsonDocument.Parse(res);
 
             if (!doc.RootElement.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
-                return false;
+                return null;
 
             var route = routes[0];
-            if (!route.TryGetProperty("overview_polyline", out var overviewPl)) return false;
+            if (!route.TryGetProperty("overview_polyline", out var overviewPl)) return null;
             var encoded = overviewPl.GetProperty("points").GetString();
-            if (string.IsNullOrEmpty(encoded)) return false;
+            if (string.IsNullOrEmpty(encoded)) return null;
 
             var legPolyCoords = DecodePolyline(encoded);
             if (legPolyCoords.Count < 2) continue;
@@ -1001,7 +1023,7 @@ if (!_locationService.IsMocking)
             }
         }
 
-        if (allPolyCoords.Count < 2) return false;
+        if (allPolyCoords.Count < 2) return null;
 
         var jsCoords = string.Join(",", allPolyCoords.Select(c => $"[{c.Longitude.ToString(ci)},{c.Latitude.ToString(ci)}]"));
         if (_isJsMapReady)
@@ -1014,13 +1036,13 @@ if (!_locationService.IsMocking)
             });
         }
         System.Diagnostics.Debug.WriteLine($"[DrawRoute] Goong success: {allPolyCoords.Count} total points, {dashedSegments.Count} dashed");
-        return true;
+        return allPolyCoords;
     }
 
     /// <summary>
     /// OSRM fallback - xử lý waypoints như Google Maps (mỗi POI là đích thực sự)
     /// </summary>
-    private async Task<bool> TryOsrmDirections(List<Location> allPoints, System.Globalization.CultureInfo ci)
+    private async Task<List<Location>?> TryOsrmDirections(List<Location> allPoints, System.Globalization.CultureInfo ci)
     {
         var allPolyCoords = new List<Location>();
         var dashedSegments = new List<string>();
@@ -1041,7 +1063,7 @@ if (!_locationService.IsMocking)
             var res = await _http.GetStringAsync(url);
             using var doc = JsonDocument.Parse(res);
             if (!doc.RootElement.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
-                return false;
+                return null;
 
             var geometry = routes[0].GetProperty("geometry").GetString();
             if (string.IsNullOrEmpty(geometry)) continue;
@@ -1076,7 +1098,7 @@ if (!_locationService.IsMocking)
             }
         }
 
-        if (allPolyCoords.Count < 2) return false;
+        if (allPolyCoords.Count < 2) return null;
 
         var jsCoords = string.Join(",", allPolyCoords.Select(c => $"[{c.Longitude.ToString(ci)},{c.Latitude.ToString(ci)}]"));
         if (_isJsMapReady)
@@ -1089,7 +1111,7 @@ if (!_locationService.IsMocking)
             });
         }
         System.Diagnostics.Debug.WriteLine($"[DrawRoute] OSRM success: {allPolyCoords.Count} total points, {dashedSegments.Count} dashed");
-        return true;
+        return allPolyCoords;
     }
 
     /// <summary>

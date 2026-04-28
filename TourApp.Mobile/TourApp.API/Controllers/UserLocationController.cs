@@ -335,6 +335,112 @@ public class UserLocationController : ControllerBase
         return Ok(new { routes = grouped });
     }
 
+    // ===== POPULAR ROUTES (chỉ đường phổ biến) =====
+
+    [HttpPost("save-route")]
+    public async Task<IActionResult> SaveRoute([FromBody] SaveRouteRequest req)
+    {
+        if (req == null || req.Coordinates == null || req.Coordinates.Count < 2)
+            return BadRequest(new { error = "Invalid route data" });
+
+        const double tolerance = 0.0002; // ~20m (không merge POI gần nhau)
+        var origin = req.Coordinates.First();
+        var dest = req.Coordinates.Last();
+        var newLength = RouteLengthMeters(req.Coordinates);
+
+        // Tìm route có điểm đầu/cuối gần và độ dài tương đương (±30%)
+        var candidates = await _context.PopularRoutes
+            .Where(r => Math.Abs(r.OriginLat - origin[1]) < tolerance
+                     && Math.Abs(r.OriginLng - origin[0]) < tolerance
+                     && Math.Abs(r.DestLat   - dest[1])   < tolerance
+                     && Math.Abs(r.DestLng   - dest[0])   < tolerance)
+            .OrderByDescending(r => r.LastUsedAt)
+            .Take(10)
+            .ToListAsync();
+
+        PopularRoute? existing = null;
+        foreach (var c in candidates)
+        {
+            var existingCoords = TryParseCoords(c.Polyline);
+            if (existingCoords == null) continue;
+            var existingLength = RouteLengthMeters(existingCoords);
+            // Chỉ merge nếu độ dài tương đương (±30%) hoặc điểm trung gian gần nhau
+            if (Math.Abs(newLength - existingLength) / Math.Max(newLength, 1) < 0.30)
+            {
+                existing = c;
+                break;
+            }
+        }
+
+        if (existing != null)
+        {
+            existing.UseCount++;
+            existing.LastUsedAt = DateTime.Now;
+            existing.DeviceId = req.DeviceId ?? existing.DeviceId;
+            // Cập nhật polyline nếu route mới dài hơn
+            if (req.Coordinates.Count > (existing.Polyline?.Split(']').Length ?? 0))
+                existing.Polyline = System.Text.Json.JsonSerializer.Serialize(req.Coordinates);
+            await _context.SaveChangesAsync();
+            return Ok(new { id = existing.Id, useCount = existing.UseCount, merged = true });
+        }
+
+        var route = new PopularRoute
+        {
+            DeviceId = req.DeviceId,
+            UserId = req.UserId,
+            OriginLat = origin[1],
+            OriginLng = origin[0],
+            DestLat = dest[1],
+            DestLng = dest[0],
+            Polyline = System.Text.Json.JsonSerializer.Serialize(req.Coordinates),
+            UseCount = 1,
+            CreatedAt = DateTime.Now,
+            LastUsedAt = DateTime.Now
+        };
+        _context.PopularRoutes.Add(route);
+        await _context.SaveChangesAsync();
+        return Ok(new { id = route.Id, useCount = 1, merged = false });
+    }
+
+    private static double RouteLengthMeters(List<double[]> coords)
+    {
+        double total = 0;
+        for (int i = 1; i < coords.Count; i++)
+            total += HaversineMeters(coords[i - 1][1], coords[i - 1][0], coords[i][1], coords[i][0]);
+        return total;
+    }
+
+    [HttpGet("popular-routes")]
+    public async Task<IActionResult> GetPopularRoutes()
+    {
+        var routes = await _context.PopularRoutes
+            .Where(r => r.UseCount >= 1)
+            .OrderByDescending(r => r.UseCount)
+            .Take(200)
+            .ToListAsync();
+
+        var result = routes.Select(r => new
+        {
+            coordinates = TryParseCoords(r.Polyline),
+            count = r.UseCount,
+            origin = new[] { r.OriginLng, r.OriginLat },
+            destination = new[] { r.DestLng, r.DestLat }
+        }).Where(r => r.coordinates != null && r.coordinates.Count >= 2).ToList();
+
+        return Ok(new { routes = result });
+    }
+
+    private static List<double[]>? TryParseCoords(string? json)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            var arr = System.Text.Json.JsonSerializer.Deserialize<List<double[]>>(json);
+            return arr;
+        }
+        catch { return null; }
+    }
+
     private static double HaversineMeters(double lat1, double lon1, double lat2, double lon2)
     {
         const double R = 6371000;
