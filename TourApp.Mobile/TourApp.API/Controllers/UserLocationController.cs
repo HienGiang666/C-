@@ -59,8 +59,11 @@ public class UserLocationController : ControllerBase
     [HttpPost("session")]
     public async Task<IActionResult> SessionUpdate([FromBody] UserSessionRequest request)
     {
-        var deviceId = request.GuestId ?? $"user_{request.UserId}" ?? "unknown";
-        
+        // Dùng DeviceInfo (DeviceInfo.Name) làm DeviceId để khớp với LocationService và NarrationLog
+        var deviceId = !string.IsNullOrEmpty(request.DeviceInfo)
+            ? request.DeviceInfo
+            : (request.GuestId ?? $"user_{request.UserId}" ?? "unknown");
+
         if (request.IsOnline)
         {
             // Lưu location log khi online (heartbeat) — luôn lưu dù GPS tắt

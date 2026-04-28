@@ -20,6 +20,7 @@
                     <tr>
                         <th class="text-center text-muted" style="width:48px">#</th>
                         <th>ID</th>
+                        <th>Ảnh</th>
                         <th>Tên Tour</th>
                         <th>Thời lượng</th>
                         <th>Khách tối đa</th>
@@ -37,6 +38,16 @@
                             <tr>
                                 <td class="text-center text-muted align-middle"><small>@stt</small></td>
                                 <td><span class="badge bg-secondary">@tour.DisplayCode</span></td>
+                                <td class="align-middle">
+                                    @if (!string.IsNullOrEmpty(tour.ImageUrl))
+                                    {
+                                        <img src="@tour.ImageUrl" alt="@tour.Name" class="img-thumbnail" style="max-height: 48px; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
                                 <td class="fw-medium">@tour.Name</td>
                                 <td>@tour.Duration ngày</td>
                                 <td><i class="fa-solid fa-person text-secondary"></i> @tour.MaxParticipants</td>
@@ -62,7 +73,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">Không có dữ liệu</td>
+                            <td colspan="9" class="text-center py-4 text-muted">Không có dữ liệu</td>
                         </tr>
                     }
                 </tbody>
