@@ -132,10 +132,29 @@ public partial class TourDetailPage : ContentPage
 
     private async void OnBookTourClicked(object sender, EventArgs e)
     {
-        if (_currentTour != null)
+        if (_currentTour == null) return;
+
+        if (AuthService.IsGuestMode || !AuthService.IsLoggedIn)
         {
-            await Shell.Current.GoToAsync($"BookingPage?tourId={_currentTour.Id}");
+            var result = await DisplayAlert(
+                LanguageService.GetString("LoginRequired"),
+                LanguageService.GetString("GuestBookMessage"),
+                LanguageService.GetString("Login"),
+                LanguageService.GetString("SignUp")
+            );
+
+            if (result)
+            {
+                await Shell.Current.Navigation.PushAsync(new Auth.LoginPage());
+            }
+            else
+            {
+                await Shell.Current.Navigation.PushAsync(new Auth.SignUpPage());
+            }
+            return;
         }
+
+        await Shell.Current.GoToAsync($"BookingPage?tourId={_currentTour.Id}");
     }
 
     private async void OnDownloadAudioClicked(object sender, EventArgs e)

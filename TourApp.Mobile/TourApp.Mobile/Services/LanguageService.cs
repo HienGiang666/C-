@@ -386,7 +386,8 @@ namespace TourApp.Mobile.Services
                 ["OfflineBanner"] = "Bạn đang offline — dữ liệu từ cache",
                 ["OfflineBannerShort"] = "Offline — dữ liệu cache",
                 ["OfflineBannerProfile"] = "Bạn đang offline",
-                ["OfflineBookingSaved"] = "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng."
+                ["OfflineBookingSaved"] = "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng.",
+                ["GuestBookMessage"] = "Bạn cần đăng nhập hoặc đăng ký để đặt tour."
             };
             
             var enDict = new Dictionary<string, string>
@@ -495,7 +496,8 @@ namespace TourApp.Mobile.Services
                 ["OfflineBanner"] = "You are offline — using cached data",
                 ["OfflineBannerShort"] = "Offline — cached data",
                 ["OfflineBannerProfile"] = "You are offline",
-                ["OfflineBookingSaved"] = "Booking saved. Will sync when back online."
+                ["OfflineBookingSaved"] = "Booking saved. Will sync when back online.",
+                ["GuestBookMessage"] = "Please login or sign up to book a tour."
             };
 
             var zhDict = new Dictionary<string, string>(enDict)
@@ -604,7 +606,8 @@ namespace TourApp.Mobile.Services
                 ["OfflineBanner"] = "您当前处于离线状态 — 使用缓存数据",
                 ["OfflineBannerShort"] = "离线 — 缓存数据",
                 ["OfflineBannerProfile"] = "您当前离线",
-                ["OfflineBookingSaved"] = "预订已保存。网络恢复后将自动同步。"
+                ["OfflineBookingSaved"] = "预订已保存。网络恢复后将自动同步。",
+                ["GuestBookMessage"] = "预订旅游前请先登录或注册。"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
@@ -713,7 +716,8 @@ namespace TourApp.Mobile.Services
                 ["OfflineBanner"] = "オフラインです — キャッシュデータを使用",
                 ["OfflineBannerShort"] = "オフライン — キャッシュ",
                 ["OfflineBannerProfile"] = "オフラインです",
-                ["OfflineBookingSaved"] = "予約を保存しました。オンラインに戻ったら同期します。"
+                ["OfflineBookingSaved"] = "予約を保存しました。オンラインに戻ったら同期します。",
+                ["GuestBookMessage"] = "ツアーを予約するにはログインまたは登録が必要です。"
             };
 
             _resources["vi"] = fallbackDict;

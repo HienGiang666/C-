@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
+using Plugin.Maui.Audio;
 using TourApp.Mobile.Services;
 using ZXing.Net.Maui.Controls;
 

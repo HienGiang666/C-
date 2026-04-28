@@ -370,7 +370,26 @@ public partial class MapPage : ContentPage
                 // Refresh POI description if bottom sheet is visible
                 if (_currentPoi != null && BottomSheetView?.IsVisible == true && PoiDescLabel != null)
                 {
-                    PoiDescLabel.Text = _currentPoi.GetLocalizedDescription(newLang);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var audio = await _apiService.GetAudioByPoiAsync(_currentPoi.Id, newLang);
+                            var desc = !string.IsNullOrWhiteSpace(audio?.ScriptText)
+                                ? audio.ScriptText
+                                : _currentPoi.GetLocalizedDescription(newLang);
+                            
+                            MainThread.BeginInvokeOnMainThread(() =>
+                            {
+                                if (PoiDescLabel != null)
+                                    PoiDescLabel.Text = desc;
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[MapPage] OnLanguageChanged audio fetch error: {ex.Message}");
+                        }
+                    });
                     System.Diagnostics.Debug.WriteLine($"[MapPage] Refreshed POI description for language: {newLang}");
                 }
             }
@@ -625,6 +644,28 @@ public partial class MapPage : ContentPage
         
         _currentPoi = poi;
         
+        // Fetch audio script text to use as description
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var audio = await _apiService.GetAudioByPoiAsync(poi.Id, LanguageService.CurrentLanguage);
+                var desc = !string.IsNullOrWhiteSpace(audio?.ScriptText)
+                    ? audio.ScriptText
+                    : poi.GetLocalizedDescription(LanguageService.CurrentLanguage);
+                
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    if (PoiDescLabel != null)
+                        PoiDescLabel.Text = desc;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MapPage] ShowPoiDetails audio fetch error: {ex.Message}");
+            }
+        });
+        
         // All UI updates must be on main thread with null checks
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -786,7 +827,12 @@ public partial class MapPage : ContentPage
     {
         if (_currentPoi == null) return;
 
-        var narration = _currentPoi.GetScript() ?? _currentPoi.Description ?? "";
+        // Lấy audio trước để dùng ScriptText cho cả mô tả và TTS fallback
+        var audio = await _apiService.GetAudioByPoiAsync(_currentPoi.Id, LanguageService.CurrentLanguage);
+
+        var narration = !string.IsNullOrWhiteSpace(audio?.ScriptText)
+            ? audio.ScriptText
+            : _currentPoi.GetScript() ?? _currentPoi.Description ?? "";
         if (string.IsNullOrWhiteSpace(narration))
         {
             narration = $"Địa điểm {_currentPoi.Name}";
@@ -801,19 +847,30 @@ public partial class MapPage : ContentPage
         };
 
         // Thử lấy audio MP3 từ server trước
-        var audio = await _apiService.GetAudioByPoiAsync(_currentPoi.Id);
         if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
         {
-            var audioUrl = audio.AudioPath.StartsWith("http")
-                ? audio.AudioPath
-                : ApiService.BaseUrl + audio.AudioPath;
-            await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+            string audioUrl;
+            if (audio.AudioPath.StartsWith("http"))
             {
-                Url = audioUrl,
-                Title = _currentPoi.Name ?? "Thuyết minh",
-                PoiId = _currentPoi.Id
-            });
-            return;
+                audioUrl = audio.AudioPath;
+            }
+            else
+            {
+                var baseUri = new Uri(ApiService.BaseUrl.EndsWith("/") ? ApiService.BaseUrl : ApiService.BaseUrl + "/");
+                audioUrl = new Uri(baseUri, audio.AudioPath).ToString();
+            }
+            if (Uri.TryCreate(audioUrl, UriKind.Absolute, out _))
+            {
+                await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+                {
+                    Url = audioUrl,
+                    TtsText = narration,
+                    TtsLocale = locale,
+                    Title = _currentPoi.Name ?? "Thuyết minh",
+                    PoiId = _currentPoi.Id
+                });
+                return;
+            }
         }
 
         // Fallback TTS qua AudioPlayerService để UI đồng bộ
@@ -1221,84 +1278,6 @@ if (!_locationService.IsMocking)
         }
     }
 
-    protected override void OnNavigatedTo(NavigatedToEventArgs args)
-    {
-        base.OnNavigatedTo(args);
-        AudioPlayerService.Instance.PropertyChanged += OnAudioPlayerPropertyChanged;
-        AudioPlayerService.Instance.QueueChanged += OnAudioQueueChanged;
-        UpdateAudioPlayerUI();
-    }
-
-    protected override void OnNavigatingFrom(NavigatingFromEventArgs args)
-    {
-        base.OnNavigatingFrom(args);
-        AudioPlayerService.Instance.PropertyChanged -= OnAudioPlayerPropertyChanged;
-        AudioPlayerService.Instance.QueueChanged -= OnAudioQueueChanged;
-    }
-
-    private void OnAudioQueueChanged(object? sender, EventArgs e)
-    {
-        MainThread.BeginInvokeOnMainThread(UpdateAudioPlayerUI);
-    }
-
-    private void OnAudioPlayerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        MainThread.BeginInvokeOnMainThread(UpdateAudioPlayerUI);
-    }
-
-    private void UpdateAudioPlayerUI()
-    {
-        try
-        {
-            var svc = AudioPlayerService.Instance;
-            if (svc == null) return;
-            
-            if (FloatingAudioPlayer == null) return;
-            
-            if (svc.IsPlaying || !string.IsNullOrEmpty(svc.CurrentAudioTitle) || svc.HasItemsInQueue)
-            {
-                FloatingAudioPlayer.IsVisible = true;
-                if (AudioTitleLabel != null)
-                    AudioTitleLabel.Text = svc.CurrentAudioTitle;
-                if (AudioPlayPauseBtn != null)
-                    AudioPlayPauseBtn.Text = svc.IsPlaying ? "⏸" : "▶";
-                
-                // Update queue count
-                if (svc.QueueCount > 0 && AudioQueueCountLabel != null)
-                {
-                    AudioQueueCountLabel.Text = $"+{svc.QueueCount} trong hàng đợi";
-                    AudioQueueCountLabel.IsVisible = true;
-                }
-                else if (AudioQueueCountLabel != null)
-                {
-                    AudioQueueCountLabel.IsVisible = false;
-                }
-            }
-            else
-            {
-                FloatingAudioPlayer.IsVisible = false;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MapPage] UpdateAudioPlayerUI error: {ex.Message}");
-        }
-    }
-
-    private void OnToggleAudioClicked(object? sender, EventArgs e)
-    {
-        AudioPlayerService.Instance.TogglePlayPause();
-    }
-
-    private void OnStopAudioClicked(object? sender, EventArgs e)
-    {
-        AudioPlayerService.Instance.StopAndClear();
-    }
-
-    private void OnSkipAudioClicked(object? sender, EventArgs e)
-    {
-        AudioPlayerService.Instance.SkipCurrent();
-    }
 
     private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
     {

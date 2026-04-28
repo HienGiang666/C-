@@ -256,30 +256,52 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
         Directory.CreateDirectory(audioCacheDir);
         var localFile = Path.Combine(audioCacheDir, cacheFileName);
 
+        bool mp3Ready = false;
+
         if (!File.Exists(localFile))
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, cancellationToken);
-            
-            var response = await _httpClient.GetAsync(item.Url, linkedCts.Token);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                Debug.WriteLine($"[AudioPlayerService] Failed to load audio: {response.StatusCode}");
-                return;
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, cancellationToken);
+                
+                var response = await _httpClient.GetAsync(item.Url, linkedCts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    using (var stream = await response.Content.ReadAsStreamAsync(linkedCts.Token))
+                    using (var fileStream = File.Create(localFile))
+                    {
+                        await stream.CopyToAsync(fileStream, linkedCts.Token);
+                    }
+                    mp3Ready = true;
+                }
+                else
+                {
+                    Debug.WriteLine($"[AudioPlayerService] Failed to load audio: {response.StatusCode}");
+                }
             }
-
-            using (var stream = await response.Content.ReadAsStreamAsync(linkedCts.Token))
-            using (var fileStream = File.Create(localFile))
+            catch (Exception ex)
             {
-                await stream.CopyToAsync(fileStream, linkedCts.Token);
+                Debug.WriteLine($"[AudioPlayerService] Download error: {ex.Message}");
             }
         }
         else
         {
             Debug.WriteLine($"[AudioPlayerService] Playing from cache: {cacheFileName}");
+            mp3Ready = true;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+
+        // Fallback TTS if MP3 unavailable and TtsText provided
+        if (!mp3Ready && !string.IsNullOrWhiteSpace(item.TtsText))
+        {
+            Debug.WriteLine($"[AudioPlayerService] MP3 unavailable, falling back to TTS");
+            await PlayTtsItemAsync(item, cancellationToken);
+            return;
+        }
+
+        if (!mp3Ready) return;
 
         Stream? localStream = null;
         try
@@ -303,15 +325,34 @@ public class AudioPlayerService : INotifyPropertyChanged, IDisposable
                 tcs.TrySetResult(true);
             };
 
-            _player.Play();
-            IsPlaying = true;
+            try
+            {
+                _player.Play();
+                IsPlaying = true;
+                Debug.WriteLine($"[AudioPlayer] Player started: {item.Title}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AudioPlayer] _player.Play() failed: {ex.Message}");
+                IsPlaying = false;
+                tcs.TrySetResult(true);
+            }
 
             await tcs.Task;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[AudioPlayer] Playback exception: {ex.Message}");
             localStream?.Dispose();
-            throw;
+            if (!string.IsNullOrWhiteSpace(item.TtsText))
+            {
+                Debug.WriteLine($"[AudioPlayerService] Playback failed, falling back to TTS");
+                await PlayTtsItemAsync(item, cancellationToken);
+            }
+            else
+            {
+                throw;
+            }
         }
     }
 

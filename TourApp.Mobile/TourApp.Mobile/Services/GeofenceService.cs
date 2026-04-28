@@ -141,77 +141,29 @@ namespace TourApp.Mobile.Services
                 }
             }
 
-            AudioPlayerService.Instance.ItemStarted += OnItemStarted;
-
-            // Hiện mô tả POI đầu tiên (gần nhất) ngay lập tức để UI không trống
-            var firstPoi = pois[0];
-            currentPoiId = firstPoi.Id;
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                PoiTriggered?.Invoke(this, firstPoi);
-                HighlightRequested?.Invoke(this, firstPoi.Id);
-            });
-
-            // Enqueue audio cho tất cả POIs
-            foreach (var poi in pois)
-            {
-                await EnqueueAudioForPoiAsync(poi);
-                _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
-            }
-        }
-
-        /// <summary>
-        /// Enqueue audio/TTS cho POI vào AudioPlayerService queue (không đè nhau)
-        /// </summary>
-        private async Task EnqueueAudioForPoiAsync(POI poi)
-        {
             try
             {
-                var lang = CurrentLanguage;
+                AudioPlayerService.Instance.ItemStarted += OnItemStarted;
 
-                // 1. Try MP3 audio từ API
-                Audio? audio = null;
-                try
+                // Hiện mô tả POI đầu tiên (gần nhất) ngay lập tức để UI không trống
+                var firstPoi = pois[0];
+                currentPoiId = firstPoi.Id;
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    audio = await _apiService.GetAudioByPoiAsync(poi.Id, lang);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[GeofenceService] Failed to get audio: {ex.Message}");
-                }
-
-                if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
-                {
-                    var audioUrl = audio.AudioPath.StartsWith("http")
-                        ? audio.AudioPath
-                        : ApiService.BaseUrl + audio.AudioPath;
-
-                    await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
-                    {
-                        Url = audioUrl,
-                        Title = poi.Name ?? "Audio",
-                        PoiId = poi.Id
-                    });
-                    return;
-                }
-
-                // 2. Fallback: TTS qua queue (chờ phát xong rồi tới cái kế)
-                var script = poi.GetScript(lang);
-                if (string.IsNullOrWhiteSpace(script))
-                    script = $"{poi.Name}. {poi.Description}";
-                if (string.IsNullOrWhiteSpace(script)) return;
-
-                await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
-                {
-                    Title = poi.Name ?? "TTS",
-                    PoiId = poi.Id,
-                    TtsText = script,
-                    TtsLocale = lang
+                    PoiTriggered?.Invoke(this, firstPoi);
+                    HighlightRequested?.Invoke(this, firstPoi.Id);
                 });
+
+                // Enqueue audio cho tất cả POIs
+                foreach (var poi in pois)
+                {
+                    await SpeakNarrationAsync(poi);
+                    _ = _apiService.LogNarrationAsync(poi.Id, null, "geofence");
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                System.Diagnostics.Debug.WriteLine($"[GeofenceService] EnqueueAudio error: {ex.Message}");
+                AudioPlayerService.Instance.ItemStarted -= OnItemStarted;
             }
         }
 
@@ -236,27 +188,12 @@ namespace TourApp.Mobile.Services
                 System.Diagnostics.Debug.WriteLine($"[GeofenceService] Failed to get audio: {ex.Message}");
             }
 
-            if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
-            {
-                var audioUrl = audio.AudioPath.StartsWith("http")
-                    ? audio.AudioPath
-                    : ApiService.BaseUrl + audio.AudioPath;
-
-                await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
-                {
-                    Url = audioUrl,
-                    Title = poi.Name ?? "Audio",
-                    PoiId = poi.Id
-                });
-                _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "narration");
-                return;
-            }
-
-            // 2. Fallback TTS qua AudioPlayerService để UI đồng bộ
-            var script = poi.GetScript(lang);
+            // Precompute TTS fallback text in case MP3 fails
+            var script = !string.IsNullOrWhiteSpace(audio?.ScriptText)
+                ? audio.ScriptText
+                : poi.GetScript(lang);
             if (string.IsNullOrWhiteSpace(script))
                 script = $"{poi.Name}. {poi.Description}";
-            if (string.IsNullOrWhiteSpace(script)) return;
 
             var locale = lang switch
             {
@@ -265,6 +202,36 @@ namespace TourApp.Mobile.Services
                 "ja" => "ja-JP",
                 _ => "vi-VN"
             };
+
+            if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
+            {
+                string audioUrl;
+                if (audio.AudioPath.StartsWith("http"))
+                {
+                    audioUrl = audio.AudioPath;
+                }
+                else
+                {
+                    var baseUri = new Uri(ApiService.BaseUrl.EndsWith("/") ? ApiService.BaseUrl : ApiService.BaseUrl + "/");
+                    audioUrl = new Uri(baseUri, audio.AudioPath).ToString();
+                }
+                if (Uri.TryCreate(audioUrl, UriKind.Absolute, out _))
+                {
+                    await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+                    {
+                        Url = audioUrl,
+                        TtsText = script,
+                        TtsLocale = locale,
+                        Title = poi.Name ?? "Audio",
+                        PoiId = poi.Id
+                    });
+                    _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "narration");
+                    return;
+                }
+            }
+
+            // 2. Fallback TTS qua AudioPlayerService để UI đồng bộ
+            if (string.IsNullOrWhiteSpace(script)) return;
 
             await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
             {
