@@ -13,4 +13,6 @@ public class UserLocationLog
     public string? SessionId { get; set; }
     public bool IsActive { get; set; } = true;
     public bool IsMock { get; set; } = false;
+    public int? UserId { get; set; }
+    public string? Name { get; set; }
 }

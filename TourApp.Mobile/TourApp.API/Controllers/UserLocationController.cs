@@ -75,7 +75,9 @@ public class UserLocationController : ControllerBase
                 Timestamp = DateTime.Now,
                 SessionId = request.GuestId,
                 IsActive = true,
-                IsMock = request.IsMock
+                IsMock = request.IsMock,
+                UserId = request.UserId,
+                Name = request.Name
             });
             await _context.SaveChangesAsync();
 
@@ -133,20 +135,6 @@ public class UserLocationController : ControllerBase
 
         var byDevice = recentLogs.GroupBy(l => l.DeviceId).ToList();
 
-        // Lấy tên user từ bảng Users cho deviceId dạng user_X
-        var userDeviceIds = byDevice
-            .Select(g => g.Key)
-            .Where(d => d != null && d.StartsWith("user_"))
-            .Select(d => int.TryParse(d!.Substring(5), out var id) ? id : (int?)null)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .ToList();
-
-        var userNames = await _context.Users
-            .Where(u => userDeviceIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.FullName })
-            .ToDictionaryAsync(u => $"user_{u.Id}", u => u.FullName ?? $"user_{u.Id}");
-
         // Chi tiết từng user
         var users = byDevice.Select(g =>
         {
@@ -155,13 +143,16 @@ public class UserLocationController : ControllerBase
             var lastLog = logs.First();
             var isOnline = lastLog.Timestamp >= oneMinuteAgo;
             var deviceId = g.Key ?? "unknown";
-            var name = userNames.TryGetValue(deviceId, out var userName) ? userName : deviceId;
+            // Hiển thị tên tài khoản user hoặc guest ID, không hiện tên thiết bị
+            var name = !string.IsNullOrEmpty(lastLog.Name)
+                ? lastLog.Name
+                : (!string.IsNullOrEmpty(lastLog.SessionId) ? lastLog.SessionId : deviceId);
 
             return new
             {
                 deviceId,
                 name,
-                isAnonymous = g.Key == null || !g.Key.StartsWith("user_"),
+                isAnonymous = !lastLog.UserId.HasValue,
                 isOnline,
                 firstSeen = firstLog.Timestamp,
                 lastSeen = lastLog.Timestamp,
