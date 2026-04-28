@@ -106,7 +106,7 @@ public partial class TourDetailPage : ContentPage
 
     private async void OnBackClicked(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("//TourPage");
+        await Navigation.PopAsync();
     }
 
     private async void OnViewMapClicked(object sender, EventArgs e)
