@@ -32,10 +32,35 @@ public class BookingController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<Booking>>> GetUserBookings(int userId)
     {
+        // Chỉ cho phép user xem booking của chính mình
+        var authUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(authUserIdClaim, out int authUserId) || authUserId != userId)
+            return Forbid();
+
         var bookings = await _context.Bookings
             .Where(b => b.UserId == userId)
+            .Include(b => b.Tour)
+            .Include(b => b.Payments)
+            .OrderByDescending(b => b.BookingDate)
+            .ToListAsync();
+        return Ok(bookings);
+    }
+
+    /// <summary>
+    /// GET /api/booking/admin/all
+    /// Admin xem tất cả bookings với payment info
+    /// </summary>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<Booking>>> GetAllBookings()
+    {
+        var bookings = await _context.Bookings
+            .Include(b => b.Tour)
+            .Include(b => b.User)
+            .Include(b => b.Payments)
             .OrderByDescending(b => b.BookingDate)
             .ToListAsync();
         return Ok(bookings);
@@ -49,40 +74,61 @@ public class BookingController : ControllerBase
     [Authorize] // Yêu cầu đăng nhập
     public async Task<ActionResult<Booking>> CreateBooking(Booking booking)
     {
-        // Lấy UserId từ token đăng nhập
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int authUserId))
+        try
         {
-            return Unauthorized(new { message = "Vui lòng đăng nhập để đặt tour" });
+            // Lấy UserId từ token đăng nhập
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int authUserId))
+            {
+                return Unauthorized(new { message = "Vui lòng đăng nhập để đặt tour" });
+            }
+            
+            // Đảm bảo UserId trong booking khớp với user đang đăng nhập
+            if (booking.UserId != authUserId)
+            {
+                return Forbid(); // Không được đặt hộ người khác
+            }
+            
+            // Validate required fields
+            if (booking.TourId <= 0)
+                return BadRequest(new { message = "Tour không hợp lệ" });
+            
+            if (booking.NumberOfParticipants <= 0)
+                return BadRequest(new { message = "Số lượng người phải lớn hơn 0" });
+            
+            // Check if tour exists
+            var tour = await _context.Tours.FindAsync(booking.TourId);
+            if (tour == null)
+                return BadRequest(new { message = "Tour không tồn tại" });
+            
+            // Auto-generate Code nếu chưa có
+            if (string.IsNullOrEmpty(booking.Code))
+            {
+                var maxCodeNum = await _context.Bookings
+                    .Select(b => b.Code)
+                    .ToListAsync();
+                var nextNum = maxCodeNum
+                    .Where(c => !string.IsNullOrEmpty(c) && c!.StartsWith("BK-"))
+                    .Select(c => int.TryParse(c!.Substring(3), out var n) ? n : 0)
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+                booking.Code = $"BK-{nextNum}";
+            }
+            
+            booking.BookingDate = DateTime.Now;
+            booking.Status = "Pending"; // Mặc định chờ xác nhận
+            
+            _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
+            
+            return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
         }
-        
-        // Đảm bảo UserId trong booking khớp với user đang đăng nhập
-        if (booking.UserId != authUserId)
+        catch (Exception ex)
         {
-            return Forbid(); // Không được đặt hộ người khác
+            Console.WriteLine($"[BookingController] Error: {ex.Message}");
+            Console.WriteLine($"[BookingController] Stack: {ex.StackTrace}");
+            return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
         }
-        
-        // Auto-generate Code nếu chưa có
-        if (string.IsNullOrEmpty(booking.Code))
-        {
-            var maxCodeNum = await _context.Bookings
-                .Select(b => b.Code)
-                .ToListAsync();
-            var nextNum = maxCodeNum
-                .Where(c => !string.IsNullOrEmpty(c) && c!.StartsWith("BK-"))
-                .Select(c => int.TryParse(c!.Substring(3), out var n) ? n : 0)
-                .DefaultIfEmpty(0)
-                .Max() + 1;
-            booking.Code = $"BK-{nextNum}";
-        }
-        
-        booking.BookingDate = DateTime.Now;
-        booking.Status = "Pending"; // Mặc định chờ xác nhận
-        
-        _context.Bookings.Add(booking);
-        await _context.SaveChangesAsync();
-        
-        return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
     }
 
     [HttpPut("{id}")]

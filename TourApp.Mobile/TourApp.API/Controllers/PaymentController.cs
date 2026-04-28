@@ -43,6 +43,24 @@ public class PaymentController : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/payment/admin/all
+    /// Admin xem tất cả lịch sử thanh toán
+    /// </summary>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments()
+    {
+        var payments = await _context.Payments
+            .Include(p => p.Booking)
+            .ThenInclude(b => b.Tour)
+            .Include(p => p.User)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        return Ok(payments);
+    }
+
+    /// <summary>
     /// GET /api/payment/booking/{bookingId}
     /// Lấy thông tin thanh toán của booking
     /// </summary>
