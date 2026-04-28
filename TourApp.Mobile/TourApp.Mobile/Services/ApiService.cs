@@ -443,8 +443,10 @@ namespace TourApp.Mobile.Services
             return null;
         }
 
-        public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType)
+        public async Task LogNarrationAsync(int poiId, int? audioId, string triggerType, string? deviceId = null)
         {
+            deviceId ??= GetStableDeviceId();
+
             // Offline → queue
             if (!IsOnline)
             {
@@ -453,7 +455,7 @@ namespace TourApp.Mobile.Services
                     Type = OfflineActionType.NarrationLog,
                     Payload = JsonSerializer.Serialize(new NarrationLogPayload
                     {
-                        PoiId = poiId, AudioId = audioId, TriggerType = triggerType
+                        PoiId = poiId, AudioId = audioId, TriggerType = triggerType, DeviceId = deviceId
                     })
                 });
                 Debug.WriteLine($"[ApiService] LogNarration queued offline: {triggerType}");
@@ -462,9 +464,6 @@ namespace TourApp.Mobile.Services
 
             try
             {
-                string deviceId = "Unknown";
-                try { deviceId = DeviceInfo.Current.Platform + "-" + DeviceInfo.Current.Idiom; } catch { }
-
                 var payload = new
                 {
                     POIId = poiId,
@@ -491,11 +490,28 @@ namespace TourApp.Mobile.Services
                     Type = OfflineActionType.NarrationLog,
                     Payload = JsonSerializer.Serialize(new NarrationLogPayload
                     {
-                        PoiId = poiId, AudioId = audioId, TriggerType = triggerType
+                        PoiId = poiId, AudioId = audioId, TriggerType = triggerType, DeviceId = deviceId
                     })
                 });
                 Debug.WriteLine($"[ApiService] LogNarration error, queued offline: {ex.Message}");
             }
+        }
+
+        /// <summary>Trả về device ID nhất quán giữa location và narration logs.</summary>
+        public static string GetStableDeviceId()
+        {
+            var name = DeviceInfo.Name;
+            if (!string.IsNullOrEmpty(name))
+                return name;
+            // Emulator fallback: ưu tiên device model, nếu không có thì platform
+            try
+            {
+                var model = DeviceInfo.Current.Model;
+                if (!string.IsNullOrEmpty(model))
+                    return $"emu_{model}";
+            }
+            catch { }
+            return $"emu_{DeviceInfo.Current.Platform}";
         }
 
         [DebuggerNonUserCode]

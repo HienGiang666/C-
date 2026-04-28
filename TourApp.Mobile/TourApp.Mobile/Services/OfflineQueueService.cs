@@ -103,7 +103,7 @@ public static class OfflineQueueService
             case OfflineActionType.NarrationLog:
                 var log = JsonSerializer.Deserialize<NarrationLogPayload>(action.Payload, _jsonOpts);
                 if (log == null) return true;
-                await apiService.LogNarrationAsync(log.PoiId, log.AudioId, log.TriggerType);
+                await apiService.LogNarrationAsync(log.PoiId, log.AudioId, log.TriggerType, log.DeviceId);
                 return true;
 
             default:
@@ -155,4 +155,5 @@ public class NarrationLogPayload
     public int PoiId { get; set; }
     public int? AudioId { get; set; }
     public string TriggerType { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = string.Empty;
 }

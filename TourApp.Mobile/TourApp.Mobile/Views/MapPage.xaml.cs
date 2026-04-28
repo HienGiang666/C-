@@ -900,8 +900,7 @@ if (!_locationService.IsMocking)
                 try
                 {
                     var coords = routeCoords.Select(l => new[] { l.Longitude, l.Latitude }).ToList();
-                    string deviceId = "Unknown";
-                    try { deviceId = DeviceInfo.Current.Platform + "-" + DeviceInfo.Current.Idiom; } catch { }
+                    var deviceId = ApiService.GetStableDeviceId();
                     await _apiService.SaveRouteAsync(coords, deviceId);
                     System.Diagnostics.Debug.WriteLine($"[MapPage] Popular route saved: {coords.Count} points");
                 }

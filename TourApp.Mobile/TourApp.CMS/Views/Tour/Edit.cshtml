@@ -202,12 +202,10 @@ buildPickers();
         const status = document.getElementById('translate-status');
         const langMap = { 'en': 'English', 'zh': 'Chinese', 'ja': 'Japanese' };
         const codes = ['en', 'zh', 'ja'];
-        const allEmpty = codes.every(c => !document.getElementById(`desc-${c}`)?.value?.trim());
-        if (!allEmpty) return;
         status.style.display = 'block';
         for (const code of codes) {
             const box = document.getElementById(`desc-${code}`);
-            if (!box || box.value.trim()) continue;
+            if (!box) continue;
             status.textContent = `Đang dịch sang ${langMap[code]}...`;
             try {
                 box.value = await translateText(tourDesc, code);

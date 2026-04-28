@@ -362,7 +362,7 @@ namespace TourApp.Mobile.Services
                 using var client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
                 client.Timeout = TimeSpan.FromSeconds(5);
 
-                var deviceId = string.IsNullOrEmpty(DeviceInfo.Name) ? $"emu_{DateTime.Now.Ticks}" : DeviceInfo.Name;
+                var deviceId = ApiService.GetStableDeviceId();
                 var request = new
                 {
                     DeviceId = deviceId,
