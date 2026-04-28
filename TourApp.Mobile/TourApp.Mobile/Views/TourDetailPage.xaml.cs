@@ -85,16 +85,20 @@ public partial class TourDetailPage : ContentPage
                     // Load tour image with fallback
                     if (!string.IsNullOrEmpty(_currentTour.ImageUrl))
                     {
-                        var imageUrl = _currentTour.ImageUrl.StartsWith("http") 
-                            ? _currentTour.ImageUrl 
-                            : ApiService.BaseUrl + _currentTour.ImageUrl;
+                        var imageUrl = ImageCacheService.ResolveUrl(_currentTour.ImageUrl);
                         System.Diagnostics.Debug.WriteLine($"[TourDetailPage] Loading image: {imageUrl}");
-                        TourImage.Source = imageUrl;
+                        try
+                        {
+                            TourImage.Source = ImageSource.FromUri(new Uri(imageUrl));
+                        }
+                        catch
+                        {
+                            TourImage.Source = ImageSource.FromFile("dotnet_bot.png");
+                        }
                     }
                     else
                     {
                         System.Diagnostics.Debug.WriteLine($"[TourDetailPage] No ImageUrl, using placeholder");
-                        // Default placeholder from FontAwesome
                         TourImage.Source = ImageSource.FromFile("dotnet_bot.png");
                     }
                 });
@@ -142,6 +146,9 @@ public partial class TourDetailPage : ContentPage
                 LanguageService.GetString("Login"),
                 LanguageService.GetString("SignUp")
             );
+
+            // Lưu pending booking để sau khi login/signup redirect đến BookingPage
+            PendingBookingService.Save(_currentTour.Id, 1, DateTime.Now, "", 0);
 
             if (result)
             {

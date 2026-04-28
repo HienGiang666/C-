@@ -52,7 +52,7 @@ public partial class LoginPage : ContentPage
                     var pending = PendingBookingService.PendingBooking!;
                     MainThread.BeginInvokeOnMainThread(() => {
                         // Navigate về BookingPage với TourId đã lưu
-                        Shell.Current.GoToAsync($"booking?tourId={pending.TourId}");
+                        Shell.Current.GoToAsync($"BookingPage?tourId={pending.TourId}");
                     });
                 }
                 else
