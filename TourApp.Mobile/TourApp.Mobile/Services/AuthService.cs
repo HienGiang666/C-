@@ -63,6 +63,16 @@ namespace TourApp.Mobile.Services
                     var content = await response.Content.ReadAsStringAsync();
                     var user = JsonSerializer.Deserialize<User>(content, _jsonOptions);
                     
+                    // Parse token from response
+                    string? token = null;
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(content);
+                        if (doc.RootElement.TryGetProperty("token", out var tokenProp))
+                            token = tokenProp.GetString();
+                    }
+                    catch { }
+                    
                     if (user != null)
                     {
                         // Kiểm tra vai trò: Mobile chỉ dành cho Customer
@@ -83,6 +93,10 @@ namespace TourApp.Mobile.Services
                         Preferences.Default.Set("user_email", user.Email ?? "");
                         Preferences.Default.Set("user_role", user.Role ?? "Customer");
                         Preferences.Default.Set("is_logged_in", true);
+                        
+                        // Save JWT token
+                        if (!string.IsNullOrEmpty(token))
+                            Preferences.Default.Set("auth_token", token);
                         
                         return (true, "Đăng nhập thành công!", user, false);
                     }
@@ -369,6 +383,7 @@ namespace TourApp.Mobile.Services
             Preferences.Default.Remove("user_fullname");
             Preferences.Default.Remove("user_email");
             Preferences.Default.Remove("user_role");
+            Preferences.Default.Remove("auth_token");
             Preferences.Default.Set("is_logged_in", false);
             ClearGuestMode();
         }

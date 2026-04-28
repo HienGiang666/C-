@@ -1,11 +1,51 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using TourApp.API.Data;
 using TourApp.API.Services;
 using TourApp.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// === CẤU HÌNH JWT AUTHENTICATION ===
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "TourApp-Secret-Key-For-Development-Only-Change-In-Production";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "TourApp";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "TourApp.Mobile";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+        
+        // Hỗ trợ cả query string cho SignalR
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // --- 1. MỞ CỔNG CORS (Cho phép các App/Web khác gọi vào) ---
 // Lưu ý: SignalR yêu cầu AllowCredentials nên không dùng AllowAnyOrigin()
@@ -127,7 +167,10 @@ else
     Console.WriteLine($"[Static Files] WARNING: CMS uploads not found at {cmsUploadsPath}");
 }
 
+// === THỨ TỰ QUAN TRỌNG: Authentication TRƯỚC Authorization ===
+app.UseAuthentication();
 app.UseAuthorization();
+// =========================================================
 
 // === SIGNALR Hub endpoint ===
 app.MapHub<UserLocationHub>("/hubs/userlocation");

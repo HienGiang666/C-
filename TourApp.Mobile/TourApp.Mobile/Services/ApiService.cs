@@ -642,6 +642,14 @@ namespace TourApp.Mobile.Services
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
             
+            // Add JWT Authorization header if token exists
+            var authToken = Preferences.Default.Get("auth_token", string.Empty);
+            if (!string.IsNullOrEmpty(authToken))
+            {
+                client.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+            }
+            
             return client;
         }
         // ===== LANGUAGE / TRANSLATION SYNC =====

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using TourApp.API.Data;
 using TourApp.API.Models;
 using System.Security.Cryptography;
@@ -14,10 +17,12 @@ namespace TourApp.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
-    public UserController(AppDbContext context)
+    public UserController(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
+        _configuration = configuration;
     }
 
     // POST /api/user/login  - dùng bởi CMS để xác thực
@@ -63,6 +68,9 @@ public class UserController : ControllerBase
             user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
+            // Generate JWT Token
+            var token = GenerateJwtToken(user);
+
             return Ok(new
             {
                 user.Id,
@@ -70,7 +78,8 @@ public class UserController : ControllerBase
                 user.FullName,
                 user.Email,
                 user.Role,
-                user.LastLoginAt
+                user.LastLoginAt,
+                Token = token
             });
         }
         catch (Exception ex)
@@ -285,6 +294,37 @@ public class UserController : ControllerBase
         if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
             return "RestaurantOwner";
         return role;
+    }
+
+    /// <summary>
+    /// Generate JWT Token for authenticated user
+    /// </summary>
+    private string GenerateJwtToken(User user)
+    {
+        var jwtKey = _configuration["Jwt:Key"] ?? "TourApp-Secret-Key-For-Development-Only-Change-In-Production";
+        var jwtIssuer = _configuration["Jwt:Issuer"] ?? "TourApp";
+        var jwtAudience = _configuration["Jwt:Audience"] ?? "TourApp.Mobile";
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email ?? ""),
+            new Claim(ClaimTypes.Role, user.Role ?? "Customer")
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            claims: claims,
+            expires: DateTime.Now.AddDays(7), // Token valid for 7 days
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 
