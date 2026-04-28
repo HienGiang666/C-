@@ -36,15 +36,16 @@
                             FontFamily="MaterialIcons"
                             FontSize="24"
                             TextColor="White"
-                            BackgroundColor="#00000099"
-                            CornerRadius="22"
-                            WidthRequest="44"
-                            HeightRequest="44"
+                            BackgroundColor="#CC000000"
+                            CornerRadius="24"
+                            WidthRequest="48"
+                            HeightRequest="48"
                             HorizontalOptions="Start"
                             VerticalOptions="Start"
-                            Margin="16,16,0,0"
+                            Margin="16,48,0,0"
                             Padding="0"
-                            Clicked="OnBackClicked" />
+                            Clicked="OnBackClicked"
+                            ZIndex="100" />
 
                     <!-- Tour title on image -->
                     <VerticalStackLayout VerticalOptions="End"
