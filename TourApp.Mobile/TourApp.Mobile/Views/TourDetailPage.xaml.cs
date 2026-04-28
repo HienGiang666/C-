@@ -82,8 +82,21 @@ public partial class TourDetailPage : ContentPage
                     ParticipantsLabel.Text = LanguageService.GetString("MaxPeople", _currentTour.MaxParticipants);
                     TourDescriptionLabel.Text = _currentTour.GetLocalizedDescription(LanguageService.CurrentLanguage);
                     
+                    // Load tour image with fallback
                     if (!string.IsNullOrEmpty(_currentTour.ImageUrl))
-                        TourImage.Source = ApiService.BaseUrl + _currentTour.ImageUrl;
+                    {
+                        var imageUrl = _currentTour.ImageUrl.StartsWith("http") 
+                            ? _currentTour.ImageUrl 
+                            : ApiService.BaseUrl + _currentTour.ImageUrl;
+                        System.Diagnostics.Debug.WriteLine($"[TourDetailPage] Loading image: {imageUrl}");
+                        TourImage.Source = imageUrl;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TourDetailPage] No ImageUrl, using placeholder");
+                        // Default placeholder from FontAwesome
+                        TourImage.Source = ImageSource.FromFile("dotnet_bot.png");
+                    }
                 });
 
                 // Load stops

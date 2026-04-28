@@ -80,14 +80,8 @@ public partial class TourPage : ContentPage
             {
                 UpdateLocalizedText();
                 
-                // Refresh tour items to re-evaluate LocalizedDescription bindings
-                if (_allTours != null)
-                {
-                    var current = Tours.ToList();
-                    Tours.Clear();
-                    foreach (var tour in current)
-                        Tours.Add(tour);
-                }
+                // Reload tours to get new language descriptions from API
+                _ = LoadToursAsync();
             }
             catch (Exception ex)
             {
