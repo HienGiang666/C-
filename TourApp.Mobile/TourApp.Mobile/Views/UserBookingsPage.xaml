@@ -52,6 +52,22 @@
                                     <Label Text="{Binding [BookingDate], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#A0A8B8" FontSize="11"/>
                                     <Label Text="{Binding BookingDate, StringFormat=': {0:dd/MM/yyyy HH:mm}'}" TextColor="#A0A8B8" FontSize="11"/>
                                 </HorizontalStackLayout>
+
+                                <Button Text="Thanh toán" 
+                                        BackgroundColor="#00B14F" 
+                                        TextColor="White" 
+                                        FontAttributes="Bold"
+                                        CornerRadius="8"
+                                        HeightRequest="40"
+                                        Margin="0,8,0,0"
+                                        Clicked="OnPayBookingClicked"
+                                        IsVisible="False">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding Status}" Value="Pending">
+                                            <Setter Property="IsVisible" Value="True"/>
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>

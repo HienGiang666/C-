@@ -97,7 +97,7 @@ public static class OfflineQueueService
             case OfflineActionType.Booking:
                 var booking = JsonSerializer.Deserialize<Models.Booking>(action.Payload, _jsonOpts);
                 if (booking == null) return true; // discard invalid
-                var (ok, _) = await apiService.BookTourAsync(booking);
+                var (ok, _, _) = await apiService.BookTourAsync(booking);
                 return ok;
 
             case OfflineActionType.NarrationLog:

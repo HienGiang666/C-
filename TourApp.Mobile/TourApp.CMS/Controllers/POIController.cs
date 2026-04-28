@@ -183,6 +183,20 @@ public class POIController : Controller
 
         var isAdmin = (HttpContext.Session.GetString("Role") ?? "").Equals("Admin", StringComparison.OrdinalIgnoreCase);
         ViewBag.IsAdminPoiEdit = isAdmin;
+
+        // Load categories
+        var catResponse = await client.GetAsync("api/category");
+        var allCategories = catResponse.IsSuccessStatusCode
+            ? await catResponse.Content.ReadFromJsonAsync<List<Category>>() ?? new List<Category>()
+            : new List<Category>();
+        ViewBag.AllCategories = allCategories;
+
+        var poiCatResponse = await client.GetAsync($"api/poi/{id}/categories");
+        var poiCategories = poiCatResponse.IsSuccessStatusCode
+            ? await poiCatResponse.Content.ReadFromJsonAsync<List<Category>>() ?? new List<Category>()
+            : new List<Category>();
+        ViewBag.PoiCategoryIds = poiCategories.Select(c => c.Id).ToList();
+
         return View(poi);
     }
 
@@ -239,6 +253,34 @@ public class POIController : Controller
         }
 
         TempData["success"] = $"Đã lưu {saved} bản dịch thành công!";
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveCategories(int id, int[] categoryIds)
+    {
+        var client = _clientFactory.CreateClient("TourApi");
+        var existingResponse = await client.GetAsync($"api/POI/{id}");
+        if (!existingResponse.IsSuccessStatusCode)
+            return RedirectToAction(nameof(Index));
+
+        var existing = await existingResponse.Content.ReadFromJsonAsync<POI>();
+        if (!CanModifyPoi(existing))
+        {
+            TempData["error"] = "Bạn không có quyền sửa địa điểm này.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var response = await client.PutAsJsonAsync($"api/poi/{id}/categories", categoryIds ?? Array.Empty<int>());
+        if (response.IsSuccessStatusCode)
+        {
+            _activityLogger.LogActivity(HttpContext, "Update", "POICategory", null, existing?.Name);
+            TempData["success"] = "Cập nhật danh mục thành công!";
+        }
+        else
+        {
+            TempData["error"] = "Lỗi khi cập nhật danh mục!";
+        }
         return RedirectToAction(nameof(Edit), new { id });
     }
 

@@ -13,6 +13,8 @@ namespace TourApp.Mobile
             Routing.RegisterRoute("TourDetailPage", typeof(Views.TourDetailPage));
             Routing.RegisterRoute("BookingPage", typeof(Views.BookingPage));
             Routing.RegisterRoute("UserBookingsPage", typeof(Views.UserBookingsPage));
+            Routing.RegisterRoute("PaymentPage", typeof(Views.PaymentPage));
+            Routing.RegisterRoute("PaymentSuccessPage", typeof(Views.PaymentSuccessPage));
             Routing.RegisterRoute("EditProfilePage", typeof(Views.EditProfilePage));
             Routing.RegisterRoute("ChangePasswordPage", typeof(Views.ChangePasswordPage));
             

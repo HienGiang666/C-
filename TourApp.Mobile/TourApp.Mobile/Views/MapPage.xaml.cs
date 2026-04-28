@@ -782,11 +782,48 @@ public partial class MapPage : ContentPage
         }
     }
 
-    private void OnPlayAudioClicked(object? sender, EventArgs e)
+    private async void OnPlayAudioClicked(object? sender, EventArgs e)
     {
         if (_currentPoi == null) return;
-        // Dùng ScriptText từ DB (đúng ngôn ngữ CurrentLanguage), fallback về Description
-        _ = _geofenceService.SpeakNarrationAsync(_currentPoi);
+
+        var narration = _currentPoi.GetScript() ?? _currentPoi.Description ?? "";
+        if (string.IsNullOrWhiteSpace(narration))
+        {
+            narration = $"Địa điểm {_currentPoi.Name}";
+        }
+
+        var locale = LanguageService.CurrentLanguage switch
+        {
+            "en" => "en-US",
+            "zh" => "zh-CN",
+            "ja" => "ja-JP",
+            _ => "vi-VN"
+        };
+
+        // Thử lấy audio MP3 từ server trước
+        var audio = await _apiService.GetAudioByPoiAsync(_currentPoi.Id);
+        if (audio != null && !string.IsNullOrEmpty(audio.AudioPath))
+        {
+            var audioUrl = audio.AudioPath.StartsWith("http")
+                ? audio.AudioPath
+                : ApiService.BaseUrl + audio.AudioPath;
+            await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+            {
+                Url = audioUrl,
+                Title = _currentPoi.Name ?? "Thuyết minh",
+                PoiId = _currentPoi.Id
+            });
+            return;
+        }
+
+        // Fallback TTS qua AudioPlayerService để UI đồng bộ
+        await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+        {
+            TtsText = narration,
+            TtsLocale = locale,
+            Title = _currentPoi.Name ?? "Thuyết minh",
+            PoiId = _currentPoi.Id
+        });
     }
 
     private async void OnMockToggleClicked(object? sender, EventArgs e)

@@ -11,6 +11,10 @@ public partial class POIPage : ContentPage
     public ObservableCollection<POI> POIs { get; set; } = new();
     private List<POI>? _allPois;
     private readonly ApiService _apiService;
+
+    // Static pending category from HomePage taps
+    public static int? PendingCategoryId { get; set; }
+    public static string? PendingCategoryName { get; set; }
     
     // Localized properties
     private string _pageTitle = "";
@@ -95,6 +99,53 @@ public partial class POIPage : ContentPage
     {
         base.OnAppearing();
         UpdateLocalizedText();
+
+        if (PendingCategoryId.HasValue)
+        {
+            var catId = PendingCategoryId.Value;
+            var catName = PendingCategoryName ?? "";
+            PendingCategoryId = null;
+            PendingCategoryName = null;
+            _ = LoadPoisByCategoryAsync(catId, catName);
+        }
+    }
+
+    private async Task LoadPoisByCategoryAsync(int categoryId, string categoryName)
+    {
+        try
+        {
+            await ApiService.AutoDiscoverApiAsync();
+            var pois = await _apiService.GetPOIsByCategoryAsync(categoryId);
+            if (pois?.Any() != true)
+            {
+                await DisplayAlert(categoryName, LanguageService.GetString("NoPOIFound"), LanguageService.GetString("OK"));
+                return;
+            }
+
+            _allPois = pois;
+            await ImageCacheService.PreloadAsync(pois.Select(p => p.ImageUrl));
+
+            var items = new List<POI>();
+            foreach (var poi in pois)
+            {
+                var localPath = await ImageCacheService.GetLocalPathAsync(poi.ImageUrl);
+                if (localPath != null)
+                    poi.ImageUrl = localPath;
+                items.Add(poi);
+            }
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                POIs.Clear();
+                foreach (var poi in items)
+                    POIs.Add(poi);
+                SearchEntry.Text = categoryName;
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[POIPage] LoadPoisByCategoryAsync error: {ex.Message}");
+        }
     }
     
     private async Task LoadPoisAsync()

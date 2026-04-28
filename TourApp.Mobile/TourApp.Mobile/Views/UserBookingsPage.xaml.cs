@@ -57,4 +57,15 @@ public partial class UserBookingsPage : ContentPage
     {
         _ = LoadBookingsAsync();
     }
+
+    private async void OnPayBookingClicked(object sender, EventArgs e)
+    {
+        if (sender is Button btn && btn.BindingContext is Booking booking)
+        {
+            if (booking.Status == "Pending")
+            {
+                await Shell.Current.GoToAsync($"PaymentPage?bookingId={booking.Id}");
+            }
+        }
+    }
 }

@@ -114,7 +114,7 @@ public class UserLocationController : ControllerBase
     public async Task<IActionResult> GetManagementStats()
     {
         var since24h = DateTime.Now.AddHours(-24);
-        var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+        var fiveSecondsAgo = DateTime.Now.AddSeconds(-5);
 
         // Tổng thiết bị đã vào app (all time)
         var totalDevices = await _context.UserLocationLogs
@@ -141,7 +141,7 @@ public class UserLocationController : ControllerBase
             var logs = g.OrderByDescending(l => l.Timestamp).ToList();
             var firstLog = logs.Last();
             var lastLog = logs.First();
-            var isOnline = lastLog.Timestamp >= oneMinuteAgo;
+            var isOnline = lastLog.Timestamp >= fiveSecondsAgo;
             var deviceId = g.Key ?? "unknown";
             // Hiển thị tên tài khoản user hoặc guest ID, không hiện tên thiết bị
             var name = !string.IsNullOrEmpty(lastLog.Name)

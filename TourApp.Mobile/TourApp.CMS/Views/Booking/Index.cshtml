@@ -55,6 +55,8 @@
                                 <td>
                                     @if(booking.Status == "Confirmed") {
                                         <span class="badge bg-success bg-opacity-10 text-success border border-success"><i class="fa-solid fa-check me-1"></i> Đã xác nhận</span>
+                                    } else if(booking.Status == "Paid") {
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info"><i class="fa-solid fa-credit-card me-1"></i> Đã thanh toán</span>
                                     } else if(booking.Status == "Cancelled") {
                                         <span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="fa-solid fa-xmark me-1"></i> Đã hủy</span>
                                     } else {

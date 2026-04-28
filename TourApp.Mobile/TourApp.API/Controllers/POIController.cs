@@ -91,6 +91,47 @@ public class POIController : ControllerBase
         return poi;
     }
 
+    // ===== CATEGORY ENDPOINTS =====
+
+    [HttpGet("{id}/categories")]
+    public async Task<ActionResult<IEnumerable<Category>>> GetPOICategories(int id)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+        if (poi == null) return NotFound("Không tìm thấy địa điểm!");
+
+        var categories = await _context.POICategories
+            .Where(pc => pc.POIId == id)
+            .Include(pc => pc.Category)
+            .Where(pc => pc.Category != null && pc.Category.IsActive)
+            .Select(pc => pc.Category!)
+            .OrderBy(c => c.DisplayOrder)
+            .ThenBy(c => c.Name)
+            .ToListAsync();
+
+        return Ok(categories);
+    }
+
+    [HttpPut("{id}/categories")]
+    public async Task<IActionResult> SetPOICategories(int id, [FromBody] int[] categoryIds)
+    {
+        var poi = await _context.POIs.FindAsync(id);
+        if (poi == null) return NotFound("Không tìm thấy địa điểm!");
+
+        var existing = _context.POICategories.Where(pc => pc.POIId == id);
+        _context.POICategories.RemoveRange(existing);
+
+        foreach (var catId in (categoryIds ?? Array.Empty<int>()).Distinct())
+        {
+            if (await _context.Categories.AnyAsync(c => c.Id == catId && c.IsActive))
+            {
+                _context.POICategories.Add(new POICategory { POIId = id, CategoryId = catId });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     // ===== TRANSLATION ENDPOINTS =====
 
     [HttpGet("{poiId}/translations")]

@@ -138,7 +138,7 @@ namespace TourApp.Mobile.Services
                     FullName = fullName,
                     Username = username,
                     Email = email,
-                    PasswordHash = HashPassword(password),
+                    Password = password,
                     Role = "Customer",
                     IsActive = true,
                     CreatedAt = DateTime.Now

@@ -242,55 +242,38 @@ namespace TourApp.Mobile.Services
                     ? audio.AudioPath
                     : ApiService.BaseUrl + audio.AudioPath;
 
-                await AudioPlayerService.Instance.PlayFromUrlAsync(audioUrl, poi.Name ?? "Audio", poi.Id);
+                await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
+                {
+                    Url = audioUrl,
+                    Title = poi.Name ?? "Audio",
+                    PoiId = poi.Id
+                });
                 _ = _apiService.LogNarrationAsync(poi.Id, audio.Id, "narration");
                 return;
             }
 
-            // 2. Fallback TTS
-            await SpeakTTSAsync(poi, lang);
-        }
+            // 2. Fallback TTS qua AudioPlayerService để UI đồng bộ
+            var script = poi.GetScript(lang);
+            if (string.IsNullOrWhiteSpace(script))
+                script = $"{poi.Name}. {poi.Description}";
+            if (string.IsNullOrWhiteSpace(script)) return;
 
-        /// <summary>
-        /// Fallback: phát TTS khi không có file MP3
-        /// </summary>
-        private async Task SpeakTTSAsync(POI poi, string lang)
-        {
-            try
+            var locale = lang switch
             {
-                CancelTTS();
-                _ttsCts = new CancellationTokenSource();
-                var token = _ttsCts.Token;
+                "en" => "en-US",
+                "zh" => "zh-CN",
+                "ja" => "ja-JP",
+                _ => "vi-VN"
+            };
 
-                var script = poi.GetScript(lang);
-                if (string.IsNullOrWhiteSpace(script))
-                    script = $"{poi.Name}. {poi.Description}";
-                if (string.IsNullOrWhiteSpace(script)) return;
-
-                System.Diagnostics.Debug.WriteLine($"[TTS] POI={poi.Name}, lang={lang}, script={script[..Math.Min(50, script.Length)]}...");
-
-                var locales = await TextToSpeech.Default.GetLocalesAsync();
-                var matchedLocale = locales?.FirstOrDefault(l =>
-                    l.Language.StartsWith(lang, StringComparison.OrdinalIgnoreCase));
-
-                var options = new SpeechOptions
-                {
-                    Pitch = 1.0f,
-                    Volume = 1.0f,
-                    Locale = matchedLocale
-                };
-
-                await TextToSpeech.Default.SpeakAsync(script, options, cancelToken: token);
-                _ = _apiService.LogNarrationAsync(poi.Id, null, "tts");
-            }
-            catch (OperationCanceledException)
+            await AudioPlayerService.Instance.EnqueueAsync(new AudioQueueItem
             {
-                System.Diagnostics.Debug.WriteLine("[TTS] Cancelled");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[TTS] Error: {ex.Message}");
-            }
+                TtsText = script,
+                TtsLocale = locale,
+                Title = poi.Name ?? "Thuyết minh",
+                PoiId = poi.Id
+            });
+            _ = _apiService.LogNarrationAsync(poi.Id, null, "tts");
         }
 
         /// <summary>

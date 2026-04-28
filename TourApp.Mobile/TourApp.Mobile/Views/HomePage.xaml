@@ -203,10 +203,10 @@
                         </Label>
                     </Grid>
 
-                    <CollectionView x:Name="TourCollectionView" HeightRequest="260" SelectionMode="Single" SelectionChanged="OnTourSelected">
+                    <CollectionView x:Name="TourCollectionView" HeightRequest="260" ItemsLayout="HorizontalList" SelectionMode="Single" SelectionChanged="OnTourSelected">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="views:MockItem">
-                                <Border StrokeThickness="0" Padding="0" Margin="0,0,0,12" BackgroundColor="White" StrokeShape="RoundRectangle 16">
+                                <Border WidthRequest="260" StrokeThickness="0" Padding="0" Margin="0,0,12,0" BackgroundColor="White" StrokeShape="RoundRectangle 16">
                                     <Border.Shadow>
                                         <Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.08"/>
                                     </Border.Shadow>

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Timers;
 using TourApp.Mobile.Models;
 using TourApp.Mobile.Services;
@@ -47,7 +48,7 @@ public partial class PaymentPage : ContentPage
             _booking = await _apiService.GetBookingAsync(_bookingId);
             if (_booking == null)
             {
-                await DisplayAlert("Lỗi", "Không tìm thấy thông tin booking", "OK");
+                await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("BookingNotFound"), LanguageService.GetString("OK"));
                 await Shell.Current.GoToAsync("..");
                 return;
             }
@@ -70,7 +71,7 @@ public partial class PaymentPage : ContentPage
         catch (Exception ex)
         {
             Debug.WriteLine($"[PaymentPage] Error loading booking: {ex.Message}");
-            await DisplayAlert("Lỗi", "Không thể tải thông tin booking", "OK");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("LoadBookingError"), LanguageService.GetString("OK"));
         }
     }
 
@@ -116,7 +117,7 @@ public partial class PaymentPage : ContentPage
             _timer?.Stop();
             MainThread.BeginInvokeOnMainThread(async () =>
             {
-                await DisplayAlert("Hết hạn", "Mã QR đã hết hạn, vui lòng thử lại", "OK");
+                await DisplayAlert(LanguageService.GetString("Notice"), LanguageService.GetString("QRExpired"), LanguageService.GetString("OK"));
                 await Shell.Current.GoToAsync("..");
             });
             return;
@@ -124,76 +125,66 @@ public partial class PaymentPage : ContentPage
 
         var minutes = _remainingSeconds / 60;
         var seconds = _remainingSeconds % 60;
-        
+
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            TimerLabel.Text = $"Mã QR hết hạn sau: {minutes:D2}:{seconds:D2}";
+            TimerLabel.Text = $"{LanguageService.GetString("QRCodeExpiry")} {minutes:D2}:{seconds:D2}";
         });
     }
 
-    private async void OnSimulateSuccessClicked(object sender, EventArgs e)
+    private async void OnVnPayClicked(object sender, EventArgs e) => await ProcessPaymentAsync();
+    private async void OnMomoClicked(object sender, EventArgs e) => await ProcessPaymentAsync();
+    private async void OnPayPalClicked(object sender, EventArgs e) => await ProcessPaymentAsync();
+
+    private async Task ProcessPaymentAsync()
     {
         try
         {
-            // Simulate successful payment
+            VnPayButton.IsEnabled = false;
+            MomoButton.IsEnabled = false;
+            PayPalButton.IsEnabled = false;
+
             var result = await _apiService.VerifyQrPaymentAsync(_bookingId);
-            
             if (result.Success)
             {
-                await DisplayAlert("Thành công", 
-                    $"Thanh toán thành công!\nMã giao dịch: {result.TransactionId}", "OK");
-                
-                // Navigate to Map with tour route
-                if (_tour != null)
-                {
-                    var parameters = new Dictionary<string, object>
-                    {
-                        { "tourId", _tour.Id.ToString() },
-                        { "showRoute", "true" }
-                    };
-                    await Shell.Current.GoToAsync($"///mappage?tourId={_tour.Id}&showRoute=true");
-                }
-                else
-                {
-                    await Shell.Current.GoToAsync("///mappage");
-                }
+                await Shell.Current.GoToAsync($"PaymentSuccessPage?bookingId={_bookingId}&transactionId={Uri.EscapeDataString(result.TransactionId ?? "")}");
             }
             else
             {
-                await DisplayAlert("Thất bại", result.Message, "OK");
+                await DisplayAlert(LanguageService.GetString("PaymentFailed"), result.Message, LanguageService.GetString("OK"));
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[PaymentPage] Payment error: {ex.Message}");
-            await DisplayAlert("Lỗi", "Có lỗi xảy ra khi xử lý thanh toán", "OK");
+            Debug.WriteLine($"[PaymentPage] error: {ex.Message}");
+            await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("PaymentProcessError"), LanguageService.GetString("OK"));
         }
-    }
-
-    private async void OnSimulateFailClicked(object sender, EventArgs e)
-    {
-        await DisplayAlert("Thất bại", 
-            "Giả lập: Quét mã không thành công. Vui lòng thử lại.", "OK");
+        finally
+        {
+            VnPayButton.IsEnabled = true;
+            MomoButton.IsEnabled = true;
+            PayPalButton.IsEnabled = true;
+        }
     }
 
     private async void OnCancelClicked(object sender, EventArgs e)
     {
-        var result = await DisplayAlert("Xác nhận", 
-            "Bạn có chắc muốn hủy thanh toán?\nBooking của bạn sẽ bị hủy.", 
-            "Có", "Không");
-        
+        var result = await DisplayAlert(LanguageService.GetString("Notice"),
+            LanguageService.GetString("CancelPaymentConfirm"),
+            LanguageService.GetString("OK"), LanguageService.GetString("Cancel"));
+
         if (result)
         {
             try
             {
-                await _apiService.CancelBookingAsync(_bookingId, "Người dùng hủy thanh toán");
-                await DisplayAlert("Đã hủy", "Booking đã được hủy thành công", "OK");
+                await _apiService.CancelBookingAsync(_bookingId, LanguageService.GetString("BookingCancelled"));
+                await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("CancelSuccess"), LanguageService.GetString("OK"));
                 await Shell.Current.GoToAsync("..");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PaymentPage] Cancel error: {ex.Message}");
-                await DisplayAlert("Lỗi", "Không thể hủy booking", "OK");
+                await DisplayAlert(LanguageService.GetString("Error"), LanguageService.GetString("CancelBookingError"), LanguageService.GetString("OK"));
             }
         }
     }

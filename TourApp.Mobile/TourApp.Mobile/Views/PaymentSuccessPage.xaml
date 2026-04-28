@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:services="clr-namespace:TourApp.Mobile.Services"
+             x:Class="TourApp.Mobile.Views.PaymentSuccessPage"
+             Shell.NavBarIsVisible="True"
+             Title="{Binding [PaymentSuccessTitle], Source={x:Static services:LocalizationResourceManager.Instance}}"
+             BackgroundColor="#F8F9FC">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Success Icon -->
+            <Label Text="✅"
+                   FontSize="64"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,0"/>
+
+            <Label Text="{Binding [PaymentSuccessHeader], Source={x:Static services:LocalizationResourceManager.Instance}}"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="#00B14F"
+                   HorizontalOptions="Center"/>
+
+            <Label x:Name="TransactionIdLabel"
+                   FontSize="13"
+                   TextColor="#6B7588"
+                   HorizontalOptions="Center"/>
+
+            <!-- Booking Summary -->
+            <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="White" Padding="16" StrokeShape="RoundRectangle 12">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{Binding [BookingInfoTitle], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="16" FontAttributes="Bold" TextColor="#1A1A2E"/>
+
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Label Grid.Column="0" Text="{Binding [TourLabel], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#6B7588" FontSize="14"/>
+                        <Label Grid.Column="1" x:Name="TourNameLabel" TextColor="#1A1A2E" FontSize="14" FontAttributes="Bold" HorizontalOptions="End"/>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Label Grid.Column="0" Text="{Binding [DepartureDateLabel], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#6B7588" FontSize="14"/>
+                        <Label Grid.Column="1" x:Name="TourDateLabel" TextColor="#1A1A2E" FontSize="14" HorizontalOptions="End"/>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Label Grid.Column="0" Text="{Binding [NumberOfPeopleLabel], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#6B7588" FontSize="14"/>
+                        <Label Grid.Column="1" x:Name="ParticipantsLabel" TextColor="#1A1A2E" FontSize="14" HorizontalOptions="End"/>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#E4E7ED"/>
+
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Label Grid.Column="0" Text="{Binding [TotalPaymentLabel], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="#6B7588" FontSize="14"/>
+                        <Label Grid.Column="1" x:Name="TotalPriceLabel" TextColor="#00B14F" FontSize="16" FontAttributes="Bold" HorizontalOptions="End"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Actions -->
+            <Button Text="{Binding [ViewBookingHistory], Source={x:Static services:LocalizationResourceManager.Instance}}"
+                    BackgroundColor="#007AFF"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="12"
+                    HeightRequest="50"
+                    Clicked="OnViewBookingsClicked"/>
+
+            <Button Text="{Binding [BackToHome], Source={x:Static services:LocalizationResourceManager.Instance}}"
+                    BackgroundColor="Transparent"
+                    TextColor="#6B7588"
+                    BorderColor="#E4E7ED"
+                    BorderWidth="1"
+                    CornerRadius="12"
+                    HeightRequest="50"
+                    Clicked="OnGoHomeClicked"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -17,9 +17,27 @@ public class TourController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Tour>>> GetTours()
+    public async Task<IActionResult> GetTours(string? lang = null)
     {
-        return await _context.Tours.ToListAsync();
+        var tours = await _context.Tours
+            .Include(t => t.Translations)
+            .ToListAsync();
+
+        var result = tours.Select(t => new
+        {
+            t.Id,
+            t.Name,
+            t.Description,
+            t.Price,
+            t.Duration,
+            t.MaxParticipants,
+            t.ImageUrl,
+            t.CreatedAt,
+            t.IsActive,
+            Translations = t.Translations?.Select(tr => new { tr.Language, tr.Description }).ToList()
+        });
+
+        return Ok(result);
     }
 
     [HttpGet("{id}")]

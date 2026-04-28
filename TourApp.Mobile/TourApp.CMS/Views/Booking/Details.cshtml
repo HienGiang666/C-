@@ -14,6 +14,8 @@
                 <h5 class="mb-0 fw-bold"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i> Đơn Đặt Vé @Model.DisplayCode</h5>
                 @if(Model.Status == "Confirmed") {
                     <span class="badge bg-success bg-opacity-10 text-success px-3 border border-success">Đã Xác Nhận</span>
+                } else if(Model.Status == "Paid") {
+                    <span class="badge bg-info bg-opacity-10 text-info px-3 border border-info">Đã Thanh Toán</span>
                 } else if(Model.Status == "Cancelled") {
                     <span class="badge bg-danger bg-opacity-10 text-danger px-3 border border-danger">Đã Hủy</span>
                 } else {
@@ -30,7 +32,7 @@
                     <div class="col-md-6 ps-md-4">
                         <h6 class="text-uppercase text-muted fw-bold mb-3">Thông tin Tour</h6>
                         <p class="mb-1"><i class="fa-solid fa-suitcase-rolling text-muted me-2 width-20"></i> <span class="fw-medium">Mã Tour:</span> <a asp-controller="Tour" asp-action="Edit" asp-route-id="@Model.TourId" class="text-decoration-none">@tourCode</a></p>
-                        <p class="mb-1"><i class="fa-solid fa-calendar-day text-muted me-2 width-20"></i> <span class="fw-medium">Ngày bay:</span> @Model.TourDate.ToString("dd/MM/yyyy")</p>
+                        <p class="mb-1"><i class="fa-solid fa-calendar-day text-muted me-2 width-20"></i> <span class="fw-medium">Ngày đi:</span> @Model.TourDate.ToString("dd/MM/yyyy")</p>
                         <p class="mb-1"><i class="fa-solid fa-users text-muted me-2 width-20"></i> <span class="fw-medium">SL Khách:</span> @Model.NumberOfParticipants khách</p>
                     </div>
                 </div>

@@ -7,6 +7,7 @@ using TourApp.API.Data;
 using TourApp.API.Models;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 using TourApp.API.Helpers;
 
@@ -154,12 +155,20 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<User>> CreateUser(User user)
+    public async Task<ActionResult<User>> CreateUser(RegisterRequest req)
     {
+        var user = new User
+        {
+            FullName = req.FullName,
+            Username = req.Username,
+            Email = req.Email,
+            Role = "User",
+            IsActive = true
+        };
         user.Role = NormalizeRole(user.Role);
-        // Hash nếu plain text được truyền lên
-        if (!string.IsNullOrEmpty(user.PasswordHash) && user.PasswordHash.Length < 60)
-            user.PasswordHash = SecurityHelper.HashPassword(user.PasswordHash);
+        // Hash mật khẩu plain text
+        if (!string.IsNullOrEmpty(req.Password))
+            user.PasswordHash = SecurityHelper.HashPassword(req.Password);
         // Auto-generate Code nếu chưa có
         if (string.IsNullOrEmpty(user.Code))
         {

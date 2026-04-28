@@ -153,6 +153,178 @@ public class PaymentController : ControllerBase
     }
 
     /// <summary>
+    /// POST /api/payment/create
+    /// Tạo URL thanh toán cho VNPay/Momo/QR
+    /// </summary>
+    [HttpPost("create")]
+    [Authorize]
+    public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
+    {
+        var authUserId = GetCurrentUserId();
+        if (authUserId == null)
+            return Unauthorized(new { message = "Vui lòng đăng nhập" });
+
+        var booking = await _context.Bookings
+            .Include(b => b.Tour)
+            .FirstOrDefaultAsync(b => b.Id == request.BookingId);
+
+        if (booking == null)
+            return NotFound(new { message = "Không tìm thấy booking" });
+
+        if (booking.UserId != authUserId)
+            return Forbid();
+
+        if (booking.Status != "Pending")
+            return BadRequest(new { message = "Booking này không thể thanh toán" });
+
+        var existingPayment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.BookingId == booking.Id && p.Status == "Success");
+        if (existingPayment != null)
+            return BadRequest(new { message = "Booking này đã được thanh toán" });
+
+        // Tạo payment record với status Pending
+        var payment = new Payment
+        {
+            BookingId = booking.Id,
+            UserId = booking.UserId,
+            Amount = booking.TotalPrice,
+            PaymentMethod = request.Method, // VNPAY, MOMO, QR
+            Status = "Pending",
+            TransactionId = $"{request.Method}_{Guid.NewGuid():N}",
+            CreatedAt = DateTime.Now
+        };
+        _context.Payments.Add(payment);
+        await _context.SaveChangesAsync();
+
+        // Tạo URL thanh toán sandbox
+        string paymentUrl;
+        var returnUrl = $"{Request.Scheme}://{Request.Host}/api/payment/callback/{request.Method.ToLower()}";
+
+        switch (request.Method?.ToUpper())
+        {
+            case "VNPAY":
+                paymentUrl = CreateVnPaySandboxUrl(booking, payment.TransactionId, returnUrl);
+                break;
+            case "MOMO":
+                paymentUrl = CreateMomoSandboxUrl(booking, payment.TransactionId, returnUrl);
+                break;
+            case "QR":
+                paymentUrl = $"{Request.Scheme}://{Request.Host}/api/payment/callback/qr?bookingId={booking.Id}&txn={payment.TransactionId}";
+                break;
+            default:
+                return BadRequest(new { message = "Phương thức thanh toán không hợp lệ" });
+        }
+
+        return Ok(new
+        {
+            paymentId = payment.Id,
+            transactionId = payment.TransactionId,
+            amount = payment.Amount,
+            method = request.Method,
+            paymentUrl,
+            returnUrl
+        });
+    }
+
+    /// <summary>
+    /// GET /api/payment/callback/vnpay
+    /// Callback giả lập VNPay Sandbox
+    /// </summary>
+    [HttpGet("callback/vnpay")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VnPayCallback(
+        [FromQuery] string txn,
+        [FromQuery] bool success = true)
+    {
+        return await ProcessCallbackAsync(txn, "VNPAY", success);
+    }
+
+    /// <summary>
+    /// GET /api/payment/callback/momo
+    /// Callback giả lập Momo Sandbox
+    /// </summary>
+    [HttpGet("callback/momo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> MomoCallback(
+        [FromQuery] string txn,
+        [FromQuery] bool success = true)
+    {
+        return await ProcessCallbackAsync(txn, "MOMO", success);
+    }
+
+    /// <summary>
+    /// GET /api/payment/callback/qr
+    /// Callback giả lập QR
+    /// </summary>
+    [HttpGet("callback/qr")]
+    [AllowAnonymous]
+    public async Task<IActionResult> QrCallback(
+        [FromQuery] int bookingId,
+        [FromQuery] string txn)
+    {
+        return await ProcessCallbackAsync(txn, "QR", true);
+    }
+
+    private async Task<IActionResult> ProcessCallbackAsync(string txn, string method, bool success)
+    {
+        var payment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.TransactionId == txn);
+
+        if (payment == null)
+            return NotFound(new { message = "Không tìm thấy giao dịch" });
+
+        var booking = await _context.Bookings.FindAsync(payment.BookingId);
+        if (booking == null)
+            return NotFound(new { message = "Không tìm thấy booking" });
+
+        if (success)
+        {
+            payment.Status = "Success";
+            payment.PaidAt = DateTime.Now;
+            booking.Status = "Paid";
+            booking.PaymentMethod = method;
+            booking.TransactionId = payment.TransactionId;
+            booking.PaidAt = DateTime.Now;
+        }
+        else
+        {
+            payment.Status = "Failed";
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Trả về JSON cho mobile xử lý inline, hoặc redirect nếu từ browser
+        if (Request.Headers.ContainsKey("X-Requested-With") ||
+            Request.Headers["Accept"].ToString().Contains("application/json"))
+        {
+            return Ok(new
+            {
+                success,
+                transactionId = txn,
+                amount = payment.Amount,
+                message = success ? "Thanh toán thành công" : "Thanh toán thất bại"
+            });
+        }
+
+        // Redirect về app deep link hoặc trang kết quả
+        return Redirect($"/payment-result?success={success}&txn={txn}&amount={payment.Amount}");
+    }
+
+    private string CreateVnPaySandboxUrl(Booking booking, string txnId, string returnUrl)
+    {
+        // Sandbox URL giả lập - trong thực tế sẽ gọi VNPay API
+        var url = $"{returnUrl}?txn={Uri.EscapeDataString(txnId)}&success=true";
+        // Trả về trang giả lập VNPay (có thể mở trong WebView)
+        return url;
+    }
+
+    private string CreateMomoSandboxUrl(Booking booking, string txnId, string returnUrl)
+    {
+        var url = $"{returnUrl}?txn={Uri.EscapeDataString(txnId)}&success=true";
+        return url;
+    }
+
+    /// <summary>
     /// POST /api/payment/{bookingId}/cancel
     /// Hủy booking và hoàn tiền giả lập
     /// </summary>
@@ -204,6 +376,15 @@ public class PaymentController : ControllerBase
     }
 
     #endregion
+}
+
+/// <summary>
+/// Request model tạo thanh toán
+/// </summary>
+public class CreatePaymentRequest
+{
+    public int BookingId { get; set; }
+    public string? Method { get; set; } // VNPAY, MOMO, QR
 }
 
 /// <summary>

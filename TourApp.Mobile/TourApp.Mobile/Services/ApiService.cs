@@ -292,7 +292,7 @@ namespace TourApp.Mobile.Services
             return new List<TourPOI>();
         }
 
-        public async Task<(bool Success, string Message)> BookTourAsync(Booking booking)
+        public async Task<(bool Success, string Message, int? BookingId)> BookTourAsync(Booking booking)
         {
             // Offline → queue lại, sync khi có mạng
             if (!IsOnline)
@@ -302,7 +302,7 @@ namespace TourApp.Mobile.Services
                     Type = OfflineActionType.Booking,
                     Payload = JsonSerializer.Serialize(booking)
                 });
-                return (true, "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng.");
+                return (true, "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng.", null);
             }
 
             try
@@ -314,11 +314,13 @@ namespace TourApp.Mobile.Services
                 var response = await GetClient().PostAsync("/api/booking", content, cts.Token);
                 if (response.IsSuccessStatusCode)
                 {
-                    return (true, "Đặt tour thành công!");
+                    var body = await response.Content.ReadAsStringAsync();
+                    var created = JsonSerializer.Deserialize<Booking>(body, JsonOpts);
+                    return (true, "Đặt tour thành công!", created?.Id);
                 }
                 
                 var errorMsg = await response.Content.ReadAsStringAsync();
-                return (false, $"Lỗi server: {errorMsg}");
+                return (false, $"Lỗi server: {errorMsg}", null);
             }
             catch (Exception)
             {
@@ -328,7 +330,7 @@ namespace TourApp.Mobile.Services
                     Type = OfflineActionType.Booking,
                     Payload = JsonSerializer.Serialize(booking)
                 });
-                return (true, $"Lỗi mạng. Đã lưu offline, sẽ sync khi có mạng.");
+                return (true, $"Lỗi mạng. Đã lưu offline, sẽ sync khi có mạng.", null);
             }
         }
 
@@ -422,7 +424,7 @@ namespace TourApp.Mobile.Services
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                var response = await GetClient().GetAsync($"/api/audio/poi/{poiId}?lang={lang}", cts.Token).ConfigureAwait(false);
+                var response = await GetClient().GetAsync($"/api/audio/by-poi/{poiId}/lang/{lang}", cts.Token).ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
                     var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
@@ -707,6 +709,37 @@ namespace TourApp.Mobile.Services
         }
 
         #region Payment Methods (Migration v2)
+
+        /// <summary>Tạo URL thanh toán cho VNPay/Momo/QR</summary>
+        public async Task<(bool Success, string Message, string? PaymentUrl, string? TransactionId)> CreatePaymentAsync(int bookingId, string method)
+        {
+            try
+            {
+                var request = new { BookingId = bookingId, Method = method };
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await GetClient().PostAsync("/api/payment/create", content, cts.Token);
+                var body = await response.Content.ReadAsStringAsync();
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    var root = doc.RootElement;
+                    var paymentUrl = root.TryGetProperty("paymentUrl", out var urlProp) ? urlProp.GetString() : null;
+                    var txnId = root.TryGetProperty("transactionId", out var txnProp) ? txnProp.GetString() : null;
+                    return (true, "Tạo thanh toán thành công", paymentUrl, txnId);
+                }
+                
+                return (false, $"Lỗi: {body}", null, null);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] CreatePayment error: {ex.Message}");
+                return (false, "Lỗi kết nối. Vui lòng thử lại.", null, null);
+            }
+        }
 
         /// <summary>Verify QR payment - Giả lập thanh toán thành công</summary>
         public async Task<(bool Success, string Message, string? TransactionId)> VerifyQrPaymentAsync(int bookingId)

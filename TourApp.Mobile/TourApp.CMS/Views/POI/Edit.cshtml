@@ -6,6 +6,8 @@
     var languages = new[] {
         ("en", "🇬🇧 English"), ("zh", "🇨🇳 中文"), ("ja", "🇯🇵 日本語")
     };
+    var allCategories = ViewBag.AllCategories as List<TourApp.CMS.Models.Category> ?? new List<TourApp.CMS.Models.Category>();
+    var poiCategoryIds = ViewBag.PoiCategoryIds as List<int> ?? new List<int>();
 }
 
 <div class="row justify-content-center">
@@ -152,6 +154,37 @@
                 </form>
             </div>
         </div>
+
+        <!-- ===== CATEGORY SECTION ===== -->
+        <div class="card border-0 mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-tags me-2 text-warning"></i> Danh mục</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" asp-action="SaveCategories" asp-route-id="@Model.Id">
+                    <p class="text-muted small mb-3">Chọn một hoặc nhiều danh mục cho địa điểm này.</p>
+                    <div class="row g-3">
+                        @foreach (var cat in allCategories)
+                        {
+                            var isChecked = poiCategoryIds.Contains(cat.Id);
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categoryIds" value="@cat.Id" id="cat_@cat.Id" @(isChecked ? "checked" : "")>
+                                    <label class="form-check-label" for="cat_@cat.Id">
+                                        <span class="badge rounded-pill" style="background-color:@(cat.Color ?? "#6c757d")">@cat.Name</span>
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <hr />
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i> Lưu danh mục</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- ===== END CATEGORY SECTION ===== -->
 
         <!-- ===== TRANSLATION SECTION ===== -->
         <div class="card border-0 mt-4">

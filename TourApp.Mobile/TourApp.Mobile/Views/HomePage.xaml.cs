@@ -209,7 +209,6 @@ public partial class HomePage : ContentPage
                     tourItems.Add(new MockItem
                     {
                         Name = tour.Name ?? "Tour",
-                        Summary = $"{tour.PoiCount} điểm",
                         ImageUrl = localPath,
                         TourId = tour.Id
                     });
@@ -343,66 +342,29 @@ public partial class HomePage : ContentPage
 
     private async void OnNuongTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("nướng", LanguageService.GetString("CategoryGrill"));
+        await NavigateToCategory(1, LanguageService.GetString("CategoryNuong"));
     }
 
     private async void OnLauTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("lẩu", LanguageService.GetString("CategoryHotpot"));
+        await NavigateToCategory(2, LanguageService.GetString("CategoryLau"));
     }
 
     private async void OnOcTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("ốc", LanguageService.GetString("CategorySeafood"));
+        await NavigateToCategory(3, LanguageService.GetString("CategoryOc"));
     }
 
     private async void OnAnVatTapped(object sender, EventArgs e)
     {
-        await FilterPoisByCategory("ăn vặt", LanguageService.GetString("CategorySnacks"));
+        await NavigateToCategory(4, LanguageService.GetString("CategoryAnVat"));
     }
-    
-    private async Task FilterPoisByCategory(string keyword, string categoryName)
+
+    private async Task NavigateToCategory(int categoryId, string categoryName)
     {
-        // Filter POIs by keyword in name or description
-        var filteredPois = _allPois?.Where(p =>
-            p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-            p.Description.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-            
-        // Also check mock data if no API data
-        if (filteredPois?.Any() != true)
-        {
-            var mockFiltered = MockPois.Where(p =>
-                !string.IsNullOrEmpty(p.Name) && p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-                
-            if (mockFiltered.Any())
-            {
-                await DisplayAlert(categoryName, 
-                    LanguageService.GetString("RestaurantsFound", mockFiltered.Count, categoryName), 
-                    LanguageService.GetString("ViewAllRestaurants"), 
-                    LanguageService.GetString("Close"));
-            }
-            else
-            {
-                await DisplayAlert(categoryName, 
-                    LanguageService.GetString("NoPOIFound"), 
-                    LanguageService.GetString("OK"));
-                return;
-            }
-        }
-        else
-        {
-            var result = await DisplayAlert(categoryName, 
-                LanguageService.GetString("RestaurantsFound", filteredPois.Count, categoryName),
-                LanguageService.GetString("ViewAllRestaurants"), 
-                LanguageService.GetString("Close"));
-                
-            if (result)
-            {
-                await Shell.Current.GoToAsync("//POIPage");
-            }
-        }
+        POIPage.PendingCategoryId = categoryId;
+        POIPage.PendingCategoryName = categoryName;
+        await Shell.Current.GoToAsync("//POIPage");
     }
 
     private async void OnTourSelected(object sender, SelectionChangedEventArgs e)
@@ -414,11 +376,11 @@ public partial class HomePage : ContentPage
 
             if (selectedTour.TourId > 0)
             {
-                await Shell.Current.GoToAsync($"//MapPage?tourId={selectedTour.TourId}");
+                await Shell.Current.GoToAsync($"TourDetailPage?tourId={selectedTour.TourId}");
                 return;
             }
 
-            await Shell.Current.GoToAsync("//MapPage");
+            await Shell.Current.GoToAsync("//TourPage");
         }
     }
 

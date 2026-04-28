@@ -161,7 +161,7 @@ public partial class BookingPage : ContentPage
             BookingDate = DateTime.Now,
             TotalPrice = _tourPrice * _participants,
             Status = "Pending",
-            Notes = NotesEditor.Text
+            Notes = NotesEditor.Text ?? ""
         };
 
         var result = await _apiService.BookTourAsync(booking);
@@ -170,8 +170,10 @@ public partial class BookingPage : ContentPage
         {
             // Xóa pending booking nếu có
             PendingBookingService.Clear();
-            await DisplayAlert(LanguageService.GetString("Success"), LanguageService.GetString("BookingSuccess"), LanguageService.GetString("OK"));
-            await Shell.Current.Navigation.PopToRootAsync();
+            if (result.BookingId.HasValue)
+                await Shell.Current.GoToAsync($"PaymentPage?bookingId={result.BookingId.Value}");
+            else
+                await Shell.Current.Navigation.PopToRootAsync();
         }
         else
         {
