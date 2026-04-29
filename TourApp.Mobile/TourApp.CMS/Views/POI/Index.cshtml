@@ -174,17 +174,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <p class="mb-3 text-muted">Quét mã QR để mở địa điểm trong app</p>
+                <p class="mb-3 text-muted">Quét mã QR để mở địa điểm trong app hoặc tải app nếu chưa cài</p>
                 <div id="qrCodeContainer" class="d-flex justify-content-center">
                     <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
                 </div>
                 <div class="mt-3">
                     <strong id="qrPoiName" class="text-primary"></strong>
                     <div class="mt-2">
-                        <small class="text-muted">Tải app: </small>
-                        <a href="/download/app" class="small">Android</a>
-                        <span class="text-muted">|</span>
-                        <a href="/download/ios" class="small">iOS</a>
+                        <small class="text-muted">Chưa có app? </small>
+                        <a href="https://www.upload-apk.com/bIYw4LoJkIl96rz" target="_blank" class="small">Tải APK</a>
                     </div>
                 </div>
             </div>
@@ -217,7 +215,7 @@
             .then(async response => {
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                    throw new Error(errorData.error || 'Failed to generate QR');
                 }
                 return response.json();
             })
@@ -225,6 +223,11 @@
                 currentQrData = data.qrCode;
                 document.getElementById('qrCodeContainer').innerHTML = 
                     `<img src="${data.qrCode}" alt="QR Code" class="img-fluid" style="max-width: 250px;">`;
+                // Cập nhật link download từ response nếu có
+                if (data.downloadUrl) {
+                    const linkEl = document.querySelector('#qrModal a[href*="upload-apk"]');
+                    if (linkEl) linkEl.href = data.downloadUrl;
+                }
             })
             .catch(error => {
                 console.error('[QR] Error:', error);

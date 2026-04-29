@@ -354,12 +354,13 @@ public partial class QRScannerPage : ContentPage
         // Format: chỉ số: "3"
         if (int.TryParse(qrValue, out int directId)) return directId;
 
-        // Format: URL có ?id=3
+        // Format: URL có ?id=3 hoặc ?poi=3
         try
         {
             var uri = new Uri(qrValue);
             var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
             if (int.TryParse(q["id"], out int qId)) return qId;
+            if (int.TryParse(q["poi"], out int qPoiId)) return qPoiId;
         }
         catch { }
 

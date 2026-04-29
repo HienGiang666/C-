@@ -441,8 +441,9 @@ public class POIController : Controller
         if (poi == null)
             return NotFound(new { error = "POI not found" });
 
-        // Format đơn giản: tourapp://poi/{id} - dễ quét, ít lỗi
-        var qrContent = $"tourapp://poi/{id}";
+        // URL download app kèm POI ID để app quét vẫn nhận diện được
+        const string downloadUrl = "https://www.upload-apk.com/bIYw4LoJkIl96rz";
+        var qrContent = $"{downloadUrl}?poi={id}";
 
         // Tạo QR code với ECCLevel M (medium) thay vì Q để QR nhỏ hơn
         using var qrGenerator = new QRCodeGenerator();
@@ -456,7 +457,8 @@ public class POIController : Controller
             qrCode = $"data:image/png;base64,{base64Image}",
             poiId = id,
             poiName = poi.Name,
-            deepLink = qrContent
+            deepLink = qrContent,
+            downloadUrl
         });
     }
 }
