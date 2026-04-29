@@ -93,6 +93,7 @@ namespace TourApp.Mobile.Services
                         Preferences.Default.Set("user_email", user.Email ?? "");
                         Preferences.Default.Set("user_role", user.Role ?? "Customer");
                         Preferences.Default.Set("is_logged_in", true);
+                        ClearGuestMode();
                         
                         // Save JWT token
                         if (!string.IsNullOrEmpty(token))
@@ -173,6 +174,7 @@ namespace TourApp.Mobile.Services
                         Preferences.Default.Set("user_email", user.Email ?? "");
                         Preferences.Default.Set("user_role", user.Role ?? "Customer");
                         Preferences.Default.Set("is_logged_in", true);
+                        ClearGuestMode();
                         
                         return (true, "Đăng ký thành công!", user);
                     }
