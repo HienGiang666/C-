@@ -24,6 +24,16 @@ public static class NetworkService
         _initialized = true;
         Connectivity.Current.ConnectivityChanged += OnConnectivityChanged;
         Debug.WriteLine($"[NetworkService] Initialized — online={IsConnected}");
+
+        // Sync ngay nếu đang online
+        if (IsConnected)
+        {
+            _ = Task.Run(async () =>
+            {
+                try { await OfflineQueueService.SyncAllAsync(); }
+                catch (Exception ex) { Debug.WriteLine($"[NetworkService] Initial sync error: {ex.Message}"); }
+            });
+        }
     }
 
     public static void Dispose()

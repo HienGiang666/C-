@@ -869,6 +869,7 @@ public partial class MapPage : ContentPage
                     Title = _currentPoi.Name ?? "Thuyết minh",
                     PoiId = _currentPoi.Id
                 });
+                _ = _apiService.LogNarrationAsync(_currentPoi.Id, audio?.Id, "manual");
                 return;
             }
         }
@@ -881,6 +882,7 @@ public partial class MapPage : ContentPage
             Title = _currentPoi.Name ?? "Thuyết minh",
             PoiId = _currentPoi.Id
         });
+        _ = _apiService.LogNarrationAsync(_currentPoi.Id, audio?.Id, "manual");
     }
 
     private async void OnMockToggleClicked(object? sender, EventArgs e)

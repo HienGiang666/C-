@@ -235,7 +235,12 @@
             });
             
             // ===== Chart 2: Lượt nghe theo POI =====
-            var narrationData = @Html.Raw(Json.Serialize((ViewBag.NarrationStats as NarrationStatsViewModel)?.TopPOIs?.Take(5) ?? new List<TopPOIViewModel>()));
+            var narrationData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                (ViewBag.NarrationStats as NarrationStatsViewModel)?.TopPOIs?.Take(5)
+                    .Select(p => (object)new { poiId = p.PoiId, poiName = p.PoiName, count = p.Count })
+                    .ToList() ?? new List<object>(),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
+            ));
             
             if (narrationData && narrationData.length > 0) {
                 var ctx2 = document.getElementById('narrationChart').getContext('2d');
