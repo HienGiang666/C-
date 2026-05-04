@@ -24,44 +24,14 @@ public class NarrationLogController : ControllerBase
         return await q.OrderByDescending(l => l.Timestamp).Take(top).ToListAsync();
     }
 
-[HttpPost]
-public async Task<IActionResult> LogNarration(NarrationLog log)
-{
-    // Muốn nhân bao nhiêu thì đổi số này:
-    // 1 = bình thường, 2 = gấp đôi, 3 = gấp ba, 4 = gấp bốn...
-    const int listenMultiplier = 1;
-
-    if (listenMultiplier < 1)
-        return BadRequest(new { message = "listenMultiplier phải >= 1" });
-
-    var now = DateTime.Now;
-    var logs = new List<NarrationLog>();
-
-    for (int i = 0; i < listenMultiplier; i++)
+    [HttpPost]
+    public async Task<IActionResult> LogNarration(NarrationLog log)
     {
-        logs.Add(new NarrationLog
-        {
-            POIId = log.POIId,
-            AudioId = log.AudioId,
-            DeviceId = log.DeviceId,
-            TriggerType = log.TriggerType,
-            Timestamp = now.AddMilliseconds(i),
-
-            // Nếu model có DurationListened thì giữ lại.
-            // Nhưng lưu ý nếu DurationListened đang [NotMapped] thì DB không lưu field này.
-            DurationListened = log.DurationListened
-        });
+        log.Timestamp = DateTime.Now;
+        _context.NarrationLogs.Add(log);
+        await _context.SaveChangesAsync();
+        return Ok(new { id = log.Id });
     }
-
-    _context.NarrationLogs.AddRange(logs);
-    await _context.SaveChangesAsync();
-
-    return Ok(new
-    {
-        ids = logs.Select(x => x.Id).ToList(),
-        multiplier = listenMultiplier
-    });
-}
 
     /// <summary>
     /// GET /api/narrationlog/stats
