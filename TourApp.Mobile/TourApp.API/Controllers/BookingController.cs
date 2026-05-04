@@ -131,6 +131,100 @@ public class BookingController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// POST /api/booking/guest
+    /// Đặt tour không cần đăng nhập — nhập tên + số điện thoại
+    /// </summary>
+    [HttpPost("guest")]
+    public async Task<ActionResult<Booking>> CreateGuestBooking([FromBody] Booking booking)
+    {
+        try
+        {
+            if (booking.TourId <= 0)
+                return BadRequest(new { message = "Tour không hợp lệ" });
+
+            if (booking.NumberOfParticipants <= 0)
+                return BadRequest(new { message = "Số lượng người phải lớn hơn 0" });
+
+            if (string.IsNullOrWhiteSpace(booking.GuestPhone))
+                return BadRequest(new { message = "Vui lòng nhập số điện thoại" });
+
+            var tour = await _context.Tours.FindAsync(booking.TourId);
+            if (tour == null)
+                return BadRequest(new { message = "Tour không tồn tại" });
+
+            // Tìm user theo số điện thoại
+            var phone = booking.GuestPhone.Trim();
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.PhoneNumber == phone);
+
+            if (user == null)
+            {
+                // Tạo user guest mới
+                var maxCodeNum = await _context.Users
+                    .Select(u => u.Code)
+                    .ToListAsync();
+                var nextNum = maxCodeNum
+                    .Where(c => !string.IsNullOrEmpty(c) && c!.StartsWith("#U"))
+                    .Select(c => int.TryParse(c!.Substring(2), out var n) ? n : 0)
+                    .DefaultIfEmpty(1000)
+                    .Max() + 1;
+
+                user = new User
+                {
+                    FullName = booking.GuestName ?? "Khách",
+                    Username = phone,
+                    PhoneNumber = phone,
+                    Email = $"guest_{nextNum}@tourapp.local",
+                    Role = "Customer",
+                    IsActive = true,
+                    Code = $"#U{nextNum}",
+                    CreatedAt = DateTime.Now
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                // Cập nhật tên nếu khác
+                if (!string.IsNullOrWhiteSpace(booking.GuestName) && user.FullName != booking.GuestName)
+                {
+                    user.FullName = booking.GuestName;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // Gán user vào booking
+            booking.UserId = user.Id;
+            booking.BookingDate = DateTime.Now;
+            booking.Status = "Pending";
+
+            if (string.IsNullOrEmpty(booking.Code))
+            {
+                var maxBkNum = await _context.Bookings
+                    .Select(b => b.Code)
+                    .ToListAsync();
+                var nextBk = maxBkNum
+                    .Where(c => !string.IsNullOrEmpty(c) && c!.StartsWith("BK-"))
+                    .Select(c => int.TryParse(c!.Substring(3), out var n) ? n : 0)
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+                booking.Code = $"BK-{nextBk}";
+            }
+
+            _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BookingController] Guest booking error: {ex.Message}");
+            Console.WriteLine($"[BookingController] Stack: {ex.StackTrace}");
+            return StatusCode(500, new { message = $"Lỗi server: {ex.Message}" });
+        }
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBooking(int id, Booking booking)
     {

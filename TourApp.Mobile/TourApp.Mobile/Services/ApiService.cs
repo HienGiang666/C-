@@ -334,6 +334,47 @@ namespace TourApp.Mobile.Services
             }
         }
 
+        /// <summary>Đặt tour không cần đăng nhập — dùng tên + số điện thoại</summary>
+        public async Task<(bool Success, string Message, int? BookingId)> BookTourGuestAsync(Booking booking)
+        {
+            if (!IsOnline)
+            {
+                await OfflineQueueService.EnqueueAsync(new OfflineAction
+                {
+                    Type = OfflineActionType.Booking,
+                    Payload = JsonSerializer.Serialize(booking)
+                });
+                return (true, "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng.", null);
+            }
+
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var json = JsonSerializer.Serialize(booking);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await GetClient().PostAsync("/api/booking/guest", content, cts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    var created = JsonSerializer.Deserialize<Booking>(body, JsonOpts);
+                    return (true, "Đặt tour thành công!", created?.Id);
+                }
+
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return (false, $"Lỗi server: {errorMsg}", null);
+            }
+            catch (Exception)
+            {
+                await OfflineQueueService.EnqueueAsync(new OfflineAction
+                {
+                    Type = OfflineActionType.Booking,
+                    Payload = JsonSerializer.Serialize(booking)
+                });
+                return (true, "Lỗi mạng. Đã lưu offline, sẽ sync khi có mạng.", null);
+            }
+        }
+
         /// <summary>Lấy danh sách booking của user (có cache offline)</summary>
         public async Task<List<Booking>> GetUserBookingsAsync(int userId)
         {

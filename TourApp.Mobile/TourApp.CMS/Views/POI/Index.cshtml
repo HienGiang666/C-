@@ -182,7 +182,7 @@
                     <strong id="qrPoiName" class="text-primary"></strong>
                     <div class="mt-2">
                         <small class="text-muted">Chưa có app? </small>
-                        <a href="https://www.upload-apk.com/bIYw4LoJkIl96rz" target="_blank" class="small">Tải APK</a>
+                        <a href="https://github.com/HienGiang666/C-/releases/tag/v1.0.0" target="_blank" class="small">Tải APK</a>
                     </div>
                 </div>
             </div>
@@ -225,7 +225,7 @@
                     `<img src="${data.qrCode}" alt="QR Code" class="img-fluid" style="max-width: 250px;">`;
                 // Cập nhật link download từ response nếu có
                 if (data.downloadUrl) {
-                    const linkEl = document.querySelector('#qrModal a[href*="upload-apk"]');
+                    const linkEl = document.querySelector('#qrModal a[href*="github.com"]');
                     if (linkEl) linkEl.href = data.downloadUrl;
                 }
             })

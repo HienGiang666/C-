@@ -50,6 +50,13 @@ namespace TourApp.Mobile.Models
         [JsonPropertyName("cancelReason")]
         public string? CancelReason { get; set; }
         
+        // Guest booking fields (no login required)
+        [JsonPropertyName("guestName")]
+        public string? GuestName { get; set; }
+
+        [JsonPropertyName("guestPhone")]
+        public string? GuestPhone { get; set; }
+
         // Dùng riêng cho UI Mobile để hiển thị tên Tour
         [JsonIgnore]
         public string? TourName { get; set; }

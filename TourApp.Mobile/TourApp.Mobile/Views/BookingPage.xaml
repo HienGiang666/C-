@@ -34,6 +34,22 @@
 
             <Label Text="{Binding [BookingInfo], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="16" FontAttributes="Bold" TextColor="#1A1D26"/>
 
+            <!-- Guest Name -->
+            <VerticalStackLayout>
+                <Label Text="{Binding [GuestNameLabel], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <Entry x:Name="GuestNameEntry" Placeholder="{Binding [GuestNamePlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Guest Phone -->
+            <VerticalStackLayout>
+                <Label Text="{Binding [GuestPhoneLabel], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
+                <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">
+                    <Entry x:Name="GuestPhoneEntry" Placeholder="{Binding [GuestPhonePlaceholder], Source={x:Static services:LocalizationResourceManager.Instance}}" TextColor="Black" BackgroundColor="Transparent" Keyboard="Telephone"/>
+                </Border>
+            </VerticalStackLayout>
+
             <VerticalStackLayout>
                 <Label Text="{Binding [DepartureDate], Source={x:Static services:LocalizationResourceManager.Instance}}" FontSize="13" FontAttributes="Bold" TextColor="#6B7588" Margin="0,0,0,8"/>
                 <Border Stroke="#E4E7ED" StrokeThickness="1" BackgroundColor="#F8F9FC" HeightRequest="50" StrokeShape="RoundRectangle 12" Padding="12,0">

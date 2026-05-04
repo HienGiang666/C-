@@ -442,7 +442,7 @@ public class POIController : Controller
             return NotFound(new { error = "POI not found" });
 
         // URL download app kèm POI ID để app quét vẫn nhận diện được
-        const string downloadUrl = "https://www.upload-apk.com/bIYw4LoJkIl96rz";
+        const string downloadUrl = "https://github.com/HienGiang666/C-/releases/tag/v1.0.0";
         var qrContent = $"{downloadUrl}?poi={id}";
 
         // Tạo QR code với ECCLevel M (medium) thay vì Q để QR nhỏ hơn

@@ -27,6 +27,10 @@ namespace TourApp.API.Models
         public DateTime? CancelledAt { get; set; }      // Thời gian hủy
         public string? CancelReason { get; set; }         // Lý do hủy
 
+        // Guest booking fields (no login required)
+        public string? GuestName { get; set; }
+        public string? GuestPhone { get; set; }
+
         // Navigation properties
         public Tour? Tour { get; set; }
         public User? User { get; set; }

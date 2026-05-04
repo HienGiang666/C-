@@ -63,12 +63,6 @@
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
 
-                    <Border Grid.Column="2" WidthRequest="44" HeightRequest="44" StrokeThickness="0" BackgroundColor="#FFFFFF30" StrokeShape="RoundRectangle 22">
-                        <Label Text="{x:Static helpers:IconFont.QrcodeScan}" FontFamily="MaterialIcons" FontSize="22" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnQRScanClicked"/>
-                        </Border.GestureRecognizers>
-                    </Border>
                 </Grid>
 
                 <!-- Search Bar with Dropdown -->

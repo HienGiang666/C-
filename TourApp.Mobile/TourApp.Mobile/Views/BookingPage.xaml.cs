@@ -115,30 +115,29 @@ public partial class BookingPage : ContentPage
 
     private async void OnConfirmBookingClicked(object sender, EventArgs e)
     {
-        // Check nếu đang ở chế độ khách (chưa đăng nhập)
+        if (_currentTour == null) return;
+
+        // Nếu chưa đăng nhập, bắt buộc nhập tên + số điện thoại
         if (!AuthService.IsLoggedIn || AuthService.CurrentUser == null)
         {
-            // Lưu thông tin booking đang dang dở để sau khi login sẽ tiếp tục
-            PendingBookingService.Save(
-                _tourId,
-                _participants,
-                TourDatePicker.Date,
-                NotesEditor.Text,
-                _tourPrice * _participants
-            );
+            var guestName = GuestNameEntry.Text?.Trim() ?? "";
+            var guestPhone = GuestPhoneEntry.Text?.Trim() ?? "";
 
-            var result = await DisplayAlert(
-                LanguageService.GetString("LoginRequired"),
-                LanguageService.GetString("LoginToBook"),
-                LanguageService.GetString("Login"),
-                LanguageService.GetString("Cancel")
-            );
-
-            if (result)
+            if (string.IsNullOrWhiteSpace(guestName))
             {
-                // Chuyển về trang login
-                await Shell.Current.Navigation.PushAsync(new Auth.LoginPage());
+                await DisplayAlert("Thiếu thông tin", "Vui lòng nhập họ tên", "OK");
+                GuestNameEntry.Focus();
+                return;
             }
+
+            if (string.IsNullOrWhiteSpace(guestPhone) || guestPhone.Length < 9)
+            {
+                await DisplayAlert("Thiếu thông tin", "Vui lòng nhập số điện thoại hợp lệ", "OK");
+                GuestPhoneEntry.Focus();
+                return;
+            }
+
+            await SubmitGuestBookingAsync(guestName, guestPhone);
             return;
         }
 
@@ -168,7 +167,44 @@ public partial class BookingPage : ContentPage
 
         if (result.Success)
         {
-            // Xóa pending booking nếu có
+            PendingBookingService.Clear();
+            if (result.BookingId.HasValue)
+                await Shell.Current.GoToAsync($"PaymentPage?bookingId={result.BookingId.Value}");
+            else
+                await Shell.Current.Navigation.PopToRootAsync();
+        }
+        else
+        {
+            await DisplayAlert(LanguageService.GetString("Error"), result.Message, LanguageService.GetString("OK"));
+            ConfirmBookingButton.IsEnabled = true;
+            ConfirmBookingButton.Text = LanguageService.GetString("ConfirmBooking");
+        }
+    }
+
+    private async Task SubmitGuestBookingAsync(string guestName, string guestPhone)
+    {
+        if (_currentTour == null) return;
+
+        ConfirmBookingButton.IsEnabled = false;
+        ConfirmBookingButton.Text = LanguageService.GetString("Processing");
+
+        var booking = new Booking
+        {
+            TourId = _currentTour.Id,
+            NumberOfParticipants = _participants,
+            TourDate = TourDatePicker.Date,
+            BookingDate = DateTime.Now,
+            TotalPrice = _tourPrice * _participants,
+            Status = "Pending",
+            Notes = NotesEditor.Text ?? "",
+            GuestName = guestName,
+            GuestPhone = guestPhone
+        };
+
+        var result = await _apiService.BookTourGuestAsync(booking);
+
+        if (result.Success)
+        {
             PendingBookingService.Clear();
             if (result.BookingId.HasValue)
                 await Shell.Current.GoToAsync($"PaymentPage?bookingId={result.BookingId.Value}");

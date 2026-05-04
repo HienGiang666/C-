@@ -138,29 +138,6 @@ public partial class TourDetailPage : ContentPage
     {
         if (_currentTour == null) return;
 
-        if (AuthService.IsGuestMode || !AuthService.IsLoggedIn)
-        {
-            var result = await DisplayAlert(
-                LanguageService.GetString("LoginRequired"),
-                LanguageService.GetString("GuestBookMessage"),
-                LanguageService.GetString("Login"),
-                LanguageService.GetString("SignUp")
-            );
-
-            // Lưu pending booking để sau khi login/signup redirect đến BookingPage
-            PendingBookingService.Save(_currentTour.Id, 1, DateTime.Now, "", 0);
-
-            if (result)
-            {
-                await Shell.Current.Navigation.PushAsync(new Auth.LoginPage());
-            }
-            else
-            {
-                await Shell.Current.Navigation.PushAsync(new Auth.SignUpPage());
-            }
-            return;
-        }
-
         await Shell.Current.GoToAsync($"BookingPage?tourId={_currentTour.Id}");
     }
 

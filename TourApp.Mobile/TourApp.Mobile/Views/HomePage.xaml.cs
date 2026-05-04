@@ -414,11 +414,6 @@ public partial class HomePage : ContentPage
         await Shell.Current.GoToAsync("//POIPage");
     }
 
-    private async void OnQRScanClicked(object sender, EventArgs e)
-    {
-        // Navigate to real QR scanner page
-        await Shell.Current.GoToAsync("QRScannerPage");
-    }
 }
 
 public class MockItem
