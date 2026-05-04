@@ -315,6 +315,8 @@ namespace TourApp.Mobile.Services
                 ["ToursVisited"] = "Tour đã đi", ["PlacesTried"] = "Quán đã thử", ["Favorites"] = "Yêu thích",
                 // BookingPage keys
                 ["BookTourTitle"] = "Đặt Tour", ["SelectedTour"] = "Tour đang chọn", ["PricePerPerson"] = "Giá/Người:",
+                ["GuestNameLabel"] = "Họ và tên", ["GuestNamePlaceholder"] = "Nhập họ và tên",
+                ["GuestPhoneLabel"] = "Số điện thoại", ["GuestPhonePlaceholder"] = "Nhập số điện thoại",
                 ["BookingInfo"] = "Thông tin đặt chỗ", ["DepartureDate"] = "Ngày khởi hành", ["NumberOfPeople"] = "Số lượng người",
                 ["NotesOptional"] = "Ghi chú (Tùy chọn)", ["SpecialRequests"] = "Yêu cầu đặc biệt...",
                 ["TotalPayment"] = "Tổng thanh toán:", ["ConfirmBooking"] = "Xác nhận đặt tour",
@@ -387,7 +389,9 @@ namespace TourApp.Mobile.Services
                 ["OfflineBannerShort"] = "Offline — dữ liệu cache",
                 ["OfflineBannerProfile"] = "Bạn đang offline",
                 ["OfflineBookingSaved"] = "Đã lưu đặt tour. Sẽ gửi lên server khi có mạng.",
-                ["GuestBookMessage"] = "Bạn cần đăng nhập hoặc đăng ký để đặt tour."
+                ["GuestBookMessage"] = "Bạn cần đăng nhập hoặc đăng ký để đặt tour.",
+                ["GuestNameRequired"] = "Vui lòng nhập họ tên",
+                ["GuestPhoneRequired"] = "Vui lòng nhập số điện thoại hợp lệ"
             };
             
             var enDict = new Dictionary<string, string>
@@ -425,6 +429,8 @@ namespace TourApp.Mobile.Services
                 ["ToursVisited"] = "Tours", ["PlacesTried"] = "Places", ["Favorites"] = "Favorites",
                 // BookingPage keys
                 ["BookTourTitle"] = "Book Tour", ["SelectedTour"] = "Selected Tour", ["PricePerPerson"] = "Price/Person:",
+                ["GuestNameLabel"] = "Full Name", ["GuestNamePlaceholder"] = "Enter full name",
+                ["GuestPhoneLabel"] = "Phone Number", ["GuestPhonePlaceholder"] = "Enter phone number",
                 ["BookingInfo"] = "Booking Information", ["DepartureDate"] = "Departure Date", ["NumberOfPeople"] = "Number of People",
                 ["NotesOptional"] = "Notes (Optional)", ["SpecialRequests"] = "Special requests...",
                 ["TotalPayment"] = "Total Payment:", ["ConfirmBooking"] = "Confirm Booking",
@@ -497,7 +503,9 @@ namespace TourApp.Mobile.Services
                 ["OfflineBannerShort"] = "Offline — cached data",
                 ["OfflineBannerProfile"] = "You are offline",
                 ["OfflineBookingSaved"] = "Booking saved. Will sync when back online.",
-                ["GuestBookMessage"] = "Please login or sign up to book a tour."
+                ["GuestBookMessage"] = "Please login or sign up to book a tour.",
+                ["GuestNameRequired"] = "Please enter your full name",
+                ["GuestPhoneRequired"] = "Please enter a valid phone number"
             };
 
             var zhDict = new Dictionary<string, string>(enDict)
@@ -535,6 +543,8 @@ namespace TourApp.Mobile.Services
                 ["ToursVisited"] = "已去", ["PlacesTried"] = "已尝试", ["Favorites"] = "收藏",
                 // BookingPage keys
                 ["BookTourTitle"] = "预订旅游", ["SelectedTour"] = "已选旅游", ["PricePerPerson"] = "每人价格：",
+                ["GuestNameLabel"] = "姓名", ["GuestNamePlaceholder"] = "请输入姓名",
+                ["GuestPhoneLabel"] = "电话号码", ["GuestPhonePlaceholder"] = "请输入电话号码",
                 ["BookingInfo"] = "预订信息", ["DepartureDate"] = "出发日期", ["NumberOfPeople"] = "人数",
                 ["NotesOptional"] = "备注（可选）", ["SpecialRequests"] = "特殊要求...",
                 ["TotalPayment"] = "总付款：", ["ConfirmBooking"] = "确认预订",
@@ -607,7 +617,9 @@ namespace TourApp.Mobile.Services
                 ["OfflineBannerShort"] = "离线 — 缓存数据",
                 ["OfflineBannerProfile"] = "您当前离线",
                 ["OfflineBookingSaved"] = "预订已保存。网络恢复后将自动同步。",
-                ["GuestBookMessage"] = "预订旅游前请先登录或注册。"
+                ["GuestBookMessage"] = "预订旅游前请先登录或注册。",
+                ["GuestNameRequired"] = "请输入您的姓名",
+                ["GuestPhoneRequired"] = "请输入有效的电话号码"
             };
 
             var jaDict = new Dictionary<string, string>(enDict)
@@ -645,6 +657,8 @@ namespace TourApp.Mobile.Services
                 ["ToursVisited"] = "ツアー", ["PlacesTried"] = "訪問先", ["Favorites"] = "お気に入り",
                 // BookingPage keys
                 ["BookTourTitle"] = "ツアー予約", ["SelectedTour"] = "選択中のツアー", ["PricePerPerson"] = "1人あたり：",
+                ["GuestNameLabel"] = "氏名", ["GuestNamePlaceholder"] = "氏名を入力",
+                ["GuestPhoneLabel"] = "電話番号", ["GuestPhonePlaceholder"] = "電話番号を入力",
                 ["BookingInfo"] = "予約情報", ["DepartureDate"] = "出発日", ["NumberOfPeople"] = "人数",
                 ["NotesOptional"] = "メモ（任意）", ["SpecialRequests"] = "特別なリクエスト...",
                 ["TotalPayment"] = "合計金額：", ["ConfirmBooking"] = "予約を確定",
@@ -717,7 +731,9 @@ namespace TourApp.Mobile.Services
                 ["OfflineBannerShort"] = "オフライン — キャッシュ",
                 ["OfflineBannerProfile"] = "オフラインです",
                 ["OfflineBookingSaved"] = "予約を保存しました。オンラインに戻ったら同期します。",
-                ["GuestBookMessage"] = "ツアーを予約するにはログインまたは登録が必要です。"
+                ["GuestBookMessage"] = "ツアーを予約するにはログインまたは登録が必要です。",
+                ["GuestNameRequired"] = "氏名を入力してください",
+                ["GuestPhoneRequired"] = "有効な電話番号を入力してください"
             };
 
             _resources["vi"] = fallbackDict;

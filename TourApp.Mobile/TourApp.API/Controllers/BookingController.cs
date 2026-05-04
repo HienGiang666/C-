@@ -136,6 +136,7 @@ public class BookingController : ControllerBase
     /// Đặt tour không cần đăng nhập — nhập tên + số điện thoại
     /// </summary>
     [HttpPost("guest")]
+    [AllowAnonymous]
     public async Task<ActionResult<Booking>> CreateGuestBooking([FromBody] Booking booking)
     {
         try
@@ -176,6 +177,7 @@ public class BookingController : ControllerBase
                     Username = phone,
                     PhoneNumber = phone,
                     Email = $"guest_{nextNum}@tourapp.local",
+                    PasswordHash = $"[GUEST_{nextNum}]",
                     Role = "Customer",
                     IsActive = true,
                     Code = $"#U{nextNum}",
@@ -246,6 +248,34 @@ public class BookingController : ControllerBase
                 throw;
         }
         return NoContent();
+    }
+
+    /// <summary>
+    /// GET /api/booking/guest/{phone}
+    /// Khách xem lịch sử đặt tour bằng số điện thoại (không cần đăng nhập)
+    /// </summary>
+    [HttpGet("guest/{phone}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IEnumerable<Booking>>> GetGuestBookings(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+            return BadRequest(new { message = "Vui lòng nhập số điện thoại" });
+
+        var normalizedPhone = phone.Trim();
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhone);
+
+        if (user == null)
+            return Ok(new List<Booking>()); // Chưa có booking nào
+
+        var bookings = await _context.Bookings
+            .Where(b => b.UserId == user.Id)
+            .Include(b => b.Tour)
+            .Include(b => b.Payments)
+            .OrderByDescending(b => b.BookingDate)
+            .ToListAsync();
+
+        return Ok(bookings);
     }
 
     [HttpDelete("{id}")]

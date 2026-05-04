@@ -117,22 +117,25 @@ public partial class BookingPage : ContentPage
     {
         if (_currentTour == null) return;
 
-        // Nếu chưa đăng nhập, bắt buộc nhập tên + số điện thoại
-        if (!AuthService.IsLoggedIn || AuthService.CurrentUser == null)
+        // Nếu chưa đăng nhập hoặc là guest mode (không có tài khoản thật), bắt buộc nhập tên + số điện thoại
+        var isRealUser = AuthService.IsLoggedIn && AuthService.CurrentUser != null
+                         && AuthService.CurrentUser.Role != "Guest"
+                         && AuthService.CurrentUser.Id > 0;
+        if (!isRealUser)
         {
             var guestName = GuestNameEntry.Text?.Trim() ?? "";
             var guestPhone = GuestPhoneEntry.Text?.Trim() ?? "";
 
             if (string.IsNullOrWhiteSpace(guestName))
             {
-                await DisplayAlert("Thiếu thông tin", "Vui lòng nhập họ tên", "OK");
+                await DisplayAlert(LanguageService.GetString("Notice"), LanguageService.GetString("GuestNameRequired"), LanguageService.GetString("OK"));
                 GuestNameEntry.Focus();
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(guestPhone) || guestPhone.Length < 9)
             {
-                await DisplayAlert("Thiếu thông tin", "Vui lòng nhập số điện thoại hợp lệ", "OK");
+                await DisplayAlert(LanguageService.GetString("Notice"), LanguageService.GetString("GuestPhoneRequired"), LanguageService.GetString("OK"));
                 GuestPhoneEntry.Focus();
                 return;
             }
@@ -169,7 +172,11 @@ public partial class BookingPage : ContentPage
         {
             PendingBookingService.Clear();
             if (result.BookingId.HasValue)
+            {
+                booking.Id = result.BookingId.Value;
+                GuestBookingStorage.SaveBooking(booking);
                 await Shell.Current.GoToAsync($"PaymentPage?bookingId={result.BookingId.Value}");
+            }
             else
                 await Shell.Current.Navigation.PopToRootAsync();
         }
@@ -205,9 +212,15 @@ public partial class BookingPage : ContentPage
 
         if (result.Success)
         {
+            // Lưu số điện thoại guest để xem lịch sử đặt tour
+            Preferences.Default.Set("guest_phone", guestPhone);
             PendingBookingService.Clear();
             if (result.BookingId.HasValue)
+            {
+                booking.Id = result.BookingId.Value;
+                GuestBookingStorage.SaveBooking(booking);
                 await Shell.Current.GoToAsync($"PaymentPage?bookingId={result.BookingId.Value}");
+            }
             else
                 await Shell.Current.Navigation.PopToRootAsync();
         }

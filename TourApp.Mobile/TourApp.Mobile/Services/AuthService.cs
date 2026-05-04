@@ -386,6 +386,7 @@ namespace TourApp.Mobile.Services
             Preferences.Default.Remove("user_email");
             Preferences.Default.Remove("user_role");
             Preferences.Default.Remove("auth_token");
+            Preferences.Default.Remove("guest_phone");
             Preferences.Default.Set("is_logged_in", false);
             ClearGuestMode();
         }

@@ -319,8 +319,9 @@ namespace TourApp.Mobile.Services
                     return (true, "Đặt tour thành công!", created?.Id);
                 }
                 
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                return (false, $"Lỗi server: {errorMsg}", null);
+                var errorBody = await response.Content.ReadAsStringAsync();
+                var errorMsg = ExtractServerError(errorBody, response.StatusCode.ToString());
+                return (false, errorMsg, null);
             }
             catch (Exception)
             {
@@ -361,8 +362,9 @@ namespace TourApp.Mobile.Services
                     return (true, "Đặt tour thành công!", created?.Id);
                 }
 
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                return (false, $"Lỗi server: {errorMsg}", null);
+                var errorBody = await response.Content.ReadAsStringAsync();
+                var errorMsg = ExtractServerError(errorBody, response.StatusCode.ToString());
+                return (false, errorMsg, null);
             }
             catch (Exception)
             {
@@ -373,6 +375,27 @@ namespace TourApp.Mobile.Services
                 });
                 return (true, "Lỗi mạng. Đã lưu offline, sẽ sync khi có mạng.", null);
             }
+        }
+
+        /// <summary>Lấy danh sách booking của guest theo số điện thoại (không cần đăng nhập)</summary>
+        public async Task<List<Booking>> GetGuestBookingsAsync(string phone)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var response = await GetClient().GetAsync($"/api/booking/guest/{Uri.EscapeDataString(phone)}", cts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cts.Token);
+                    var list = JsonSerializer.Deserialize<List<Booking>>(body, JsonOpts);
+                    return list ?? new List<Booking>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] GetGuestBookings error: {ex.Message}");
+            }
+            return new List<Booking>();
         }
 
         /// <summary>Lấy danh sách booking của user (có cache offline)</summary>
@@ -649,6 +672,23 @@ namespace TourApp.Mobile.Services
                    (ex is System.Net.Sockets.SocketException socketEx && 
                     (socketEx.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut ||
                      socketEx.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionRefused));
+        }
+
+        /// <summary>Trích xuất message lỗi từ JSON server response hoặc trả về raw text.</summary>
+        private static string ExtractServerError(string errorBody, string statusCode)
+        {
+            if (string.IsNullOrWhiteSpace(errorBody))
+                return $"Server lỗi {statusCode}.";
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(errorBody);
+                if (doc.RootElement.TryGetProperty("message", out var msg))
+                    return msg.GetString() ?? errorBody;
+                if (doc.RootElement.TryGetProperty("title", out var title))
+                    return title.GetString() ?? errorBody;
+            }
+            catch { }
+            return errorBody.Length > 200 ? errorBody[..200] + "..." : errorBody;
         }
 
         [DebuggerNonUserCode]

@@ -72,7 +72,9 @@ public partial class MapPage : ContentPage
     // ── Offline Map Asset Caching ──
     private static readonly string MapCacheDir = Path.Combine(FileSystem.AppDataDirectory, "map_cache");
     private const string GoongJsUrl = "https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js";
+    private const string GoongJsFallbackUrl = "https://unpkg.com/@goongmaps/goong-js@1.0.9/dist/goong-js.js";
     private const string GoongCssUrl = "https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css";
+    private const string GoongCssFallbackUrl = "https://unpkg.com/@goongmaps/goong-js@1.0.9/dist/goong-js.css";
     private const string StyleJsonUrl = "https://tiles.goong.io/assets/goong_map_web.json";
     private static string JsCachePath => Path.Combine(MapCacheDir, "goong-js.js");
     private static string CssCachePath => Path.Combine(MapCacheDir, "goong-js.css");
@@ -93,13 +95,17 @@ public partial class MapPage : ContentPage
 
             if (!File.Exists(JsCachePath))
             {
-                var js = await client.GetStringAsync(GoongJsUrl);
+                string js;
+                try { js = await client.GetStringAsync(GoongJsUrl); }
+                catch { js = await client.GetStringAsync(GoongJsFallbackUrl); }
                 await File.WriteAllTextAsync(JsCachePath, js);
                 System.Diagnostics.Debug.WriteLine($"[MapAssetCache] JS cached ({js.Length} chars)");
             }
             if (!File.Exists(CssCachePath))
             {
-                var css = await client.GetStringAsync(GoongCssUrl);
+                string css;
+                try { css = await client.GetStringAsync(GoongCssUrl); }
+                catch { css = await client.GetStringAsync(GoongCssFallbackUrl); }
                 await File.WriteAllTextAsync(CssCachePath, css);
                 System.Diagnostics.Debug.WriteLine($"[MapAssetCache] CSS cached ({css.Length} chars)");
             }
@@ -175,12 +181,12 @@ public partial class MapPage : ContentPage
             // Tránh lỗi nén tài nguyên trên Android cũ khi load quá nhanh lúc bật app
             await Task.Delay(200);
 
-            // Load map ngay lập tức với danh sách POI trống
-            if (!_isMapLoaded)
-            {
-                LoadMap();
-                _isMapLoaded = true;
-            }
+            // Pre-cache map assets (JS/CSS/Style) trước khi load map
+            // Đảm bảo assets được cache khi online → dùng lại nếu CDN chậm/lỗi
+            await CacheMapAssetsAsync();
+
+            LoadMap();
+            _isMapLoaded = true;
 
             // [ANTI CRASH] Đợi WebView nạp HTML vào bộ nhớ đệm an toàn rồi mới xin quyền GPS (tránh xung đột vòng đời Activity gây văng app)
             await Task.Delay(1000); 
@@ -332,6 +338,13 @@ public partial class MapPage : ContentPage
             if (MapWebView.Handler?.PlatformView is Android.Webkit.WebView androidWebView)
             {
                 var settings = androidWebView.Settings;
+                settings.JavaScriptEnabled = true;
+                // Cho phép load HTTPS resources từ file:// origin (HtmlWebViewSource)
+                settings.MixedContentMode = Android.Webkit.MixedContentHandling.AlwaysAllow;
+#pragma warning disable CS0618 // Deprecated nhưng cần cho một số Android cũ
+                settings.AllowUniversalAccessFromFileURLs = true;
+                settings.AllowFileAccessFromFileURLs = true;
+#pragma warning restore CS0618
                 // LOAD_CACHE_ELSE_NETWORK = 1
                 settings.CacheMode = (Android.Webkit.CacheModes)1;
                 settings.DomStorageEnabled = true;
@@ -345,7 +358,10 @@ public partial class MapPage : ContentPage
                 Directory.CreateDirectory(cachePath);
                 settings.SetAppCachePath(cachePath);
                 settings.SetAppCacheEnabled(true);
-                System.Diagnostics.Debug.WriteLine("[MapPage] Android WebView cache enabled (LOAD_CACHE_ELSE_NETWORK)");
+
+                // Log JavaScript console messages → giúp debug map load errors
+                androidWebView.SetWebChromeClient(new JSConsoleLogger());
+                System.Diagnostics.Debug.WriteLine("[MapPage] Android WebView cache enabled (LOAD_CACHE_ELSE_NETWORK) + JS console logger");
             }
         }
         catch (Exception ex)
@@ -354,6 +370,19 @@ public partial class MapPage : ContentPage
         }
 #endif
     }
+
+#if ANDROID
+    // WebChromeClient tùy chỉnh để log JS console message vào Debug output
+    private class JSConsoleLogger : Android.Webkit.WebChromeClient
+    {
+        public override bool OnConsoleMessage(Android.Webkit.ConsoleMessage? consoleMessage)
+        {
+            var msg = $"[JS Console] {consoleMessage?.SourceId()}:{consoleMessage?.LineNumber()} — {consoleMessage?.Message()}";
+            System.Diagnostics.Debug.WriteLine(msg);
+            return true;
+        }
+    }
+#endif
 
     /// <summary>
     /// Xử lý khi ngôn ngữ thay đổi - refresh mô tả POI nếu bottom sheet đang mở
@@ -1469,7 +1498,9 @@ if (!_locationService.IsMocking)
         _pendingMapPoisJson = SerializeMapPois(_pois);
         var poisJson = _pendingMapPoisJson;
 
-        // Offline mode: dùng base64 data URI cho JS/CSS/Style (tránh file:// bị chặn trên device thật)
+        // Dùng cached assets (base64 data URI) CHỈ khi offline.
+        // Khi online: dùng CDN URL — base64 data URI cho file JS lớn bị lỗi trên Android WebView
+        // (giới hạn URL length, script không execute). Fallback CDN (unpkg) khi jsdelivr lỗi.
         var useOffline = !NetworkService.IsConnected && AreMapAssetsCached();
         string? jsBase64 = null, cssBase64 = null, styleBase64 = null;
         if (useOffline)
@@ -1479,7 +1510,7 @@ if (!_locationService.IsMocking)
                 jsBase64 = Convert.ToBase64String(File.ReadAllBytes(JsCachePath));
                 cssBase64 = Convert.ToBase64String(File.ReadAllBytes(CssCachePath));
                 styleBase64 = Convert.ToBase64String(File.ReadAllBytes(StyleCachePath));
-                System.Diagnostics.Debug.WriteLine("[MapPage] Offline map: base64 data URI for JS/CSS/Style");
+                System.Diagnostics.Debug.WriteLine("[MapPage] Offline mode: JS/CSS/Style from base64 cache");
             }
             catch (Exception ex)
             {
@@ -1538,15 +1569,15 @@ if (!_locationService.IsMocking)
 
     private static string BuildMapHtml(string poisJson, bool useOfflineAssets = false, string? jsBase64 = null, string? cssBase64 = null, string? styleBase64 = null)
     {
-        // JS tag: data URI base64 khi offline (tránh </script> và file:// bị chặn), CDN khi online
+        // JS tag: data URI base64 khi có cache (tránh CDN dependency), CDN + fallback khi chưa cache
         var jsTag = useOfflineAssets && !string.IsNullOrEmpty(jsBase64)
             ? $"<script src='data:text/javascript;base64,{jsBase64}'></script>\n<script>setTimeout(function(){{ if(window.goongjs) onGoongLoaded(); else onGoongLoadError(); }}, 50);</script>"
-            : $"<script src='{GoongJsUrl}' onload='onGoongLoaded()' onerror='onGoongLoadError()'></script>";
+            : $"<script src='{GoongJsUrl}' onload='onGoongLoaded()' onerror='tryFallbackCDN()'></script>";
 
-        // CSS tag: data URI base64 khi offline, CDN khi online
+        // CSS tag: data URI base64 khi có cache, CDN khi chưa cache
         var cssTag = useOfflineAssets && !string.IsNullOrEmpty(cssBase64)
             ? $"<link href='data:text/css;base64,{cssBase64}' rel='stylesheet'>"
-            : $"<link href='{GoongCssUrl}' rel='stylesheet'>";
+            : $"<link href='{GoongCssUrl}' rel='stylesheet' onerror=\"this.href='{GoongCssFallbackUrl}'\">";
 
         // Style JSON: data URI khi offline (goongjs.Map dùng fetch() → data URI hoạt động), null khi online
         var styleObj = !string.IsNullOrEmpty(styleBase64)
@@ -1651,6 +1682,16 @@ function onGoongLoadError() {{
   document.getElementById('errmsg').classList.add('show');
 }}
 
+function tryFallbackCDN() {{
+  console.log('[Map] Primary CDN failed, trying fallback (unpkg)...');
+  document.getElementById('loading-sub').textContent = 'CDN chính lỗi, thử CDN dự phòng...';
+  var s = document.createElement('script');
+  s.src = '{GoongJsFallbackUrl}';
+  s.onload = onGoongLoaded;
+  s.onerror = onGoongLoadError;
+  document.head.appendChild(s);
+}}
+
 function onGoongLoaded() {{
   clearTimeout(window.goongLoadTimeout);
   console.log('[Map] Goong JS loaded OK');
@@ -1661,6 +1702,20 @@ function initMapWithFallback() {{
   if (_mapInitialized) return;
   _mapInitialized = true;
   try {{
+    // Kiểm tra WebGL — giả lập Android cũ thường thiếu WebGL
+    var canvas = document.createElement('canvas');
+    var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {{
+      console.error('[Map] WebGL NOT supported — likely emulator without GPU acceleration');
+      document.getElementById('loading').style.display = 'none';
+      var errEl = document.getElementById('errmsg');
+      errEl.querySelector('h3').textContent = '⚠️ Thiếu WebGL trên giả lập';
+      errEl.querySelector('p').innerHTML = 'Giả lập Android không hỗ trợ WebGL.<br>Thử bật <b>Hardware GLES</b> trong emulator settings hoặc test trên điện thoại thật.';
+      errEl.classList.add('show');
+      return;
+    }}
+    console.log('[Map] WebGL supported');
+
     goongjs.accessToken = '{GoongMaptileKey}';
     
     // Dùng cached style khi offline (được embed từ C# file cache)
@@ -1686,10 +1741,21 @@ function initMapWithFallback() {{
       }}, 0);
     }});
     
+    var _tileErrorCount = 0;
     map.on('error', function(e) {{
       console.warn('[Map] Map error:', e.error);
+      _tileErrorCount++;
       // Ẩn loading ngay cả khi tile lỗi — map vẫn hiện
       document.getElementById('loading').classList.add('hide');
+      // Nếu lỗi quá nhiều (API key hết hạn / tile server lỗi) → thông báo
+      if (_tileErrorCount >= 3) {{
+        var errEl = document.getElementById('errmsg');
+        if (errEl && !errEl.classList.contains('show')) {{
+          errEl.querySelector('h3').textContent = '⚠️ Bản đồ không tải được tile';
+          errEl.querySelector('p').innerHTML = 'API key Goong có thể đã hết hạn.<br>Kiểm tra key tại: <b>account.goong.io</b>';
+          errEl.classList.add('show');
+        }}
+      }}
     }});
     
     // Nếu map load quá lâu (tile lỗi offline), vẫn ẩn loading sau 5s

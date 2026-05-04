@@ -90,12 +90,10 @@ public class PaymentController : ControllerBase
     /// Xử lý thanh toán QR giả lập
     /// </summary>
     [HttpPost("verify-qr")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<ActionResult> VerifyQrPayment([FromBody] QrPaymentRequest request)
     {
         var authUserId = GetCurrentUserId();
-        if (authUserId == null)
-            return Unauthorized(new { message = "Vui lòng đăng nhập" });
 
         // 1. Tìm booking
         var booking = await _context.Bookings
@@ -105,7 +103,8 @@ public class PaymentController : ControllerBase
         if (booking == null)
             return NotFound(new { message = "Không tìm thấy booking" });
 
-        if (booking.UserId != authUserId)
+        // Nếu user đã đăng nhập thì kiểm tra quyền; guest thì bỏ qua
+        if (authUserId.HasValue && booking.UserId != authUserId.Value)
             return Forbid();
 
         if (booking.Status != "Pending")
@@ -329,18 +328,17 @@ public class PaymentController : ControllerBase
     /// Hủy booking và hoàn tiền giả lập
     /// </summary>
     [HttpPost("{bookingId}/cancel")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<ActionResult> CancelBooking(int bookingId, [FromBody] CancelRequest request)
     {
         var authUserId = GetCurrentUserId();
-        if (authUserId == null)
-            return Unauthorized();
 
         var booking = await _context.Bookings.FindAsync(bookingId);
         if (booking == null)
             return NotFound();
 
-        if (booking.UserId != authUserId)
+        // Nếu user đã đăng nhập thì kiểm tra quyền; guest thì bỏ qua
+        if (authUserId.HasValue && booking.UserId != authUserId.Value)
             return Forbid();
 
         // Chỉ cho hủy nếu chưa hoàn thành tour

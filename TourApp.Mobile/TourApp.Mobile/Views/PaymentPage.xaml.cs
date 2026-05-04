@@ -147,6 +147,7 @@ public partial class PaymentPage : ContentPage
             var result = await _apiService.VerifyQrPaymentAsync(_bookingId);
             if (result.Success)
             {
+                GuestBookingStorage.UpdateStatus(_bookingId, "Paid", result.TransactionId);
                 await Shell.Current.GoToAsync($"PaymentSuccessPage?bookingId={_bookingId}&transactionId={Uri.EscapeDataString(result.TransactionId ?? "")}");
             }
             else

@@ -90,8 +90,8 @@ public partial class ProfilePage : ContentPage
         
         // Ẩn/hiện các mục theo guest mode
         EditProfileButton.IsVisible = !isGuest;
-        HistoryRow.IsVisible = !isGuest;
-        HistoryDivider.IsVisible = !isGuest;
+        HistoryRow.IsVisible = true; // Guest cũng có thể xem lịch sử đặt tour
+        HistoryDivider.IsVisible = true;
         ChangePasswordRow.IsVisible = !isGuest;
         LogoutButton.IsVisible = !isGuest;
         GuestButtonsLayout.IsVisible = isGuest;

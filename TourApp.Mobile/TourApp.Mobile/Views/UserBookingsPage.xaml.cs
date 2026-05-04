@@ -22,25 +22,49 @@ public partial class UserBookingsPage : ContentPage
 
     private async Task LoadBookingsAsync()
     {
-        if (AuthService.CurrentUser == null) return;
-
         MainThread.BeginInvokeOnMainThread(() => BookingsRefreshView.IsRefreshing = true);
 
         try
         {
-            var authService = new AuthService();
-            var list = await authService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+            // 1. Luôn load từ local trước (offline-first)
+            var localList = GuestBookingStorage.LoadAll();
+
+            // 2. Nếu có mạng, merge với server
+            List<Booking>? serverList = null;
+            if (NetworkService.IsConnected)
+            {
+                var apiService = new ApiService();
+                if (AuthService.IsGuestMode)
+                {
+                    var guestPhone = Preferences.Default.Get("guest_phone", "");
+                    if (!string.IsNullOrWhiteSpace(guestPhone))
+                        serverList = await apiService.GetGuestBookingsAsync(guestPhone);
+                }
+                else if (AuthService.CurrentUser != null)
+                {
+                    var authService = new AuthService();
+                    serverList = await authService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+                }
+            }
+
+            // 3. Merge: server data ưu tiên (có status mới nhất), giữ lại local-only
+            var merged = new Dictionary<int, Booking>();
+            foreach (var b in localList)
+                if (b.Id > 0) merged[b.Id] = b;
+
+            if (serverList != null)
+            {
+                foreach (var b in serverList)
+                    if (b.Id > 0) merged[b.Id] = b;
+            }
+
+            var finalList = merged.Values.OrderByDescending(b => b.BookingDate).ToList();
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 Bookings.Clear();
-                if (list != null)
-                {
-                    foreach (var b in list)
-                    {
-                        Bookings.Add(b);
-                    }
-                }
+                foreach (var b in finalList)
+                    Bookings.Add(b);
             });
         }
         catch (Exception ex)
